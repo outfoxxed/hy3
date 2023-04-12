@@ -56,6 +56,7 @@ class Hy3Layout: public IHyprLayout {
 public:
 	virtual void onWindowCreatedTiling(CWindow*);
 	virtual void onWindowRemovedTiling(CWindow*);
+	virtual void onWindowFocusChange(CWindow*);
 	virtual bool isWindowTiled(CWindow*);
 	virtual void recalculateMonitor(const int&);
 	virtual void recalculateWindow(CWindow*);
@@ -75,6 +76,7 @@ private:
 	// std::list is used over std::vector because it does not invalidate references
 	// when mutated.
 	std::list<Hy3Node> nodes;
+	CWindow* lastActiveWindow = nullptr;
 
 	int getWorkspaceNodeCount(const int&);
 	Hy3Node* getNodeFromWindow(CWindow*);

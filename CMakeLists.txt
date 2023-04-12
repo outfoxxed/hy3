@@ -20,7 +20,6 @@ pkg_check_modules(DEPS REQUIRED pixman-1 libdrm)
 add_library(hy3 SHARED
 	src/main.cpp
 	src/Hy3Layout.cpp
-	src/Hy3SpawnLocDecoration.cpp
 )
 
 target_include_directories(hy3 PRIVATE

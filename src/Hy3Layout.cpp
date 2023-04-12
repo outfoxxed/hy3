@@ -103,6 +103,47 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 	}
 
 	auto* group = &this->data.as_group;
+
+	if (group->children.size() == 1 && this->parent != nullptr) {
+		auto& child = group->children.front();
+
+		double distortOut;
+		double distortIn;
+
+		const auto* gaps_in     = &g_pConfigManager->getConfigValuePtr("general:gaps_in")->intValue;
+		const auto* gaps_out    = &g_pConfigManager->getConfigValuePtr("general:gaps_out")->intValue;
+
+		if (gaps_in > gaps_out) {
+			distortOut = *gaps_out - 1.0;
+		} else {
+			distortOut = *gaps_in - 1.0;
+		}
+
+		if (distortOut < 0) distortOut = 0.0;
+
+		distortIn = *gaps_in * 2;
+
+		switch (group->layout) {
+		case Hy3GroupLayout::SplitH:
+			child->position.x = this->position.x - distortOut;
+			child->size.x = this->size.x - distortIn;
+			child->position.y = this->position.y;
+			child->size.y = this->size.y;
+			break;
+		case Hy3GroupLayout::SplitV:
+			child->position.y = this->position.y - distortOut;
+			child->size.y = this->size.y - distortIn;
+			child->position.x = this->position.x;
+			child->size.x = this->size.x;
+		case Hy3GroupLayout::Tabbed:
+			// TODO
+			break;
+		}
+
+		child->recalcSizePosRecursive();
+		return;
+	}
+
 	int constraint;
 	switch (group->layout) {
 	case Hy3GroupLayout::SplitH:
@@ -371,6 +412,28 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	if (parent != nullptr) parent->recalcSizePosRecursive();
 }
 
+void Hy3Layout::onWindowFocusChange(CWindow* window) {
+	Debug::log(LOG, "Switched windows from %p to %p", this->lastActiveWindow, window);
+	auto* node = this->getNodeFromWindow(this->lastActiveWindow);
+
+	while (node != nullptr
+		&& node->parent != nullptr
+		&& node->parent->parent != nullptr
+		&& node->parent->data.as_group.children.size() == 1)
+	{
+		auto parent = node->parent;
+		std::swap(parent->data, node->data);
+		this->nodes.remove(*node);
+		node = parent;
+	}
+
+	if (node != nullptr) {
+		node->recalcSizePosRecursive();
+	}
+
+	this->lastActiveWindow = window;
+}
+
 bool Hy3Layout::isWindowTiled(CWindow* window) {
 	return this->getNodeFromWindow(window) != nullptr;
 }
@@ -400,6 +463,16 @@ std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string conte
 		Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 		if (content == "splitv") {
 			layout = Hy3GroupLayout::SplitV;
+		}
+
+		if (node->parent != nullptr
+			&& node->parent->data.as_group.children.size() == 1
+			&& (node->parent->data.as_group.layout == Hy3GroupLayout::SplitH
+				|| node->parent->data.as_group.layout == Hy3GroupLayout::SplitV))
+		{
+			node->parent->data.as_group.layout = layout;
+			node->parent->recalcSizePosRecursive();
+			return "";
 		}
 
 		Hy3NodeData node_data = Hy3NodeData(Hy3GroupData(layout));
