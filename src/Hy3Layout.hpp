@@ -12,14 +12,32 @@ enum class Hy3GroupLayout {
 	Tabbed,
 };
 
+enum class ShiftDirection {
+	Left,
+	Up,
+	Down,
+	Right,
+};
+
 struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
 
+	bool hasChild(Hy3Node* child);
+
 	Hy3GroupData(Hy3GroupLayout layout);
+
+private:
+	Hy3GroupData(Hy3GroupData&&) = default;
+	Hy3GroupData(const Hy3GroupData&) = default;
+
+	friend class Hy3NodeData;
 };
 
-struct Hy3NodeData {
+void swapNodeData(Hy3Node& a, Hy3Node& b);
+
+class Hy3NodeData {
+public:
 	enum { Group, Window } type;
 	union {
 		Hy3GroupData as_group;
@@ -29,12 +47,19 @@ struct Hy3NodeData {
 	bool operator==(const Hy3NodeData&) const;
 
 	Hy3NodeData();
-	Hy3NodeData(CWindow* window);
-	Hy3NodeData(Hy3GroupData group);
+	~Hy3NodeData();
+	Hy3NodeData(CWindow*);
+	Hy3NodeData(Hy3GroupLayout);
+	Hy3NodeData& operator=(CWindow*);
+	Hy3NodeData& operator=(Hy3GroupLayout);
+
+	//private: - I give up, C++ wins
+	Hy3NodeData(Hy3GroupData);
 	Hy3NodeData(const Hy3NodeData&);
 	Hy3NodeData(Hy3NodeData&&);
 	Hy3NodeData& operator=(const Hy3NodeData&);
-	~Hy3NodeData();
+
+	friend void swapNodeData(Hy3Node&, Hy3Node&);
 };
 
 struct Hy3Node {
@@ -48,6 +73,11 @@ struct Hy3Node {
 	Hy3Layout* layout = nullptr;
 
 	void recalcSizePosRecursive(bool force = false);
+	// remove a child node, returns true on success.
+	// fails if not a group
+	// if only a single child node remains && childSwallows, replace this group with said child.
+	// if no children remain, remove this node from its parent.
+	bool removeChild(Hy3Node* child, bool childSwallows = false);
 
 	bool operator==(const Hy3Node&) const;
 };
@@ -72,9 +102,12 @@ public:
 	virtual void onEnable();
 	virtual void onDisable();
 
+	void makeGroupOn(CWindow*, Hy3GroupLayout);
+	void shiftWindow(CWindow*, ShiftDirection);
+
+	Hy3Node* findCommonParentNode(Hy3Node&, Hy3Node&);
+
 private:
-	// std::list is used over std::vector because it does not invalidate references
-	// when mutated.
 	std::list<Hy3Node> nodes;
 	CWindow* lastActiveWindow = nullptr;
 

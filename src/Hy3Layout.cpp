@@ -1,14 +1,5 @@
 #include "Hy3Layout.hpp"
-#include "src/Window.hpp"
-#include "src/debug/Log.hpp"
-#include "src/helpers/Vector2D.hpp"
-#include "src/helpers/Workspace.hpp"
-#include "src/managers/XWaylandManager.hpp"
-#include "src/managers/input/InputManager.hpp"
-#include "src/render/Renderer.hpp"
-#include <cairo/cairo.h>
-#include <ctime>
-#include <memory>
+
 #include <src/Compositor.hpp>
 
 Hy3GroupData::Hy3GroupData(Hy3GroupLayout layout): layout(layout) {}
@@ -22,6 +13,8 @@ Hy3NodeData::Hy3NodeData(CWindow *window): type(Hy3NodeData::Window) {
 Hy3NodeData::Hy3NodeData(Hy3GroupData group): type(Hy3NodeData::Group) {
 	new(&this->as_group) Hy3GroupData(std::move(group));
 }
+
+Hy3NodeData::Hy3NodeData(Hy3GroupLayout layout): Hy3NodeData(Hy3GroupData(layout)) {}
 
 Hy3NodeData::~Hy3NodeData() {
 	switch (this->type) {
@@ -76,6 +69,18 @@ Hy3NodeData& Hy3NodeData::operator=(const Hy3NodeData& from) {
 		new(&this->as_group) Hy3GroupData(from.as_group);
 		break;
 	}
+
+	return *this;
+}
+
+Hy3NodeData& Hy3NodeData::operator=(CWindow* window) {
+	*this = Hy3NodeData(window);
+
+	return *this;
+}
+
+Hy3NodeData& Hy3NodeData::operator=(Hy3GroupLayout layout) {
+	*this = Hy3NodeData(layout);
 
 	return *this;
 }
@@ -182,6 +187,59 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 		}
 
 		child->recalcSizePosRecursive(force);
+	}
+}
+
+bool Hy3GroupData::hasChild(Hy3Node* node) {
+	Debug::log(LOG, "Searching for child %p of %p", this, node);
+	for (auto child: this->children) {
+		if (child == node) return true;
+
+		if (child->data.type == Hy3NodeData::Group) {
+			if (child->data.as_group.hasChild(node)) return true;
+		}
+	}
+
+	return false;
+}
+
+bool Hy3Node::removeChild(Hy3Node* child, bool childSwallows) {
+	if (this->data.type != Hy3NodeData::Group) return false;
+	Hy3GroupData& group = this->data.as_group;
+
+	if (group.children.remove(child)) {
+		if (group.children.empty()) {
+			Debug::log(LOG, "Group %p is empty, removing", this);
+			this->parent->removeChild(this, childSwallows);
+			this->layout->nodes.remove(*this);
+		} else if (childSwallows && group.children.size() == 1) {
+			auto remaining = group.children.front();
+			Debug::log(LOG, "Group %p has only one child(%p), swallowing", this, remaining);
+			swapNodeData(*this, *remaining);
+			this->layout->nodes.remove(*remaining);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+void swapNodeData(Hy3Node& a, Hy3Node& b) {
+	Hy3NodeData aData = std::move(a.data);
+	a.data = b.data;
+	b.data = aData;
+
+	if (a.data.type == Hy3NodeData::Group) {
+		for (auto child: a.data.as_group.children) {
+			child->parent = &a;
+		}
+	}
+
+	if (b.data.type == Hy3NodeData::Group) {
+		for (auto child: b.data.as_group.children) {
+			child->parent = &b;
+		}
 	}
 }
 
@@ -341,7 +399,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	} else {
 		if ((opening_into = this->getWorkspaceRootGroup(window->m_iWorkspaceID)) == nullptr) {
 			this->nodes.push_back({
-				.data = Hy3NodeData(Hy3GroupData(Hy3GroupLayout::SplitH)),
+				.data = Hy3GroupLayout::SplitH,
 				.position = monitor->vecPosition,
 				.size = monitor->vecSize,
 				.workspace_id = window->m_iWorkspaceID,
@@ -359,7 +417,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 
 	this->nodes.push_back({
 		.parent = opening_into,
-		.data = Hy3NodeData(window),
+		.data = window,
 		.workspace_id = window->m_iWorkspaceID,
 		.layout = this,
 	});
@@ -422,7 +480,7 @@ void Hy3Layout::onWindowFocusChange(CWindow* window) {
 		&& node->parent->data.as_group.children.size() == 1)
 	{
 		auto parent = node->parent;
-		std::swap(parent->data, node->data);
+		swapNodeData(*parent, *node);
 		this->nodes.remove(*node);
 		node = parent;
 	}
@@ -455,40 +513,6 @@ void Hy3Layout::fullscreenRequestForWindow(CWindow* pWindow, eFullscreenMode mod
 }
 
 std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string content) {
-	if (header.pWindow == nullptr) return "";
-	auto* node = this->getNodeFromWindow(header.pWindow);
-	if (node == nullptr) return "";
-
-	if (content == "splith" || content == "splitv") {
-		Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
-		if (content == "splitv") {
-			layout = Hy3GroupLayout::SplitV;
-		}
-
-		if (node->parent != nullptr
-			&& node->parent->data.as_group.children.size() == 1
-			&& (node->parent->data.as_group.layout == Hy3GroupLayout::SplitH
-				|| node->parent->data.as_group.layout == Hy3GroupLayout::SplitV))
-		{
-			node->parent->data.as_group.layout = layout;
-			node->parent->recalcSizePosRecursive();
-			return "";
-		}
-
-		Hy3NodeData node_data = Hy3NodeData(Hy3GroupData(layout));
-		std::swap(node->data, node_data);
-
-		this->nodes.push_back({
-			.parent = node,
-			.data = node_data,
-			.workspace_id = node->workspace_id,
-			.layout = this,
-		});
-
-		node->data.as_group.children.push_back(&this->nodes.back());
-		node->recalcSizePosRecursive();
-	}
-
 	return "";
 }
 
@@ -497,10 +521,12 @@ SWindowRenderLayoutHints Hy3Layout::requestRenderHints(CWindow* pWindow) {
 }
 
 void Hy3Layout::switchWindows(CWindow* pWindowA, CWindow* pWindowB) {
+	Debug::log(LOG, "SwitchWindows: %p %p", pWindowA, pWindowB);
     ; // empty
 }
 
 void Hy3Layout::alterSplitRatio(CWindow* pWindow, float delta, bool exact) {
+	Debug::log(LOG, "AlterSplitRatio: %p %f", pWindow, delta);
     ; // empty
 }
 
@@ -522,4 +548,226 @@ void Hy3Layout::onEnable() {
 }
 
 void Hy3Layout::onDisable() {
+}
+
+void Hy3Layout::makeGroupOn(CWindow* window, Hy3GroupLayout layout) {
+	auto* node = this->getNodeFromWindow(window);
+	if (node == nullptr) return;
+
+	if (node->parent->data.as_group.children.size() == 1
+			&& (node->parent->data.as_group.layout == Hy3GroupLayout::SplitH
+			|| node->parent->data.as_group.layout == Hy3GroupLayout::SplitV))
+	{
+			node->parent->data.as_group.layout = layout;
+			node->parent->recalcSizePosRecursive();
+			return;
+	}
+
+	this->nodes.push_back({
+			.parent = node,
+			.data = node->data.as_window,
+			.workspace_id = node->workspace_id,
+			.layout = this,
+	});
+
+	node->data = layout;
+	node->data.as_group.children.push_back(&this->nodes.back());
+	node->recalcSizePosRecursive();
+
+	return;
+}
+
+void Hy3Layout::shiftWindow(CWindow* window, ShiftDirection direction) {
+	Debug::log(LOG, "ShiftWindow %p %d", window, direction);
+	auto* node = this->getNodeFromWindow(window);
+	if (node == nullptr) return;
+
+	auto& group = node->parent->data.as_group;
+
+	enum class ShiftAction {
+		ShiftUp,
+		ShiftDown,
+		BreakGroup,
+	};
+
+	ShiftAction action;
+
+	switch (group.layout) {
+	case Hy3GroupLayout::SplitH:
+	case Hy3GroupLayout::Tabbed:
+		switch (direction) {
+		case ShiftDirection::Left:
+			action = ShiftAction::ShiftUp;
+			break;
+		case ShiftDirection::Right:
+			action = ShiftAction::ShiftDown;
+			break;
+		case ShiftDirection::Up:
+		case ShiftDirection::Down:
+			action = ShiftAction::BreakGroup;
+			break;
+		}
+		break;
+	case Hy3GroupLayout::SplitV:
+		switch (direction) {
+		case ShiftDirection::Up:
+			action = ShiftAction::ShiftUp;
+			break;
+		case ShiftDirection::Down:
+			action = ShiftAction::ShiftDown;
+			break;
+		case ShiftDirection::Left:
+		case ShiftDirection::Right:
+			action = ShiftAction::BreakGroup;
+			break;
+		}
+		break;
+	}
+
+	Debug::log(LOG, "ShiftWindow 2 %d", action);
+
+	Hy3Node* target_group;
+	switch (action) {
+	case ShiftAction::ShiftUp:
+		if (node == group.children.front()) {
+			action = ShiftAction::BreakGroup;
+		} else {
+			auto iter = std::find(group.children.begin(), group.children.end(), node);
+			auto target = *std::prev(iter);
+			if (target->data.type == Hy3NodeData::Group) {
+				target_group = target;
+				goto entergroup;
+			} else {
+				swapNodeData(*node, *target);
+			}
+		}
+		break;
+	case ShiftAction::ShiftDown:
+		if (node == group.children.back()) {
+			action = ShiftAction::BreakGroup;
+		} else {
+			auto iter = std::find(group.children.begin(), group.children.end(), node);
+			auto target = *std::next(iter);
+			if (target->data.type == Hy3NodeData::Group) {
+				target_group = target;
+				goto entergroup;
+			} else {
+				swapNodeData(*node, *target);
+			}
+		}
+		break;
+	case ShiftAction::BreakGroup:
+		break;
+	}
+
+	if (action != ShiftAction::BreakGroup) {
+		node->parent->recalcSizePosRecursive();
+		return;
+	}
+
+	goto noentergroup;
+entergroup: {
+		auto common_parent = this->findCommonParentNode(*target_group, *node);
+		if (common_parent == nullptr) {
+				Debug::log(ERR, "Could not find common parent of nodes %p, %p while moving", target_group, node);
+				return;
+		}
+
+		auto* parent = node->parent;
+		node->parent = target_group;
+		node->size_ratio = 1.0;
+
+		Hy3GroupData& target_group_data = target_group->data.as_group;
+		switch (target_group_data.layout) {
+		case Hy3GroupLayout::SplitH:
+		case Hy3GroupLayout::Tabbed:
+				switch (direction) {
+				case ShiftDirection::Left:
+				target_group_data.children.push_back(node);
+				break;
+				case ShiftDirection::Right:
+				case ShiftDirection::Up:
+				case ShiftDirection::Down:
+				target_group_data.children.push_front(node);
+				break;
+				}
+				break;
+		case Hy3GroupLayout::SplitV:
+				switch (direction) {
+				case ShiftDirection::Up:
+				target_group_data.children.push_back(node);
+				break;
+				case ShiftDirection::Down:
+				case ShiftDirection::Left:
+				case ShiftDirection::Right:
+				target_group_data.children.push_front(node);
+				break;
+				}
+				break;
+		}
+
+		// this might cause the target group to get swallowed and invalidate its pointers,
+		// so its done after touching it.
+		parent->removeChild(node, true);
+		common_parent->recalcSizePosRecursive();
+		return;
+	}
+noentergroup:
+
+	// break out of group
+	Hy3Node* breakout_origin = node->parent;
+	target_group = breakout_origin->parent;
+	// break parents until we reach one going the shift direction or nullptr
+	while (target_group != nullptr
+				 && !(((target_group->data.as_group.layout == Hy3GroupLayout::SplitH
+							 || target_group->data.as_group.layout == Hy3GroupLayout::Tabbed)
+							&& (direction == ShiftDirection::Left || direction == ShiftDirection::Right))
+						 || (target_group->data.as_group.layout == Hy3GroupLayout::SplitV
+								 && (direction == ShiftDirection::Up || direction == ShiftDirection::Down))))
+	{
+		breakout_origin = target_group;
+		target_group = breakout_origin->parent;
+	}
+
+	if (target_group != nullptr) {
+		auto* parent = node->parent;
+		node->parent = target_group;
+		node->size_ratio = 1.0;
+
+		bool insert_after = direction == ShiftDirection::Right || direction == ShiftDirection::Down;
+
+		Hy3GroupData& target_group_data = target_group->data.as_group;
+
+		auto iter = std::find(target_group_data.children.begin(), target_group_data.children.end(), breakout_origin);
+		if (insert_after) {
+			iter = std::next(iter);
+		}
+
+		target_group_data.children.insert(iter, node);
+		parent->removeChild(node, true);
+		target_group->recalcSizePosRecursive();
+	}
+	return;
+}
+
+Hy3Node* Hy3Layout::findCommonParentNode(Hy3Node& a, Hy3Node& b) {
+	Hy3Node* last_node = nullptr;
+	Hy3Node* searcher = &a;
+
+	while (searcher != nullptr) {
+		if (searcher->data.type == Hy3NodeData::Group) {
+			for (auto child: searcher->data.as_group.children) {
+				if (last_node == child) continue; // dont rescan already scanned tree
+				if (child == &b) return searcher;
+				if (child->data.type == Hy3NodeData::Group && child->data.as_group.hasChild(&b)) {
+					return searcher;
+				}
+			}
+		}
+
+		last_node = searcher;
+		searcher = searcher->parent;
+	}
+
+	return nullptr;
 }
