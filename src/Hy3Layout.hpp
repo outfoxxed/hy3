@@ -104,8 +104,7 @@ public:
 
 	void makeGroupOn(CWindow*, Hy3GroupLayout);
 	void shiftWindow(CWindow*, ShiftDirection);
-
-	Hy3Node* findCommonParentNode(Hy3Node&, Hy3Node&);
+	void shiftFocus(CWindow*, ShiftDirection);
 
 private:
 	std::list<Hy3Node> nodes;

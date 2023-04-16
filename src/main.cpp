@@ -50,6 +50,21 @@ void dispatch_movewindow(std::string arg) {
 	}
 }
 
+void dispatch_movefocus(std::string arg) {
+	CWindow* window = window_for_action();
+	if (window == nullptr) return;
+
+	if (arg == "l") {
+		g_Hy3Layout->shiftFocus(window, ShiftDirection::Left);
+	} else if (arg == "u") {
+		g_Hy3Layout->shiftFocus(window, ShiftDirection::Up);
+	} else if (arg == "d") {
+		g_Hy3Layout->shiftFocus(window, ShiftDirection::Down);
+	} else if (arg == "r") {
+		g_Hy3Layout->shiftFocus(window, ShiftDirection::Right);
+	}
+}
+
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	PHANDLE = handle;
 
@@ -57,6 +72,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	HyprlandAPI::addLayout(PHANDLE, "hy3", g_Hy3Layout.get());
 
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3_makegroup", dispatch_makegroup);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3_movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3_movewindow", dispatch_movewindow);
 
 	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};
