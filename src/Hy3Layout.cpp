@@ -416,6 +416,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	}
 	Debug::log(LOG, "open new window %p(node: %p:%p) on winodow %p in %p", window, &node, node.data.as_window, opening_after, opening_into);
 
+	opening_into->data.as_group.lastFocusedChild = &node;
 	opening_into->recalcSizePosRecursive();
 	Debug::log(LOG, "opening_into (%p) contains new child (%p)? %d", opening_into, &node, opening_into->data.as_group.hasChild(&node));
 }
@@ -440,8 +441,21 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	auto* parent = node->parent;
 	auto* group = &parent->data.as_group;
 
+	if (group->children.size() > 2) {
+		auto iter = std::find(group->children.begin(), group->children.end(), node);
+		if (iter == group->children.begin()) {
+			group->lastFocusedChild = *std::next(iter);
+		} else {
+			group->lastFocusedChild = *std::prev(iter);
+		}
+	}
+
 	group->children.remove(node);
 	this->nodes.remove(*node);
+
+	if (group->children.size() == 1) {
+		group->lastFocusedChild = group->children.front();
+	}
 
 	while (parent->parent != nullptr && group->children.empty()) {
 		auto* child = parent;
@@ -457,21 +471,24 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 			}
 		}
 
-		parent->data.as_group.children.remove(child);
+		group->children.remove(child);
+		this->nodes.remove(*child);
 
 		if (group->children.size() == 1) {
 			group->lastFocusedChild = group->children.front();
 		}
-
-		this->nodes.remove(*child);
 	}
 
 	if (parent != nullptr) {
 		parent->recalcSizePosRecursive();
-		auto* focus = group->lastFocusedChild;
-		while (focus->data.type == Hy3NodeData::Group) focus = focus->data.as_group.lastFocusedChild;
-		g_pCompositor->focusWindow(focus->data.as_window);
 	}
+}
+
+CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
+	auto* node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
+	if (node == nullptr) return nullptr;
+	while (node->data.type == Hy3NodeData::Group) node = node->data.as_group.lastFocusedChild;
+	return node->data.as_window;
 }
 
 void Hy3Layout::onWindowFocusChange(CWindow* window) {

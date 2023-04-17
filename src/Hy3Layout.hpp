@@ -93,7 +93,8 @@ public:
 	virtual void switchWindows(CWindow*, CWindow*);
 	virtual void alterSplitRatio(CWindow*, float, bool);
 	virtual std::string getLayoutName();
-	virtual void replaceWindowDataWith(CWindow* from, CWindow* to);
+	virtual CWindow* getNextWindowCandidate(CWindow*);
+	virtual void replaceWindowDataWith(CWindow*, CWindow*);
 
 	virtual void onEnable();
 	virtual void onDisable();
