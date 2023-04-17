@@ -1,3 +1,4 @@
+#include "globals.hpp"
 #include "Hy3Layout.hpp"
 
 #include <src/Compositor.hpp>
@@ -286,7 +287,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 	const auto* border_size = &g_pConfigManager->getConfigValuePtr("general:border_size")->intValue;
 	const auto* gaps_in     = &g_pConfigManager->getConfigValuePtr("general:gaps_in")->intValue;
 	const auto* gaps_out    = &g_pConfigManager->getConfigValuePtr("general:gaps_out")->intValue;
-	static auto* const single_window_no_gaps = &g_pConfigManager->getConfigValuePtr("plugin:hy3:no_gaps_when_only")->intValue;
+	static auto* const single_window_no_gaps = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only")->intValue;
 
 	if (!g_pCompositor->windowExists(window) || !window->m_bIsMapped) {
 		Debug::log(ERR, "Node %p holding invalid window %p!!", node, window);
@@ -503,8 +504,52 @@ bool Hy3Layout::isWindowTiled(CWindow* window) {
 	return this->getNodeFromWindow(window) != nullptr;
 }
 
-void Hy3Layout::recalculateMonitor(const int& eIdleInhibitMode) {
-    ; // empty
+void Hy3Layout::recalculateMonitor(const int& monitor_id) {
+	const auto monitor = g_pCompositor->getMonitorFromID(monitor_id);
+	if (monitor == nullptr) return;
+
+	const auto workspace = g_pCompositor->getWorkspaceByID(monitor->activeWorkspace);
+	if (workspace == nullptr) return;
+
+	g_pHyprRenderer->damageMonitor(monitor);
+
+	if (monitor->specialWorkspaceID) {
+		const auto top_node = this->getWorkspaceRootGroup(monitor->specialWorkspaceID);
+
+		if (top_node != nullptr) {
+			top_node->position = monitor->vecPosition + monitor->vecReservedTopLeft;
+			top_node->size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+			top_node->recalcSizePosRecursive();
+		}
+	}
+
+	if (workspace->m_bHasFullscreenWindow) {
+		const auto window = g_pCompositor->getFullscreenWindowOnWorkspace(workspace->m_iID);
+
+		if (workspace->m_efFullscreenMode == FULLSCREEN_FULL) {
+			window->m_vRealPosition = monitor->vecPosition;
+			window->m_vRealSize = monitor->vecSize;
+		} else {
+			// Vaxry's hack from below, but again
+
+			Hy3Node fakeNode = {
+				.data = window,
+				.position = monitor->vecPosition + monitor->vecReservedTopLeft,
+				.size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
+				.workspace_id = window->m_iWorkspaceID,
+			};
+
+			this->applyNodeDataToWindow(&fakeNode);
+		}
+	} else {
+		const auto top_node = this->getWorkspaceRootGroup(monitor->specialWorkspaceID);
+
+		if (top_node) {
+			top_node->position = monitor->vecPosition + monitor->vecReservedTopLeft;
+			top_node->size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+			top_node->recalcSizePosRecursive();
+		}
+	}
 }
 
 void Hy3Layout::recalculateWindow(CWindow* pWindow) {
@@ -515,8 +560,66 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
     ; // empty
 }
 
-void Hy3Layout::fullscreenRequestForWindow(CWindow* pWindow, eFullscreenMode mode, bool on) {
-    ; // empty
+void Hy3Layout::fullscreenRequestForWindow(CWindow* window, eFullscreenMode fullscreen_mode, bool on) {
+	if (!g_pCompositor->windowValidMapped(window)) return;
+	if (on == window->m_bIsFullscreen || g_pCompositor->isWorkspaceSpecial(window->m_iWorkspaceID)) return;
+
+	const auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
+	const auto workspace = g_pCompositor->getWorkspaceByID(window->m_iWorkspaceID);
+	if (workspace->m_bHasFullscreenWindow && on) return;
+
+	window->m_bIsFullscreen = on;
+	workspace->m_bHasFullscreenWindow = !workspace->m_bHasFullscreenWindow;
+
+	if (!window->m_bIsFullscreen) {
+		auto* node = this->getNodeFromWindow(window);
+
+		if (node) {
+			// restore node positioning if tiled
+			this->applyNodeDataToWindow(node);
+		} else {
+			// restore floating position if not
+			window->m_vRealPosition = window->m_vLastFloatingPosition;
+			window->m_vRealSize = window->m_vLastFloatingSize;
+
+			window->m_sSpecialRenderData.rounding = true;
+			window->m_sSpecialRenderData.border = true;
+			window->m_sSpecialRenderData.decorate = true;
+		}
+	} else {
+		workspace->m_efFullscreenMode = fullscreen_mode;
+
+		// save position and size if floating
+		if (window->m_bIsFloating) {
+			window->m_vLastFloatingPosition = window->m_vRealPosition.goalv();
+			window->m_vPosition = window->m_vRealPosition.goalv();
+			window->m_vLastFloatingSize = window->m_vRealSize.goalv();
+			window->m_vSize = window->m_vRealSize.goalv();
+		}
+
+		if (fullscreen_mode == FULLSCREEN_FULL) {
+			Debug::log(LOG, "fullscreen");
+			window->m_vRealPosition = monitor->vecPosition;
+			window->m_vRealSize = monitor->vecSize;
+		} else {
+			Debug::log(LOG, "vaxry hack");
+			// Copy of vaxry's massive hack
+
+			Hy3Node fakeNode = {
+				.data = window,
+				.position = monitor->vecPosition + monitor->vecReservedTopLeft,
+				.size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
+				.workspace_id = window->m_iWorkspaceID,
+			};
+
+			this->applyNodeDataToWindow(&fakeNode);
+		}
+	}
+
+	g_pCompositor->updateWindowAnimatedDecorationValues(window);
+	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
+	g_pCompositor->moveWindowToTop(window);
+	this->recalculateMonitor(monitor->ID);
 }
 
 std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string content) {

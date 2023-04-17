@@ -1,9 +1,10 @@
 #include <src/plugins/PluginAPI.hpp>
 
+#include "globals.hpp"
 #include "Hy3Layout.hpp"
 #include "src/Compositor.hpp"
+#include "src/config/ConfigManager.hpp"
 
-inline HANDLE PHANDLE = nullptr;
 inline std::unique_ptr<Hy3Layout> g_Hy3Layout;
 
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
@@ -67,6 +68,8 @@ void dispatch_movefocus(std::string arg) {
 
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	PHANDLE = handle;
+
+	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only", SConfigValue{.intValue = 0});
 
 	g_Hy3Layout = std::make_unique<Hy3Layout>();
 	HyprlandAPI::addLayout(PHANDLE, "hy3", g_Hy3Layout.get());
