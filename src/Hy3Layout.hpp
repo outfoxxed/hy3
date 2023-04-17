@@ -22,6 +22,7 @@ enum class ShiftDirection {
 struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
+	Hy3Node* lastFocusedChild = nullptr;
 
 	bool hasChild(Hy3Node* child);
 
@@ -73,11 +74,6 @@ struct Hy3Node {
 	Hy3Layout* layout = nullptr;
 
 	void recalcSizePosRecursive(bool force = false);
-	// remove a child node, returns true on success.
-	// fails if not a group
-	// if only a single child node remains && childSwallows, replace this group with said child.
-	// if no children remain, remove this node from its parent.
-	bool removeChild(Hy3Node* child, bool childSwallows = false);
 
 	bool operator==(const Hy3Node&) const;
 };
@@ -106,8 +102,8 @@ public:
 	void shiftWindow(CWindow*, ShiftDirection);
 	void shiftFocus(CWindow*, ShiftDirection);
 
-private:
 	std::list<Hy3Node> nodes;
+private:
 	CWindow* lastActiveWindow = nullptr;
 
 	int getWorkspaceNodeCount(const int&);
