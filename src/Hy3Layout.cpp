@@ -248,7 +248,7 @@ Hy3Node* Hy3Layout::getNodeFromWindow(CWindow* window) {
 
 Hy3Node* Hy3Layout::getWorkspaceRootGroup(const int& id) {
 	for (auto& node: this->nodes) {
-		if (node.parent == nullptr && node.data.type == Hy3NodeData::Group) {
+		if (node.workspace_id == id && node.parent == nullptr && node.data.type == Hy3NodeData::Group) {
 			return &node;
 		}
 	}
@@ -361,6 +361,12 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	if (window->m_bIsFloating) return;
 
+	auto* existing = this->getNodeFromWindow(window);
+	if (existing != nullptr) {
+		Debug::log(WARN, "Attempted to add a window(%p) that is already tiled(as %p) to the layout", window, existing);
+		return;
+	}
+
 	auto* monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
 
 	Hy3Node* opening_into;
@@ -375,6 +381,10 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		opening_after = this->getNodeFromWindow(g_pCompositor->m_pLastWindow);
 	} else {
 		opening_after = this->getNodeFromWindow(g_pCompositor->vectorToWindowTiled(g_pInputManager->getMouseCoordsInternal()));
+	}
+
+	if (opening_after != nullptr && opening_after->workspace_id != window->m_iWorkspaceID) {
+		opening_after = nullptr;
 	}
 
 	if (opening_after != nullptr) {
@@ -398,6 +408,10 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		return;
 	}
 
+	if (opening_into->workspace_id != window->m_iWorkspaceID) {
+		Debug::log(WARN, "opening_into node %p has workspace %d which does not match the opening window (workspace %d)", opening_into, opening_into->workspace_id, window->m_iWorkspaceID);
+	}
+
 	this->nodes.push_back({
 		.parent = opening_into,
 		.data = window,
@@ -415,7 +429,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		auto iter2 = std::next(iter);
 		children.insert(iter2, &node);
 	}
-	Debug::log(LOG, "open new window %p(node: %p:%p) on winodow %p in %p", window, &node, node.data.as_window, opening_after, opening_into);
+	Debug::log(LOG, "opened new window %p(node: %p) on window %p in %p", window, &node, opening_after, opening_into);
 
 	opening_into->data.as_group.lastFocusedChild = &node;
 	opening_into->recalcSizePosRecursive();
