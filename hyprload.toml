@@ -6,7 +6,7 @@ author = "outfoxxed"
 [hy3.build]
 output = "build/libhy3.so"
 steps = [
-  "rm -rf build"
-  "cmake -DCMAKE_BUILD_TYPE=Debug -B build"
+  "rm -rf build",
+  "cmake -DCMAKE_BUILD_TYPE=Debug -B build",
   "cmake --build build"
 ]

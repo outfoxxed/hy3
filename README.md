@@ -22,6 +22,8 @@ When reporting bugs, please include:
 If you don't know how to reproduce it or can't, or you can't take a backtrace please still report the issue.
 
 ## Configuration
+Set your `general:layout` to `hy3` in hyprland.conf.
+
 hy3 requires using a few custom dispatchers for normal operation.
 In your hyprland config replace the following dispatchers:
  - `movefocus` -> `hy3:movefocus`
@@ -46,7 +48,7 @@ Add an entry to your hyprload.toml like so:
 ```toml
 plugins = [
   # ...
-  "outfoxxed/hy3"
+  "outfoxxed/hy3",
   # ...
 ]
 ```
