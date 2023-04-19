@@ -1,0 +1,12 @@
+[hy3]
+description = "i3 like tiling for hyprland"
+version = "0.1"
+author = "outfoxxed"
+
+[hy3.build]
+output = "build/libhy3.so"
+steps = [
+  "rm -rf build"
+  "cmake -DCMAKE_BUILD_TYPE=Debug -B build"
+  "cmake --build build"
+]
