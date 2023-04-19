@@ -86,10 +86,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	g_Hy3Layout = std::make_unique<Hy3Layout>();
 	HyprlandAPI::addLayout(PHANDLE, "hy3", g_Hy3Layout.get());
 
-	HyprlandAPI::addDispatcher(PHANDLE, "hy3_makegroup", dispatch_makegroup);
-	HyprlandAPI::addDispatcher(PHANDLE, "hy3_movefocus", dispatch_movefocus);
-	HyprlandAPI::addDispatcher(PHANDLE, "hy3_movewindow", dispatch_movewindow);
-	HyprlandAPI::addDispatcher(PHANDLE, "hy3_debugnodes", dispatch_debug);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:debugnodes", dispatch_debug);
 
 	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};
 }
