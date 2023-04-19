@@ -66,6 +66,18 @@ void dispatch_movefocus(std::string arg) {
 	}
 }
 
+void dispatch_debug(std::string arg) {
+	CWindow* window = window_for_action();
+	if (window == nullptr) return;
+
+	auto* root = g_Hy3Layout->getWorkspaceRootGroup(window->m_iWorkspaceID);
+	if (window == nullptr) {
+		Debug::log(LOG, "DEBUG NODES: no nodes on workspace");
+	} else {
+		Debug::log(LOG, "DEBUG NODES\n%s", root->debugNode().c_str());
+	}
+}
+
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	PHANDLE = handle;
 
@@ -77,6 +89,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3_makegroup", dispatch_makegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3_movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3_movewindow", dispatch_movewindow);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3_debugnodes", dispatch_debug);
 
 	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};
 }

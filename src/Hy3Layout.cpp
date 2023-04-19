@@ -1139,3 +1139,47 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 
 	return nullptr;
 }
+
+std::string Hy3Node::debugNode() {
+	std::stringstream buf;
+	std::string addr = "0x" + std::to_string((size_t)this);
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		buf << "window(";
+		buf << std::hex << this;
+		buf << ") [hypr ";
+		buf << this->data.as_window;
+		buf << "]";
+		break;
+	case Hy3NodeData::Group:
+		buf << "group(";
+		buf << std::hex << this;
+		buf << ") [";
+
+		switch (this->data.as_group.layout) {
+		case Hy3GroupLayout::SplitH:
+			buf << "splith";
+			break;
+		case Hy3GroupLayout::SplitV:
+			buf << "splitv";
+			break;
+		case Hy3GroupLayout::Tabbed:
+			buf << "tabs";
+			break;
+		}
+
+		buf << "]";
+		for (auto* child: this->data.as_group.children) {
+			buf << "\n|-";
+			// this is terrible
+			for (char c: child->debugNode()) {
+				buf << c;
+				if (c == '\n') buf << "  ";
+			}
+		}
+
+		break;
+	}
+
+	return buf.str();
+}

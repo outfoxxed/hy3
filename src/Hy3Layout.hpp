@@ -74,6 +74,7 @@ struct Hy3Node {
 	Hy3Layout* layout = nullptr;
 
 	void recalcSizePosRecursive(bool force = false);
+	std::string debugNode();
 
 	bool operator==(const Hy3Node&) const;
 };
@@ -104,6 +105,8 @@ public:
 	void shiftWindow(CWindow*, ShiftDirection);
 	void shiftFocus(CWindow*, ShiftDirection);
 
+	Hy3Node* getWorkspaceRootGroup(const int&);
+
 	std::list<Hy3Node> nodes;
 private:
 	CWindow* lastActiveWindow = nullptr;
@@ -116,7 +119,6 @@ private:
 
 	int getWorkspaceNodeCount(const int&);
 	Hy3Node* getNodeFromWindow(CWindow*);
-	Hy3Node* getWorkspaceRootGroup(const int&);
 	void applyNodeDataToWindow(Hy3Node*, bool force = false);
 
 	friend struct Hy3Node;
