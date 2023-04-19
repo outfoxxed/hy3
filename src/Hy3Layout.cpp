@@ -197,6 +197,18 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 	}
 }
 
+bool swallowGroup(Hy3Node* into) {
+	if (into == nullptr || into->data.type != Hy3NodeData::Group) return false;
+	if (into->data.as_group.children.size() != 1) return false;
+	auto* child = into->data.as_group.children.front();
+
+	Debug::log(LOG, "Swallowing %p into %p", child, into);
+	swapNodeData(*into, *child);
+	into->layout->nodes.remove(*child);
+
+	return true;
+}
+
 bool Hy3GroupData::hasChild(Hy3Node* node) {
 	Debug::log(LOG, "Searching for child %p of %p", this, node);
 	for (auto child: this->children) {
@@ -1093,7 +1105,6 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 		// must happen AFTER `insert` is used
 		old_group->children.remove(&node);
 
-
 		auto splitmod = old_group->children.empty() ? 0.0 : (1.0 - node.size_ratio) / old_group->children.size();
 		for (auto child: old_group->children) {
 			child->size_ratio -= splitmod;
@@ -1135,6 +1146,14 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 
 		old_parent->recalcSizePosRecursive();
 		target_group->recalcSizePosRecursive();
+
+		auto* target_parent = target_group->parent;
+		while (target_parent != nullptr && swallowGroup(target_parent)) {
+			target_parent = target_parent->parent;
+		}
+
+		if (target_parent != target_group && target_parent != nullptr)
+			target_parent->recalcSizePosRecursive();
 	}
 
 	return nullptr;

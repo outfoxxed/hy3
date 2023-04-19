@@ -79,6 +79,10 @@ struct Hy3Node {
 	bool operator==(const Hy3Node&) const;
 };
 
+// Attempt to swallow a group. returns true if swallowed
+Hy3Node* swallowGroups(Hy3Node*);
+
+
 class Hy3Layout: public IHyprLayout {
 public:
 	virtual void onWindowCreatedTiling(CWindow*);
