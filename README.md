@@ -42,13 +42,13 @@ You can use `hy3:makegroup` to create a new split.
 ### Nix
 Under nix, use the provided devShell, then go to [Manual Installation](#manual)
 
-### [Hyprload](https://github.com/Duckonaut/hyprload) (currently untested)
+### [Hyprload](https://github.com/Duckonaut/hyprload)
 Add an entry to your hyprload.toml like so:
 
 ```toml
 plugins = [
   # ...
-  "outfoxxed/hy3",
+  { git = "https://github.com/outfoxxed/hy3", branch = "master", name = "hy3" },
   # ...
 ]
 ```
@@ -57,10 +57,8 @@ plugins = [
 First export `HYPRLAND_HEADERS`, then run the following commands:
 
 ```sh
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Debug ..
-make
+cmake -DCMAKE_BUILD_TYPE=Debug -B build
+cmake --build build
 ```
 
 > **Note**: Please use a debug build as debugging a backtrace from a release build is much more difficult if you need to report an error.
