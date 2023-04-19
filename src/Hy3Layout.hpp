@@ -86,6 +86,7 @@ public:
 	virtual bool isWindowTiled(CWindow*);
 	virtual void recalculateMonitor(const int&);
 	virtual void recalculateWindow(CWindow*);
+	virtual void onBeginDragWindow();
 	virtual void resizeActiveWindow(const Vector2D&, CWindow* pWindow = nullptr);
 	virtual void fullscreenRequestForWindow(CWindow*, eFullscreenMode, bool);
 	virtual std::any layoutMessage(SLayoutMessageHeader, std::string);
@@ -106,6 +107,12 @@ public:
 	std::list<Hy3Node> nodes;
 private:
 	CWindow* lastActiveWindow = nullptr;
+
+	struct {
+		bool started = false;
+		bool xExtent = false;
+		bool yExtent = false;
+	} drag_flags;
 
 	int getWorkspaceNodeCount(const int&);
 	Hy3Node* getNodeFromWindow(CWindow*);

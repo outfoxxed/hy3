@@ -150,7 +150,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			break;
 		}
 
-		child->recalcSizePosRecursive();
+		child->recalcSizePosRecursive(force);
 		return;
 	}
 
@@ -166,20 +166,22 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 		break;
 	}
 
+	double ratio_mul = group->layout != Hy3GroupLayout::Tabbed ? group->children.empty() ? 0 : constraint / group->children.size() : 0;
+
 	double offset = 0;
 
 	for(auto child: group->children) {
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
 			child->position.x = this->position.x + offset;
-			child->size.x = child->size_ratio * ((double) constraint / group->children.size());
+			child->size.x = child->size_ratio * ratio_mul;
 			offset += child->size.x;
 			child->position.y = this->position.y;
 			child->size.y = this->size.y;
 			break;
 		case Hy3GroupLayout::SplitV:
 			child->position.y = this->position.y + offset;
-			child->size.y = child->size_ratio * ((double) constraint / group->children.size());
+			child->size.y = child->size_ratio * ratio_mul;
 			offset += child->size.y;
 			child->position.x = this->position.x;
 			child->size.x = this->size.x;
@@ -349,7 +351,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 			g_pHyprRenderer->damageWindow(window);
 
 			window->m_vRealPosition.warp();
-			window->m_vRealPosition.warp();
+			window->m_vRealSize.warp();
 
 			g_pHyprRenderer->damageWindow(window);
 		}
@@ -466,6 +468,12 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	}
 
 	group->children.remove(node);
+
+	auto splitmod = group->children.empty() ? 0.0 : (1.0 - node->size_ratio) / group->children.size();
+	for (auto child: group->children) {
+		child->size_ratio -= splitmod;
+	}
+
 	this->nodes.remove(*node);
 
 	if (group->children.size() == 1) {
@@ -487,6 +495,12 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 		}
 
 		group->children.remove(child);
+
+		auto splitmod = group->children.empty() ? 0.0 : (1.0 - child->size_ratio) / group->children.size();
+		for (auto child: group->children) {
+				child->size_ratio -= splitmod;
+		}
+
 		this->nodes.remove(*child);
 
 		if (group->children.size() == 1) {
@@ -570,8 +584,203 @@ void Hy3Layout::recalculateWindow(CWindow* pWindow) {
     ; // empty
 }
 
+void Hy3Layout::onBeginDragWindow() {
+	this->drag_flags.started = false;
+	IHyprLayout::onBeginDragWindow();
+}
+
 void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
-    ; // empty
+	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow;
+	if (!g_pCompositor->windowValidMapped(window)) return;
+
+	auto* node = this->getNodeFromWindow(window);
+	if (node == nullptr) return;
+
+	if (!this->drag_flags.started) {
+		auto mouse = g_pInputManager->getMouseCoordsInternal();
+		auto mouseOffset = mouse - window->m_vPosition;
+
+		this->drag_flags = {
+			.started = true,
+			.xExtent = mouseOffset.x > window->m_vSize.x / 2,
+			.yExtent = mouseOffset.y > window->m_vSize.y / 2,
+		};
+
+		Debug::log(LOG, "Positive offsets - x: %d, y: %d", this->drag_flags.xExtent, this->drag_flags.yExtent);
+	}
+
+	const auto animate = &g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
+
+	auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
+
+	const bool display_left   = STICKS(node->position.x, monitor->vecPosition.x + monitor->vecReservedTopLeft.x);
+	const bool display_right  = STICKS(node->position.x + node->size.x, monitor->vecPosition.x + monitor->vecSize.x - monitor->vecReservedBottomRight.x);
+	const bool display_top    = STICKS(node->position.y, monitor->vecPosition.y + monitor->vecReservedTopLeft.y);
+	const bool display_bottom = STICKS(node->position.y + node->size.y, monitor->vecPosition.y + monitor->vecSize.y - monitor->vecReservedBottomRight.y);
+
+	Vector2D allowed_movement = delta;
+	if (display_left && display_right) allowed_movement.x = 0;
+	if (display_top && display_bottom) allowed_movement.y = 0;
+
+	auto* inner_node = node;
+
+	// break into parent groups when encountering a corner we're dragging in or a tab group
+	while (inner_node->parent != nullptr) {
+		auto& group = inner_node->parent->data.as_group;
+
+		switch (group.layout) {
+		case Hy3GroupLayout::Tabbed:
+			// treat tabbed layouts as if they dont exist during resizing
+			goto cont;
+		case Hy3GroupLayout::SplitH:
+			if ((this->drag_flags.xExtent && group.children.back() == inner_node)
+					|| (!this->drag_flags.xExtent && group.children.front() == inner_node)) {
+				goto cont;
+			}
+			break;
+		case Hy3GroupLayout::SplitV:
+			if ((this->drag_flags.yExtent && group.children.back() == inner_node)
+					|| (!this->drag_flags.yExtent && group.children.front() == inner_node)) {
+				goto cont;
+			}
+			break;
+		}
+
+		break;
+	cont:
+		inner_node = inner_node->parent;
+	}
+
+	auto* inner_parent = inner_node->parent;
+	if (inner_parent == nullptr) return;
+
+	auto* outer_node = inner_node;
+
+	// break into parent groups when encountering a corner we're dragging in, a tab group,
+	// or a layout matching the inner_parent.
+	while (outer_node->parent != nullptr) {
+		auto& group = outer_node->parent->data.as_group;
+
+		// break out of all layouts that match the orientation of the inner_parent
+		if (group.layout == inner_parent->data.as_group.layout) goto cont2;
+
+		switch (group.layout) {
+		case Hy3GroupLayout::Tabbed:
+			// treat tabbed layouts as if they dont exist during resizing
+			goto cont2;
+		case Hy3GroupLayout::SplitH:
+			if ((this->drag_flags.xExtent && group.children.back() == outer_node)
+					|| (!this->drag_flags.xExtent && group.children.front() == outer_node)) {
+				goto cont2;
+			}
+			break;
+		case Hy3GroupLayout::SplitV:
+			if ((this->drag_flags.yExtent && group.children.back() == outer_node)
+					|| (!this->drag_flags.yExtent && group.children.front() == outer_node)) {
+				goto cont2;
+			}
+			break;
+		}
+
+		break;
+	cont2:
+		outer_node = outer_node->parent;
+	}
+
+	Debug::log(LOG, "resizeActive - inner_node: %p, outer_node: %p", inner_node, outer_node);
+
+	auto& inner_group = inner_parent->data.as_group;
+	// adjust the inner node
+	switch (inner_group.layout) {
+	case Hy3GroupLayout::SplitH: {
+		auto ratio_mod = allowed_movement.x * (float) inner_group.children.size() / inner_parent->size.x;
+
+		auto iter = std::find(inner_group.children.begin(), inner_group.children.end(), inner_node);
+
+		if (this->drag_flags.xExtent) {
+			if (inner_node == inner_group.children.back()) break;
+			iter = std::next(iter);
+		} else {
+			if (inner_node == inner_group.children.front()) break;
+			iter = std::prev(iter);
+			ratio_mod = -ratio_mod;
+		}
+
+		auto* neighbor = *iter;
+
+		inner_node->size_ratio += ratio_mod;
+		neighbor->size_ratio -= ratio_mod;
+	} break;
+	case Hy3GroupLayout::SplitV: {
+		auto ratio_mod = allowed_movement.y * (float) inner_parent->data.as_group.children.size() / inner_parent->size.y;
+
+		auto iter = std::find(inner_group.children.begin(), inner_group.children.end(), inner_node);
+
+		if (this->drag_flags.yExtent) {
+			if (inner_node == inner_group.children.back()) break;
+			iter = std::next(iter);
+		} else {
+			if (inner_node == inner_group.children.front()) break;
+			iter = std::prev(iter);
+			ratio_mod = -ratio_mod;
+		}
+
+		auto* neighbor = *iter;
+
+		inner_node->size_ratio += ratio_mod;
+		neighbor->size_ratio -= ratio_mod;
+	} break;
+	}
+
+	inner_parent->recalcSizePosRecursive(*animate == 0);
+
+	if (outer_node != nullptr && outer_node->parent != nullptr) {
+		auto* outer_parent = outer_node->parent;
+		auto& outer_group = outer_parent->data.as_group;
+		// adjust the outer node
+		switch (outer_group.layout) {
+		case Hy3GroupLayout::SplitH: {
+			auto ratio_mod = allowed_movement.x * (float) outer_group.children.size() / outer_parent->size.x;
+
+			auto iter = std::find(outer_group.children.begin(), outer_group.children.end(), outer_node);
+
+			if (this->drag_flags.xExtent) {
+				if (outer_node == inner_group.children.back()) break;
+				iter = std::next(iter);
+			} else {
+				if (outer_node == inner_group.children.front()) break;
+				iter = std::prev(iter);
+				ratio_mod = -ratio_mod;
+			}
+
+			auto* neighbor = *iter;
+
+			outer_node->size_ratio += ratio_mod;
+			neighbor->size_ratio -= ratio_mod;
+		} break;
+		case Hy3GroupLayout::SplitV: {
+			auto ratio_mod = allowed_movement.y * (float) outer_parent->data.as_group.children.size() / outer_parent->size.y;
+
+			auto iter = std::find(outer_group.children.begin(), outer_group.children.end(), outer_node);
+
+			if (this->drag_flags.yExtent) {
+				if (outer_node == outer_group.children.back()) break;
+				iter = std::next(iter);
+			} else {
+				if (outer_node == outer_group.children.front()) break;
+				iter = std::prev(iter);
+				ratio_mod = -ratio_mod;
+			}
+
+			auto* neighbor = *iter;
+
+			outer_node->size_ratio += ratio_mod;
+			neighbor->size_ratio -= ratio_mod;
+		} break;
+		}
+
+		outer_parent->recalcSizePosRecursive(*animate == 0);
+	}
 }
 
 void Hy3Layout::fullscreenRequestForWindow(CWindow* window, eFullscreenMode fullscreen_mode, bool on) {
@@ -879,11 +1088,19 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 		}
 
 		node.parent = target_group;
-		node.size_ratio = 1.0;
 		target_group->data.as_group.children.insert(insert, &node);
 
 		// must happen AFTER `insert` is used
 		old_group->children.remove(&node);
+
+
+		auto splitmod = old_group->children.empty() ? 0.0 : (1.0 - node.size_ratio) / old_group->children.size();
+		for (auto child: old_group->children) {
+			child->size_ratio -= splitmod;
+		}
+
+		node.size_ratio = 1.0;
+
 		if (old_group->children.empty()) {
 			while (old_parent->parent != nullptr && old_parent->data.as_group.children.empty()) {
 				auto* child = old_parent;
@@ -906,6 +1123,11 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 				}
 
 				old_parent->layout->nodes.remove(*child);
+
+				auto splitmod = old_group->children.empty() ? 0.0 : (1.0 - child->size_ratio) / old_group->children.size();
+				for (auto child: old_group->children) {
+					child->size_ratio -= splitmod;
+				}
 			}
 		} else if (old_group->children.size() == 1) {
 			old_group->lastFocusedChild = old_group->children.front();
