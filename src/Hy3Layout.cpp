@@ -523,6 +523,14 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	if (parent != nullptr) {
 		parent->recalcSizePosRecursive();
 	}
+
+	auto* target_parent = parent;
+	while (target_parent != nullptr && swallowGroup(target_parent)) {
+		target_parent = target_parent->parent;
+	}
+
+	if (target_parent != parent && target_parent != nullptr)
+		target_parent->recalcSizePosRecursive();
 }
 
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
