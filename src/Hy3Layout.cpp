@@ -888,7 +888,7 @@ void Hy3Layout::alterSplitRatio(CWindow* pWindow, float delta, bool exact) {
 }
 
 std::string Hy3Layout::getLayoutName() {
-    return "custom";
+    return "hy3";
 }
 
 void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
@@ -896,15 +896,19 @@ void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
 }
 
 void Hy3Layout::onEnable() {
-    for (auto& w : g_pCompositor->m_vWindows) {
-        if (w->isHidden() || !w->m_bIsMapped || w->m_bFadingOut || w->m_bIsFloating)
-            continue;
+	for (auto &window : g_pCompositor->m_vWindows) {
+		if (window->isHidden()
+				|| !window->m_bIsMapped
+				|| window->m_bFadingOut
+				|| window->m_bIsFloating)
+			continue;
 
-        this->onWindowCreatedTiling(w.get());
-    }
+		this->onWindowCreatedTiling(window.get());
+	}
 }
 
 void Hy3Layout::onDisable() {
+	this->nodes.clear();
 }
 
 void Hy3Layout::makeGroupOn(CWindow* window, Hy3GroupLayout layout) {
