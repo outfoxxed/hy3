@@ -917,6 +917,7 @@ void Hy3Layout::makeGroupOn(CWindow* window, Hy3GroupLayout layout) {
 
 	node->data = layout;
 	node->data.as_group.children.push_back(&this->nodes.back());
+	node->data.as_group.lastFocusedChild = &this->nodes.back();
 	node->recalcSizePosRecursive();
 
 	return;
