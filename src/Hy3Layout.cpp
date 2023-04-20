@@ -526,15 +526,20 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 
 	if (parent != nullptr) {
 		parent->recalcSizePosRecursive();
+
+		if (parent->data.as_group.children.size() == 1
+				&& parent->data.as_group.children.front()->data.type == Hy3NodeData::Group)
+		{
+			auto* target_parent = parent;
+			while (target_parent != nullptr && swallowGroup(target_parent)) {
+				target_parent = target_parent->parent;
+			}
+
+			if (target_parent != parent && target_parent != nullptr)
+				target_parent->recalcSizePosRecursive();
+		}
 	}
 
-	auto* target_parent = parent;
-	while (target_parent != nullptr && swallowGroup(target_parent)) {
-		target_parent = target_parent->parent;
-	}
-
-	if (target_parent != parent && target_parent != nullptr)
-		target_parent->recalcSizePosRecursive();
 }
 
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
