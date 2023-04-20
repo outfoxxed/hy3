@@ -11,7 +11,7 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 - [ ] Some convenience dispatchers not found in i3 or sway
 
 ### Stability
-As of now hy3 is stable enough to use normally as long as you don't change layout after loading the plugin (currently unimplemented).
+As of now hy3 is stable enough to use normally.
 If you encounter any crashes or bugs please report them in the issue tracker.
 
 When reporting bugs, please include:
