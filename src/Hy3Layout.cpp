@@ -557,13 +557,14 @@ bool Hy3Layout::isWindowTiled(CWindow* window) {
 }
 
 void Hy3Layout::recalculateMonitor(const int& monitor_id) {
+	Debug::log(LOG, "Recalculate monitor %d", monitor_id);
 	const auto monitor = g_pCompositor->getMonitorFromID(monitor_id);
 	if (monitor == nullptr) return;
 
+	g_pHyprRenderer->damageMonitor(monitor);
+
 	const auto workspace = g_pCompositor->getWorkspaceByID(monitor->activeWorkspace);
 	if (workspace == nullptr) return;
-
-	g_pHyprRenderer->damageMonitor(monitor);
 
 	if (monitor->specialWorkspaceID) {
 		const auto top_node = this->getWorkspaceRootGroup(monitor->specialWorkspaceID);
@@ -594,9 +595,9 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 			this->applyNodeDataToWindow(&fakeNode);
 		}
 	} else {
-		const auto top_node = this->getWorkspaceRootGroup(monitor->specialWorkspaceID);
+		const auto top_node = this->getWorkspaceRootGroup(monitor->activeWorkspace);
 
-		if (top_node) {
+		if (top_node != nullptr) {
 			top_node->position = monitor->vecPosition + monitor->vecReservedTopLeft;
 			top_node->size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 			top_node->recalcSizePosRecursive();
@@ -604,8 +605,10 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 	}
 }
 
-void Hy3Layout::recalculateWindow(CWindow* pWindow) {
-    ; // empty
+void Hy3Layout::recalculateWindow(CWindow* window) {
+	auto* node = this->getNodeFromWindow(window);
+	if (node == nullptr) return;
+	node->recalcSizePosRecursive();
 }
 
 void Hy3Layout::onBeginDragWindow() {
@@ -873,18 +876,16 @@ std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string conte
 	return "";
 }
 
-SWindowRenderLayoutHints Hy3Layout::requestRenderHints(CWindow* pWindow) {
-    return {};
+SWindowRenderLayoutHints Hy3Layout::requestRenderHints(CWindow* window) {
+	return {};
 }
 
 void Hy3Layout::switchWindows(CWindow* pWindowA, CWindow* pWindowB) {
-	Debug::log(LOG, "SwitchWindows: %p %p", pWindowA, pWindowB);
-    ; // empty
+	// todo
 }
 
 void Hy3Layout::alterSplitRatio(CWindow* pWindow, float delta, bool exact) {
-	Debug::log(LOG, "AlterSplitRatio: %p %f", pWindow, delta);
-    ; // empty
+	// todo
 }
 
 std::string Hy3Layout::getLayoutName() {
@@ -892,7 +893,11 @@ std::string Hy3Layout::getLayoutName() {
 }
 
 void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
-    ; // empty
+	auto* node = this->getNodeFromWindow(from);
+	if (node == nullptr) return;
+
+	node->data.as_window = to;
+	this->applyNodeDataToWindow(node);
 }
 
 void Hy3Layout::onEnable() {
