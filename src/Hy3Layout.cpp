@@ -198,8 +198,12 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 }
 
 bool swallowGroup(Hy3Node* into) {
-	if (into == nullptr || into->data.type != Hy3NodeData::Group) return false;
-	if (into->data.as_group.children.size() != 1) return false;
+	if (into == nullptr
+			|| into->parent == nullptr
+			|| into->data.type != Hy3NodeData::Group
+			|| into->data.as_group.children.size() != 1)
+		return false;
+
 	auto* child = into->data.as_group.children.front();
 
 	Debug::log(LOG, "Swallowing %p into %p", child, into);
