@@ -1035,9 +1035,8 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 				break;
 		}
 
-		// always break at the outermost group
 		if (break_parent->parent == nullptr) {
-			break;
+			return nullptr;
 		} else {
 			break_origin = break_parent;
 			break_parent = break_origin->parent;
