@@ -545,7 +545,13 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 	auto* node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
 	if (node == nullptr) return nullptr;
-	while (node->data.type == Hy3NodeData::Group) node = node->data.as_group.lastFocusedChild;
+	while (node->data.type == Hy3NodeData::Group) {
+		node = node->data.as_group.lastFocusedChild;
+		if (node == nullptr) {
+			Debug::log(ERR, "A group's last focused child was null when getting the next selection candidate");
+			return nullptr;
+		}
+	}
 	return node->data.as_window;
 }
 
