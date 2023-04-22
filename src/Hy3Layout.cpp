@@ -1189,6 +1189,13 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 			target_parent = target_parent->parent;
 		}
 
+		auto* focusnode = &node;
+
+		while (focusnode->parent != nullptr) {
+			focusnode->parent->data.as_group.lastFocusedChild = focusnode;
+			focusnode = focusnode->parent;
+		}
+
 		if (target_parent != target_group && target_parent != nullptr)
 			target_parent->recalcSizePosRecursive();
 	}
