@@ -213,6 +213,51 @@ bool swallowGroup(Hy3Node* into) {
 	return true;
 }
 
+Hy3Node* removeFromParentRecursive(Hy3Node* node) {
+	Hy3Node* parent = node;
+
+	Debug::log(LOG, "Recursively removing parent nodes of %p", node);
+
+	while (parent->parent != nullptr) {
+		auto* child = parent;
+		parent = parent->parent;
+		auto& group = parent->data.as_group;
+
+
+		if (group.children.size() > 2) {
+			auto iter = std::find(group.children.begin(), group.children.end(), child);
+
+			if (iter == group.children.begin()) {
+				group.lastFocusedChild = *std::next(iter);
+			} else {
+				group.lastFocusedChild = *std::prev(iter);
+			}
+		}
+
+		group.children.remove(child);
+
+		if (group.children.size() == 1) {
+			group.lastFocusedChild = group.children.front();
+		}
+
+		if (child != node) {
+			parent->layout->nodes.remove(*child);
+		}
+
+		if (!group.children.empty()) {
+			auto splitmod = group.children.empty() ? 0.0 : -((1.0 - child->size_ratio) / group.children.size());
+
+			for (auto* child: group.children) {
+				child->size_ratio += splitmod;
+			}
+
+			break;
+		}
+	}
+
+	return parent;
+}
+
 bool Hy3GroupData::hasChild(Hy3Node* node) {
 	Debug::log(LOG, "Searching for child %p of %p", this, node);
 	for (auto child: this->children) {
@@ -471,58 +516,8 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 		g_pCompositor->setWindowFullscreen(window, false, FULLSCREEN_FULL);
 	}
 
-	auto* parent = node->parent;
-	auto* group = &parent->data.as_group;
-
-	if (group->children.size() > 2) {
-		auto iter = std::find(group->children.begin(), group->children.end(), node);
-		if (iter == group->children.begin()) {
-			group->lastFocusedChild = *std::next(iter);
-		} else {
-			group->lastFocusedChild = *std::prev(iter);
-		}
-	}
-
-	group->children.remove(node);
-
-	auto splitmod = group->children.empty() ? 0.0 : (1.0 - node->size_ratio) / group->children.size();
-	for (auto child: group->children) {
-		child->size_ratio -= splitmod;
-	}
-
+	auto* parent = removeFromParentRecursive(node);
 	this->nodes.remove(*node);
-
-	if (group->children.size() == 1) {
-		group->lastFocusedChild = group->children.front();
-	}
-
-	while (parent->parent != nullptr && group->children.empty()) {
-		auto* child = parent;
-		parent = parent->parent;
-		group = &parent->data.as_group;
-
-		if (group->children.size() > 2) {
-			auto iter = std::find(group->children.begin(), group->children.end(), child);
-			if (iter == group->children.begin()) {
-				group->lastFocusedChild = *std::next(iter);
-			} else {
-				group->lastFocusedChild = *std::prev(iter);
-			}
-		}
-
-		group->children.remove(child);
-
-		auto splitmod = group->children.empty() ? 0.0 : (1.0 - child->size_ratio) / group->children.size();
-		for (auto child: group->children) {
-				child->size_ratio -= splitmod;
-		}
-
-		this->nodes.remove(*child);
-
-		if (group->children.size() == 1) {
-			group->lastFocusedChild = group->children.front();
-		}
-	}
 
 	if (parent != nullptr) {
 		parent->recalcSizePosRecursive();
@@ -1124,62 +1119,12 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 		target_group->data.as_group.children.remove(nullptr);
 		target_group->recalcSizePosRecursive();
 	} else {
-		auto* old_parent = node.parent;
-		auto* old_group = &old_parent->data.as_group;
-
-		if (old_group->children.size() > 2) {
-			auto iter = std::find(old_group->children.begin(), old_group->children.end(), &node);
-			if (iter == old_group->children.begin()) {
-				old_group->lastFocusedChild = *std::next(iter);
-			} else {
-				old_group->lastFocusedChild = *std::prev(iter);
-			}
-		}
-
-		node.parent = target_group;
 		target_group->data.as_group.children.insert(insert, &node);
 
 		// must happen AFTER `insert` is used
-		old_group->children.remove(&node);
-
-		auto splitmod = old_group->children.empty() ? 0.0 : (1.0 - node.size_ratio) / old_group->children.size();
-		for (auto child: old_group->children) {
-			child->size_ratio -= splitmod;
-		}
-
+		auto* old_parent = removeFromParentRecursive(&node);
+		node.parent = target_group;
 		node.size_ratio = 1.0;
-
-		if (old_group->children.empty()) {
-			while (old_parent->parent != nullptr && old_parent->data.as_group.children.empty()) {
-				auto* child = old_parent;
-				old_parent = old_parent->parent;
-				old_group = &old_parent->data.as_group;
-
-				if (old_group->children.size() > 2) {
-					auto iter = std::find(old_group->children.begin(), old_group->children.end(), child);
-					if (iter == old_group->children.begin()) {
-						old_group->lastFocusedChild = *std::next(iter);
-					} else {
-						old_group->lastFocusedChild = *std::prev(iter);
-					}
-				}
-
-				old_parent->data.as_group.children.remove(child);
-
-				if (old_group->children.size() == 1) {
-					old_group->lastFocusedChild = old_group->children.front();
-				}
-
-				old_parent->layout->nodes.remove(*child);
-
-				auto splitmod = old_group->children.empty() ? 0.0 : (1.0 - child->size_ratio) / old_group->children.size();
-				for (auto child: old_group->children) {
-					child->size_ratio -= splitmod;
-				}
-			}
-		} else if (old_group->children.size() == 1) {
-			old_group->lastFocusedChild = old_group->children.front();
-		}
 
 		old_parent->recalcSizePosRecursive();
 		target_group->recalcSizePosRecursive();

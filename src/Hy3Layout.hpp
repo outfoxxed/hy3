@@ -81,7 +81,9 @@ struct Hy3Node {
 
 // Attempt to swallow a group. returns true if swallowed
 Hy3Node* swallowGroups(Hy3Node*);
-
+// Remove this node from its parent, deleting the parent if it was
+// the only child and recursing if the parent was the only child of it's parent.
+Hy3Node* removeFromParentRecursive(Hy3Node*);
 
 class Hy3Layout: public IHyprLayout {
 public:
