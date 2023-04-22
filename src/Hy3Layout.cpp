@@ -411,8 +411,8 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		if ((opening_into = this->getWorkspaceRootGroup(window->m_iWorkspaceID)) == nullptr) {
 			this->nodes.push_back({
 				.data = Hy3GroupLayout::SplitH,
-				.position = monitor->vecPosition,
-				.size = monitor->vecSize,
+				.position = monitor->vecPosition + monitor->vecReservedTopLeft,
+				.size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
 				.workspace_id = window->m_iWorkspaceID,
 				.layout = this,
 			});
