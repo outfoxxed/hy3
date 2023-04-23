@@ -115,8 +115,6 @@ public:
 
 	std::list<Hy3Node> nodes;
 private:
-	CWindow* lastActiveWindow = nullptr;
-
 	struct {
 		bool started = false;
 		bool xExtent = false;

@@ -551,11 +551,9 @@ CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 }
 
 void Hy3Layout::onWindowFocusChange(CWindow* window) {
-	Debug::log(LOG, "Switched windows from %p to %p", this->lastActiveWindow, window);
-	this->lastActiveWindow = window;
-	auto* node = this->getNodeFromWindow(this->lastActiveWindow);
+	Debug::log(LOG, "Switched windows from to %p", window);
+	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
-	Debug::log(LOG, "Switched focused node to %p (parent: %p)", node, node->parent);
 
 	while (node->parent != nullptr) {
 		node->parent->data.as_group.lastFocusedChild = node;
