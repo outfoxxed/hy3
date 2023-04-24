@@ -197,7 +197,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 	}
 }
 
-bool swallowGroup(Hy3Node* into) {
+bool Hy3Node::swallowGroups(Hy3Node* into) {
 	if (into == nullptr
 			|| into->parent == nullptr
 			|| into->data.type != Hy3NodeData::Group
@@ -207,16 +207,16 @@ bool swallowGroup(Hy3Node* into) {
 	auto* child = into->data.as_group.children.front();
 
 	Debug::log(LOG, "Swallowing %p into %p", child, into);
-	swapNodeData(*into, *child);
+	Hy3Node::swapData(*into, *child);
 	into->layout->nodes.remove(*child);
 
 	return true;
 }
 
-Hy3Node* removeFromParentRecursive(Hy3Node* node) {
-	Hy3Node* parent = node;
+Hy3Node* Hy3Node::removeFromParentRecursive() {
+	Hy3Node* parent = this;
 
-	Debug::log(LOG, "Recursively removing parent nodes of %p", node);
+	Debug::log(LOG, "Recursively removing parent nodes of %p", parent);
 
 	while (parent->parent != nullptr) {
 		auto* child = parent;
@@ -240,7 +240,7 @@ Hy3Node* removeFromParentRecursive(Hy3Node* node) {
 			group.lastFocusedChild = group.children.front();
 		}
 
-		if (child != node) {
+		if (child != this) {
 			parent->layout->nodes.remove(*child);
 		}
 
@@ -271,7 +271,7 @@ bool Hy3GroupData::hasChild(Hy3Node* node) {
 	return false;
 }
 
-void swapNodeData(Hy3Node& a, Hy3Node& b) {
+void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 	Hy3NodeData aData = std::move(a.data);
 	a.data = b.data;
 	b.data = aData;
@@ -516,7 +516,7 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 		g_pCompositor->setWindowFullscreen(window, false, FULLSCREEN_FULL);
 	}
 
-	auto* parent = removeFromParentRecursive(node);
+	auto* parent = node->removeFromParentRecursive();
 	this->nodes.remove(*node);
 
 	if (parent != nullptr) {
@@ -526,7 +526,7 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 				&& parent->data.as_group.children.front()->data.type == Hy3NodeData::Group)
 		{
 			auto* target_parent = parent;
-			while (target_parent != nullptr && swallowGroup(target_parent)) {
+			while (target_parent != nullptr && Hy3Node::swallowGroups(target_parent)) {
 				target_parent = target_parent->parent;
 			}
 
@@ -961,7 +961,7 @@ void Hy3Layout::shiftFocus(CWindow* window, ShiftDirection direction) {
 	if (node == nullptr) return;
 
 	Hy3Node* target;
-	if ((target = shiftOrGetFocus(*node, direction, false))) {
+	if ((target = Hy3Layout::shiftOrGetFocus(*node, direction, false))) {
 		g_pCompositor->focusWindow(target->data.as_window);
 	}
 }
@@ -972,38 +972,14 @@ void Hy3Layout::shiftWindow(CWindow* window, ShiftDirection direction) {
 	if (node == nullptr) return;
 
 
-	shiftOrGetFocus(*node, direction, true);
-}
-
-Hy3Node* findCommonParentNode(Hy3Node& a, Hy3Node& b) {
-	Hy3Node* last_node = nullptr;
-	Hy3Node* searcher = &a;
-
-	while (searcher != nullptr) {
-		if (searcher->data.type == Hy3NodeData::Group) {
-			for (auto child: searcher->data.as_group.children) {
-				if (last_node == child) continue; // dont rescan already scanned tree
-				if (child == &b) return searcher;
-				if (child->data.type == Hy3NodeData::Group && child->data.as_group.hasChild(&b)) {
-					return searcher;
-				}
-			}
-		}
-
-		last_node = searcher;
-		searcher = searcher->parent;
-	}
-
-	return nullptr;
+	Hy3Layout::shiftOrGetFocus(*node, direction, true);
 }
 
 bool shiftIsForward(ShiftDirection direction) {
 	return direction == ShiftDirection::Right || direction == ShiftDirection::Down;
 }
 
-// if shift is true, shift the window in the given direction, returning nullptr,
-// if shift is false, return the window in the given direction or nullptr.
-Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
+Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 
 	auto* break_origin = &node;
 	auto* break_parent = break_origin->parent;
@@ -1120,7 +1096,7 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 		target_group->data.as_group.children.insert(insert, &node);
 
 		// must happen AFTER `insert` is used
-		auto* old_parent = removeFromParentRecursive(&node);
+		auto* old_parent = node.removeFromParentRecursive();
 		node.parent = target_group;
 		node.size_ratio = 1.0;
 
@@ -1128,7 +1104,7 @@ Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 		target_group->recalcSizePosRecursive();
 
 		auto* target_parent = target_group->parent;
-		while (target_parent != nullptr && swallowGroup(target_parent)) {
+		while (target_parent != nullptr && Hy3Node::swallowGroups(target_parent)) {
 			target_parent = target_parent->parent;
 		}
 

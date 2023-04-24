@@ -35,8 +35,6 @@ private:
 	friend class Hy3NodeData;
 };
 
-void swapNodeData(Hy3Node& a, Hy3Node& b);
-
 class Hy3NodeData {
 public:
 	enum { Group, Window } type;
@@ -59,8 +57,6 @@ public:
 	Hy3NodeData(const Hy3NodeData&);
 	Hy3NodeData(Hy3NodeData&&);
 	Hy3NodeData& operator=(const Hy3NodeData&);
-
-	friend void swapNodeData(Hy3Node&, Hy3Node&);
 };
 
 struct Hy3Node {
@@ -77,13 +73,15 @@ struct Hy3Node {
 	std::string debugNode();
 
 	bool operator==(const Hy3Node&) const;
-};
 
-// Attempt to swallow a group. returns true if swallowed
-Hy3Node* swallowGroups(Hy3Node*);
-// Remove this node from its parent, deleting the parent if it was
-// the only child and recursing if the parent was the only child of it's parent.
-Hy3Node* removeFromParentRecursive(Hy3Node*);
+	// Attempt to swallow a group. returns true if swallowed
+	static bool swallowGroups(Hy3Node*);
+	// Remove this node from its parent, deleting the parent if it was
+	// the only child and recursing if the parent was the only child of it's parent.
+	Hy3Node* removeFromParentRecursive();
+
+	static void swapData(Hy3Node&, Hy3Node&);
+};
 
 class Hy3Layout: public IHyprLayout {
 public:
@@ -124,6 +122,10 @@ private:
 	int getWorkspaceNodeCount(const int&);
 	Hy3Node* getNodeFromWindow(CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool force = false);
+
+	// if shift is true, shift the window in the given direction, returning nullptr,
+	// if shift is false, return the window in the given direction or nullptr.
+	static Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool);
 
 	friend struct Hy3Node;
 };
