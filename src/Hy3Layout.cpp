@@ -979,8 +979,16 @@ bool shiftIsForward(ShiftDirection direction) {
 	return direction == ShiftDirection::Right || direction == ShiftDirection::Down;
 }
 
-Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
+bool shiftIsVertical(ShiftDirection direction) {
+	return direction == ShiftDirection::Up || direction == ShiftDirection::Down;
+}
 
+bool shiftMatchesLayout(Hy3GroupLayout layout, ShiftDirection direction) {
+	return (layout == Hy3GroupLayout::SplitV && shiftIsVertical(direction))
+		|| (layout != Hy3GroupLayout::SplitV && !shiftIsVertical(direction));
+}
+
+Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
 	auto* break_origin = &node;
 	auto* break_parent = break_origin->parent;
 
@@ -990,11 +998,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 
 		auto& group = break_parent->data.as_group; // must be a group in order to be a parent
 
-		if (((group.layout == Hy3GroupLayout::SplitH || group.layout == Hy3GroupLayout::Tabbed)
-				 && (direction == ShiftDirection::Left || direction == ShiftDirection::Right))
-				|| (group.layout == Hy3GroupLayout::SplitV
-						&& (direction == ShiftDirection::Up || direction == ShiftDirection::Down)))
-		{
+		if (shiftMatchesLayout(group.layout, direction)) {
 			// group has the correct orientation
 
 			// if this movement would break out of the group, continue the break loop (do not enter this if)
@@ -1049,11 +1053,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 
 				bool shift_after = false;
 
-				if (((group_data.layout == Hy3GroupLayout::SplitH || group_data.layout == Hy3GroupLayout::Tabbed)
-						 && (direction == ShiftDirection::Left || direction == ShiftDirection::Right))
-						|| (group_data.layout == Hy3GroupLayout::SplitV
-								&& (direction == ShiftDirection::Up || direction == ShiftDirection::Down)))
-				{
+				if (shiftMatchesLayout(group_data.layout, direction)) {
 					// if the group has the same orientation as movement pick the last/first child based
 					// on movement direction
 					if (shiftIsForward(direction)) iter = group_data.children.begin();
