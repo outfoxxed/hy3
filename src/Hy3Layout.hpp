@@ -125,7 +125,7 @@ private:
 
 	// if shift is true, shift the window in the given direction, returning nullptr,
 	// if shift is false, return the window in the given direction or nullptr.
-	static Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool);
+	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool);
 
 	friend struct Hy3Node;
 };

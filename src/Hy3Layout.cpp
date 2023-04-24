@@ -199,12 +199,14 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 bool Hy3Node::swallowGroups(Hy3Node* into) {
 	if (into == nullptr
-			|| into->parent == nullptr
 			|| into->data.type != Hy3NodeData::Group
 			|| into->data.as_group.children.size() != 1)
 		return false;
 
 	auto* child = into->data.as_group.children.front();
+
+	// a lot of segfaulting happens once the assumption that the root node is a group is wrong.
+	if (into->parent == nullptr && child->data.type != Hy3NodeData::Group) return false;
 
 	Debug::log(LOG, "Swallowing %p into %p", child, into);
 	Hy3Node::swapData(*into, *child);
@@ -961,7 +963,7 @@ void Hy3Layout::shiftFocus(CWindow* window, ShiftDirection direction) {
 	if (node == nullptr) return;
 
 	Hy3Node* target;
-	if ((target = Hy3Layout::shiftOrGetFocus(*node, direction, false))) {
+	if ((target = this->shiftOrGetFocus(*node, direction, false))) {
 		g_pCompositor->focusWindow(target->data.as_window);
 	}
 }
@@ -972,7 +974,7 @@ void Hy3Layout::shiftWindow(CWindow* window, ShiftDirection direction) {
 	if (node == nullptr) return;
 
 
-	Hy3Layout::shiftOrGetFocus(*node, direction, true);
+	this->shiftOrGetFocus(*node, direction, true);
 }
 
 bool shiftIsForward(ShiftDirection direction) {
@@ -1009,7 +1011,28 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 		}
 
 		if (break_parent->parent == nullptr) {
-			return nullptr;
+			if (!shift) return nullptr;
+
+			// if we haven't gone up any levels and the group is in the same direction
+			// there's no reason to wrap the root group.
+			if (shiftMatchesLayout(group.layout, direction)) break;
+
+			// wrap the root group in another group
+			this->nodes.push_back({
+				.parent = break_parent,
+				.data = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
+				.position = break_parent->position,
+				.size = break_parent->size,
+				.workspace_id = break_parent->workspace_id,
+				.layout = this,
+			});
+
+			auto* newChild = &this->nodes.back();
+			Hy3Node::swapData(*break_parent, *newChild);
+			break_parent->data.as_group.children.push_back(newChild);
+			break_parent->data.as_group.lastFocusedChild = newChild;
+			break_origin = newChild;
+			break;
 		} else {
 			break_origin = break_parent;
 			break_parent = break_origin->parent;
