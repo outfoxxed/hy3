@@ -1,5 +1,6 @@
 #include "globals.hpp"
 #include "Hy3Layout.hpp"
+#include "SelectionHook.hpp"
 
 #include <src/Compositor.hpp>
 
@@ -197,6 +198,69 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 	}
 }
 
+void Hy3Node::markFocused() {
+	Hy3Node* node = this;
+
+	// undo decos for root focus
+	auto* root = node;
+	while (root->parent != nullptr) root = root->parent;
+	auto* oldfocus = root->getFocusedNode();
+
+	// update focus
+	if (this->data.type == Hy3NodeData::Group) {
+		this->data.as_group.lastFocusedChild = nullptr;
+	}
+
+	while (node->parent != nullptr) {
+		node->parent->data.as_group.lastFocusedChild = node;
+		node = node->parent;
+	}
+
+	if (oldfocus != nullptr) {
+		oldfocus->updateDecos();
+	}
+}
+
+void Hy3Node::focus() {
+	this->markFocused();
+
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		g_pCompositor->focusWindow(this->data.as_window);
+		break;
+	case Hy3NodeData::Group:
+		g_pCompositor->focusWindow(nullptr);
+		this->raiseToTop();
+		break;
+	}
+}
+
+void Hy3Node::raiseToTop() {
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		g_pCompositor->moveWindowToTop(this->data.as_window);
+		break;
+	case Hy3NodeData::Group:
+		for (auto* child: this->data.as_group.children) {
+			child->raiseToTop();
+		}
+		break;
+	}
+}
+
+Hy3Node* Hy3Node::getFocusedNode() {
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		return this;
+	case Hy3NodeData::Group:
+		if (this->data.as_group.lastFocusedChild == nullptr) {
+			return this;
+		} else {
+			return this->data.as_group.lastFocusedChild->getFocusedNode();
+		}
+	}
+}
+
 bool Hy3Node::swallowGroups(Hy3Node* into) {
 	if (into == nullptr
 			|| into->data.type != Hy3NodeData::Group
@@ -287,6 +351,18 @@ void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 	if (b.data.type == Hy3NodeData::Group) {
 		for (auto child: b.data.as_group.children) {
 			child->parent = &b;
+		}
+	}
+}
+
+void Hy3Node::updateDecos() {
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		g_pCompositor->updateWindowAnimatedDecorationValues(this->data.as_window);
+		break;
+	case Hy3NodeData::Group:
+	  for (auto* child: this->data.as_group.children) {
+			child->updateDecos();
 		}
 	}
 }
@@ -496,7 +572,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	}
 	Debug::log(LOG, "opened new window %p(node: %p) on window %p in %p", window, &node, opening_after, opening_into);
 
-	opening_into->data.as_group.lastFocusedChild = &node;
+	node.markFocused();
 	opening_into->recalcSizePosRecursive();
 	Debug::log(LOG, "opening_into (%p) contains new child (%p)? %d", opening_into, &node, opening_into->data.as_group.hasChild(&node));
 }
@@ -542,25 +618,23 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 	auto* node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
 	if (node == nullptr) return nullptr;
-	while (node->data.type == Hy3NodeData::Group) {
-		node = node->data.as_group.lastFocusedChild;
-		if (node == nullptr) {
-			Debug::log(ERR, "A group's last focused child was null when getting the next selection candidate");
-			return nullptr;
-		}
+
+	node = node->getFocusedNode();
+
+	switch (node->data.type) {
+	case Hy3NodeData::Window:
+		return node->data.as_window;
+	case Hy3NodeData::Group:
+		return nullptr;
 	}
-	return node->data.as_window;
 }
 
 void Hy3Layout::onWindowFocusChange(CWindow* window) {
-	Debug::log(LOG, "Switched windows from to %p", window);
+	Debug::log(LOG, "Switched windows to %p", window);
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
 
-	while (node->parent != nullptr) {
-		node->parent->data.as_group.lastFocusedChild = node;
-		node = node->parent;
-	}
+	node->markFocused();
 }
 
 bool Hy3Layout::isWindowTiled(CWindow* window) {
@@ -921,14 +995,17 @@ void Hy3Layout::onEnable() {
 
 		this->onWindowCreatedTiling(window.get());
 	}
+
+	setup_selection_hook();
 }
 
 void Hy3Layout::onDisable() {
+	disable_selection_hook();
 	this->nodes.clear();
 }
 
-void Hy3Layout::makeGroupOn(CWindow* window, Hy3GroupLayout layout) {
-	auto* node = this->getNodeFromWindow(window);
+void Hy3Layout::makeGroupOn(int workspace, Hy3GroupLayout layout) {
+	auto* node = this->getWorkspaceRootGroup(workspace)->getFocusedNode();
 	if (node == nullptr) return;
 
 	if (node->parent->data.as_group.children.size() == 1
@@ -942,7 +1019,7 @@ void Hy3Layout::makeGroupOn(CWindow* window, Hy3GroupLayout layout) {
 
 	this->nodes.push_back({
 			.parent = node,
-			.data = node->data.as_window,
+			.data = node->data,
 			.workspace_id = node->workspace_id,
 			.layout = this,
 	});
@@ -957,9 +1034,11 @@ void Hy3Layout::makeGroupOn(CWindow* window, Hy3GroupLayout layout) {
 
 Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift);
 
-void Hy3Layout::shiftFocus(CWindow* window, ShiftDirection direction) {
-	Debug::log(LOG, "ShiftFocus %p %d", window, direction);
-	auto* node = this->getNodeFromWindow(window);
+void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
+	auto* root = this->getWorkspaceRootGroup(workspace);
+	if (root == nullptr) return;
+	auto* node = root->getFocusedNode();
+	Debug::log(LOG, "ShiftFocus %p %d", node, direction);
 	if (node == nullptr) return;
 
 	Hy3Node* target;
@@ -968,9 +1047,11 @@ void Hy3Layout::shiftFocus(CWindow* window, ShiftDirection direction) {
 	}
 }
 
-void Hy3Layout::shiftWindow(CWindow* window, ShiftDirection direction) {
-	Debug::log(LOG, "ShiftWindow %p %d", window, direction);
-	auto* node = this->getNodeFromWindow(window);
+void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction) {
+	auto* root = this->getWorkspaceRootGroup(workspace);
+	if (root == nullptr) return;
+	auto* node = root->getFocusedNode();
+	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
 
 
@@ -1131,18 +1212,41 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 			target_parent = target_parent->parent;
 		}
 
-		auto* focusnode = &node;
-
-		while (focusnode->parent != nullptr) {
-			focusnode->parent->data.as_group.lastFocusedChild = focusnode;
-			focusnode = focusnode->parent;
-		}
+		node.markFocused();
 
 		if (target_parent != target_group && target_parent != nullptr)
 			target_parent->recalcSizePosRecursive();
 	}
 
 	return nullptr;
+}
+
+void Hy3Layout::raiseFocus(int workspace) {
+	auto* root = this->getWorkspaceRootGroup(workspace);
+	if (root == nullptr) return;
+	auto* node = root->getFocusedNode();
+
+	if (node->parent != nullptr && node->parent->parent != nullptr) {
+		node->parent->focus();
+		node->parent->updateDecos();
+	}
+}
+
+bool Hy3Layout::shouldRenderSelected(CWindow* window) {
+	if (window == nullptr) return false;
+	auto* root = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
+	if (root == nullptr || root->data.as_group.lastFocusedChild == nullptr) return false;
+	auto* focused = root->getFocusedNode();
+	if (focused == nullptr) return false;
+
+	switch (focused->data.type) {
+	case Hy3NodeData::Window:
+		return false;
+	case Hy3NodeData::Group:
+		auto* node = this->getNodeFromWindow(window);
+		if (node == nullptr) return false;
+		return focused->data.as_group.hasChild(node);
+	}
 }
 
 std::string Hy3Node::debugNode() {

@@ -1,11 +1,8 @@
 #include <src/plugins/PluginAPI.hpp>
+#include <src/Compositor.hpp>
 
 #include "globals.hpp"
-#include "Hy3Layout.hpp"
-#include "src/Compositor.hpp"
-#include "src/config/ConfigManager.hpp"
 
-inline std::unique_ptr<Hy3Layout> g_Hy3Layout;
 
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
 	return HYPRLAND_API_VERSION;
@@ -25,53 +22,73 @@ CWindow* window_for_action() {
 	return window;
 }
 
+int workspace_for_action() {
+	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return -1;
+
+	int workspace_id = g_pCompositor->m_pLastMonitor->activeWorkspace;
+
+	if (workspace_id < 0) return -1;
+	auto* workspace = g_pCompositor->getWorkspaceByID(workspace_id);
+	if (workspace == nullptr) return -1;
+	if (workspace->m_bHasFullscreenWindow) return -1;
+
+	return workspace_id;
+}
+
 void dispatch_makegroup(std::string arg) {
-	CWindow* window = window_for_action();
-	if (window == nullptr) return;
+	int workspace = workspace_for_action();
+	if (workspace < 0) return;
 
 	if (arg == "h") {
-		g_Hy3Layout->makeGroupOn(window, Hy3GroupLayout::SplitH);
+		g_Hy3Layout->makeGroupOn(workspace, Hy3GroupLayout::SplitH);
 	} else if (arg == "v") {
-		g_Hy3Layout->makeGroupOn(window, Hy3GroupLayout::SplitV);
+		g_Hy3Layout->makeGroupOn(workspace, Hy3GroupLayout::SplitV);
 	}
 }
 
 void dispatch_movewindow(std::string arg) {
-	CWindow* window = window_for_action();
-	if (window == nullptr) return;
+	int workspace = workspace_for_action();
+	if (workspace < 0) return;
 
 	if (arg == "l") {
-		g_Hy3Layout->shiftWindow(window, ShiftDirection::Left);
+		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Left);
 	} else if (arg == "u") {
-		g_Hy3Layout->shiftWindow(window, ShiftDirection::Up);
+		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Up);
 	} else if (arg == "d") {
-		g_Hy3Layout->shiftWindow(window, ShiftDirection::Down);
+		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Down);
 	} else if (arg == "r") {
-		g_Hy3Layout->shiftWindow(window, ShiftDirection::Right);
+		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Right);
 	}
 }
 
 void dispatch_movefocus(std::string arg) {
-	CWindow* window = window_for_action();
-	if (window == nullptr) return;
+	int workspace = workspace_for_action();
+	if (workspace < 0) return;
 
 	if (arg == "l") {
-		g_Hy3Layout->shiftFocus(window, ShiftDirection::Left);
+		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Left);
 	} else if (arg == "u") {
-		g_Hy3Layout->shiftFocus(window, ShiftDirection::Up);
+		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Up);
 	} else if (arg == "d") {
-		g_Hy3Layout->shiftFocus(window, ShiftDirection::Down);
+		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Down);
 	} else if (arg == "r") {
-		g_Hy3Layout->shiftFocus(window, ShiftDirection::Right);
+		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Right);
 	}
 }
 
-void dispatch_debug(std::string arg) {
-	CWindow* window = window_for_action();
-	if (window == nullptr) return;
+void dispatch_raisefocus(std::string arg) {
+	int workspace = workspace_for_action();
+	if (workspace < 0) return;
 
-	auto* root = g_Hy3Layout->getWorkspaceRootGroup(window->m_iWorkspaceID);
-	if (window == nullptr) {
+	g_Hy3Layout->raiseFocus(workspace);
+}
+
+void dispatch_debug(std::string arg) {
+	int workspace = workspace_for_action();
+	if (workspace < 0) return;
+
+	auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace);
+	if (workspace < 0) {
 		Debug::log(LOG, "DEBUG NODES: no nodes on workspace");
 	} else {
 		Debug::log(LOG, "DEBUG NODES\n%s", root->debugNode().c_str());
@@ -89,6 +106,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:raisefocus", dispatch_raisefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:debugnodes", dispatch_debug);
 
 	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};

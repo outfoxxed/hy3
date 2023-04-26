@@ -71,6 +71,11 @@ struct Hy3Node {
 
 	void recalcSizePosRecursive(bool force = false);
 	std::string debugNode();
+	void markFocused();
+	void focus();
+	void raiseToTop();
+	Hy3Node* getFocusedNode();
+	void updateDecos();
 
 	bool operator==(const Hy3Node&) const;
 
@@ -105,9 +110,12 @@ public:
 	virtual void onEnable();
 	virtual void onDisable();
 
-	void makeGroupOn(CWindow*, Hy3GroupLayout);
-	void shiftWindow(CWindow*, ShiftDirection);
-	void shiftFocus(CWindow*, ShiftDirection);
+	void makeGroupOn(int, Hy3GroupLayout);
+	void shiftWindow(int, ShiftDirection);
+	void shiftFocus(int, ShiftDirection);
+	void raiseFocus(int);
+
+	bool shouldRenderSelected(CWindow*);
 
 	Hy3Node* getWorkspaceRootGroup(const int&);
 

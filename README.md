@@ -6,7 +6,7 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 - [x] Window splits
 - [x] Window movement
 - [x] Window resizing
-- [ ] Selecting a group of windows at once (and related movement)
+- [x] Selecting a group of windows at once (and related movement)
 - [ ] Tabbed groups
 - [ ] Some convenience dispatchers not found in i3 or sway
 
@@ -35,6 +35,7 @@ You can use `hy3:makegroup` to create a new split.
  - `hy3:makegroup, <h | v>` - make a vertical or horizontal split
  - `hy3:movefocus, <l | u | d | r>` - move the focus left, up, down, or right
  - `hy3:movewindow, <l | u | d | r>` - move a window left, up, down, or right
+ - `hy3:raisefocus` - raise the active focus one level
  - `hy3:debugnodes` - print the node tree into the hyprland log
 
 ## Installing
