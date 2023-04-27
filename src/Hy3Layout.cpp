@@ -1098,21 +1098,26 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 			// there's no reason to wrap the root group.
 			if (shiftMatchesLayout(group.layout, direction)) break;
 
-			// wrap the root group in another group
-			this->nodes.push_back({
-				.parent = break_parent,
-				.data = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
-				.position = break_parent->position,
-				.size = break_parent->size,
-				.workspace_id = break_parent->workspace_id,
-				.layout = this,
-			});
+			if (group.layout != Hy3GroupLayout::Tabbed && group.children.size() == 2) {
+				group.layout = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
+			} else {
+				// wrap the root group in another group
+				this->nodes.push_back({
+						.parent = break_parent,
+						.data = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
+						.position = break_parent->position,
+						.size = break_parent->size,
+						.workspace_id = break_parent->workspace_id,
+						.layout = this,
+				});
 
-			auto* newChild = &this->nodes.back();
-			Hy3Node::swapData(*break_parent, *newChild);
-			break_parent->data.as_group.children.push_back(newChild);
-			break_parent->data.as_group.lastFocusedChild = newChild;
-			break_origin = newChild;
+				auto* newChild = &this->nodes.back();
+				Hy3Node::swapData(*break_parent, *newChild);
+				break_parent->data.as_group.children.push_back(newChild);
+				break_parent->data.as_group.lastFocusedChild = newChild;
+				break_origin = newChild;
+			}
+
 			break;
 		} else {
 			break_origin = break_parent;
