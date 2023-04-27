@@ -358,7 +358,8 @@ void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 void Hy3Node::updateDecos() {
 	switch (this->data.type) {
 	case Hy3NodeData::Window:
-		g_pCompositor->updateWindowAnimatedDecorationValues(this->data.as_window);
+		if (this->data.as_window->m_bIsMapped)
+			g_pCompositor->updateWindowAnimatedDecorationValues(this->data.as_window);
 		break;
 	case Hy3NodeData::Group:
 	  for (auto* child: this->data.as_group.children) {
