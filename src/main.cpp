@@ -1,5 +1,5 @@
-#include <src/plugins/PluginAPI.hpp>
-#include <src/Compositor.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/Compositor.hpp>
 
 #include "globals.hpp"
 

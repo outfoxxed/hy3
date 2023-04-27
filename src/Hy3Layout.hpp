@@ -1,7 +1,7 @@
 #pragma once
 
 #include <list>
-#include <src/layout/IHyprLayout.hpp>
+#include <hyprland/src/layout/IHyprLayout.hpp>
 
 class Hy3Layout;
 struct Hy3Node;

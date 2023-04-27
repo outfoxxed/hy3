@@ -8,8 +8,8 @@
   outputs = { nixpkgs, hyprland, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs { inherit system; };
-      hyprpkgs = hyprland.packages.${system};
-    in {
+      hyprland_pkg = hyprland.packages.${system}.hyprland;
+    in rec {
       packages.default = pkgs.gcc12Stdenv.mkDerivation {
         pname = "hy3";
         version = "0.1";
@@ -17,35 +17,21 @@
         src = ./.;
 
         nativeBuildInputs = with pkgs; [
+          hyprland_pkg.dev
           cmake
           pkg-config
-        ];
-
-        #HYPRLAND_HEADERS = hyprpkgs.hyprland.src; - TODO
+        ] ++ hyprland_pkg.buildInputs;
       };
 
       devShells.default = pkgs.mkShell.override { stdenv = pkgs.gcc12Stdenv; } {
         name = "hy3-shell";
-        nativeBuildInputs = with pkgs; [
-          cmake
-          pkg-config
 
+        nativeBuildInputs = with pkgs; [
           clang-tools_15
           bear
         ];
 
-        buildInputs = with pkgs; [
-          hyprpkgs.wlroots-hyprland
-          libdrm
-          pixman
-        ];
-
-        inputsFrom = [
-          hyprpkgs.hyprland
-          hyprpkgs.wlroots-hyprland
-        ];
-
-        #HYPRLAND_HEADERS = hyprpkgs.hyprland.src; - TODO
+        inputsFrom = [ packages.default ];
       };
     });
 }

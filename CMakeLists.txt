@@ -10,12 +10,8 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
       ${CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES})
 endif()
 
-IF(NOT DEFINED ENV{HYPRLAND_HEADERS})
- message(FATAL_ERROR "$HYPRLAND_HEADERS is unset")
-ENDIF()
-
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(DEPS REQUIRED pixman-1 libdrm)
+pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm)
 
 add_library(hy3 SHARED
 	src/main.cpp
@@ -23,7 +19,6 @@ add_library(hy3 SHARED
 	src/SelectionHook.cpp
 )
 
-target_include_directories(hy3 PRIVATE
-	${DEPS_INCLUDE_DIRS}
-	$ENV{HYPRLAND_HEADERS}
-)
+target_include_directories(hy3 PRIVATE ${DEPS_INCLUDE_DIRS})
+
+install(TARGETS hy3 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

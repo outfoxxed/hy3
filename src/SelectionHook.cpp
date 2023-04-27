@@ -1,7 +1,6 @@
 #include "globals.hpp"
-#include "src/Window.hpp"
-#include <src/plugins/PluginAPI.hpp>
-#include <src/Compositor.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/Compositor.hpp>
 
 inline CFunctionHook* g_LastSelectionHook = nullptr;
 

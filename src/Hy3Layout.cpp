@@ -2,7 +2,7 @@
 #include "Hy3Layout.hpp"
 #include "SelectionHook.hpp"
 
-#include <src/Compositor.hpp>
+#include <hyprland/src/Compositor.hpp>
 
 Hy3GroupData::Hy3GroupData(Hy3GroupLayout layout): layout(layout) {}
 
