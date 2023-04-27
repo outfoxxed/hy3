@@ -26,6 +26,12 @@ void setup_selection_hook() {
 
 		if (decoUpdateCandidates.size() != 1) {
 			Debug::log(ERR, "Expected one matching function to hook for \"updateWindowAnimatedDecorationValues\", found %d", decoUpdateCandidates.size());
+			HyprlandAPI::addNotificationV2(PHANDLE, {
+				{"text", "Failed to load function hooks: \"updateWindowAnimatedDecorationValues\""},
+				{"time", (uint64_t)10000},
+				{"color", CColor(1.0, 0.0, 0.0, 1.0)},
+				{"icon", ICON_ERROR},
+			});
 			return;
 		}
 
