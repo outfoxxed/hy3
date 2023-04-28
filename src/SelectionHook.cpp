@@ -35,7 +35,7 @@ void setup_selection_hook() {
 			return;
 		}
 
-		g_LastSelectionHook = HyprlandAPI::createFunctionHook(PHANDLE, decoUpdateCandidates[0].address, (void *)&hook_update_decos);
+		g_LastSelectionHook = HyprlandAPI::createFunctionHook(PHANDLE, decoUpdateCandidates[0].address, (void*)&hook_update_decos);
 	}
 
 	g_LastSelectionHook->hook();

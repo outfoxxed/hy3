@@ -959,6 +959,26 @@ void Hy3Layout::fullscreenRequestForWindow(CWindow* window, eFullscreenMode full
 }
 
 std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string content) {
+	if (content == "togglesplit") {
+		auto* node = this->getNodeFromWindow(header.pWindow);
+		if (node != nullptr && node->parent != nullptr) {
+			auto& layout = node->parent->data.as_group.layout;
+
+			switch (layout) {
+			case Hy3GroupLayout::SplitH:
+			  layout = Hy3GroupLayout::SplitV;
+				node->parent->recalcSizePosRecursive();
+				break;
+			case Hy3GroupLayout::SplitV:
+				layout = Hy3GroupLayout::SplitH;
+				node->parent->recalcSizePosRecursive();
+				break;
+			case Hy3GroupLayout::Tabbed:
+				break;
+			}
+		}
+	}
+
 	return "";
 }
 
