@@ -3,10 +3,10 @@
     hyprland.url = "github:hyprwm/Hyprland";
   };
 
-  outputs = { hyprland, ... }: let
+  outputs = { self, hyprland, ... }: let
     inherit (hyprland.inputs) nixpkgs;
     hyprlandSystems = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
-  in rec {
+  in {
     packages = hyprlandSystems (system: pkgs: rec {
       hy3 = pkgs.gcc12Stdenv.mkDerivation {
         pname = "hy3";
@@ -39,8 +39,23 @@
           bear
         ];
 
-        inputsFrom = [ packages.${system}.hy3 ];
+        inputsFrom = [ self.packages.${system}.hy3 ];
       };
     });
+
+    homeManagerModules.default = { config, lib, pkgs, ... }: let
+      cfg = config.wayland.windowManager.hyprland.plugins.hy3;
+      hy3Package = self.packages.${pkgs.hostPlatform.system}.default;
+    in {
+      options.wayland.windowManager.hyprland.plugins.hy3 = {
+        enable = lib.mkEnableOption "hy3 plugin";
+      };
+
+      config = lib.mkIf cfg.enable {
+        wayland.windowManager.hyprland.extraConfig = ''
+          exec-once = hyprctl plugin load ${hy3Package}/lib/libhy3.so && hyprctl reload
+        '';
+      };
+    };
   };
 }
