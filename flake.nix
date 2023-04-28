@@ -1,37 +1,46 @@
 {
   inputs = {
     hyprland.url = "github:hyprwm/Hyprland";
-    nixpkgs.follows = "hyprland/nixpkgs";
-    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { nixpkgs, hyprland, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs { inherit system; };
-      hyprland_pkg = hyprland.packages.${system}.hyprland;
-    in rec {
-      packages.default = pkgs.gcc12Stdenv.mkDerivation {
+  outputs = { hyprland, ... }: let
+    inherit (hyprland.inputs) nixpkgs;
+    hyprlandSystems = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
+  in rec {
+    packages = hyprlandSystems (system: pkgs: rec {
+      hy3 = pkgs.gcc12Stdenv.mkDerivation {
         pname = "hy3";
         version = "0.1";
-
         src = ./.;
 
-        nativeBuildInputs = with pkgs; [
-          hyprland_pkg.dev
-          cmake
-          pkg-config
-        ] ++ hyprland_pkg.buildInputs;
+        nativeBuildInputs = with pkgs; [ cmake pkg-config ];
+
+        buildInputs = [
+          hyprland.packages.${system}.hyprland.dev
+        ] ++ hyprland.packages.${system}.hyprland.buildInputs;
+
+        meta = with pkgs.lib; {
+          homepage = "https://github.com/outfoxxed/hy3";
+          description = "Hyprland plugin for an i3 / sway like manual tiling layout";
+          license = licenses.gpl3;
+          platforms = platforms.linux;
+        };
       };
 
-      devShells.default = pkgs.mkShell.override { stdenv = pkgs.gcc12Stdenv; } {
-        name = "hy3-shell";
+      default = hy3;
+    });
+
+    devShells = hyprlandSystems (system: pkgs: {
+      default = pkgs.mkShell.override { stdenv = pkgs.gcc12Stdenv; } {
+        name = "hy3";
 
         nativeBuildInputs = with pkgs; [
           clang-tools_15
           bear
         ];
 
-        inputsFrom = [ packages.default ];
+        inputsFrom = [ packages.${system}.hy3 ];
       };
     });
+  };
 }
