@@ -11,7 +11,14 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
 endif()
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm)
+pkg_check_modules(DEPS REQUIRED pixman-1 libdrm)
+
+if(DEFINED ENV{HYPRLAND_INCLUDE})
+	set(HYPRLAND_INCLUDE_DIRS $ENV{HYPRLAND_INCLUDE})
+	message(STATUS "Using provided hyprland include dir " ${HYPRLAND_INCLUDE_DIRS} " instead of pkg-config")
+else()
+	pkg_check_modules(HYPRLAND REQUIRED hyprland)
+endif()
 
 add_library(hy3 SHARED
 	src/main.cpp
@@ -19,6 +26,6 @@ add_library(hy3 SHARED
 	src/SelectionHook.cpp
 )
 
-target_include_directories(hy3 PRIVATE ${DEPS_INCLUDE_DIRS})
+target_include_directories(hy3 PRIVATE ${HYPRLAND_INCLUDE_DIRS} ${DEPS_INCLUDE_DIRS})
 
 install(TARGETS hy3 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
