@@ -2,7 +2,7 @@
 #include <hyprland/src/Compositor.hpp>
 
 #include "globals.hpp"
-
+#include "SelectionHook.hpp"
 
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
 	return HYPRLAND_API_VERSION;
@@ -97,6 +97,8 @@ void dispatch_debug(std::string arg) {
 
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	PHANDLE = handle;
+
+	selection_hook::init();
 
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only", SConfigValue{.intValue = 0});
 

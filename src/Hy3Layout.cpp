@@ -1017,11 +1017,11 @@ void Hy3Layout::onEnable() {
 		this->onWindowCreatedTiling(window.get());
 	}
 
-	setup_selection_hook();
+	selection_hook::enable();
 }
 
 void Hy3Layout::onDisable() {
-	disable_selection_hook();
+	selection_hook::disable();
 	this->nodes.clear();
 }
 

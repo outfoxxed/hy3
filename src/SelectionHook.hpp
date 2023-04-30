@@ -1,4 +1,7 @@
 #pragma once
 
-void setup_selection_hook();
-void disable_selection_hook();
+namespace selection_hook {
+	void init();
+	void enable();
+	void disable();
+}
