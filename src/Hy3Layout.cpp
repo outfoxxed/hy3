@@ -3,6 +3,16 @@
 #include "SelectionHook.hpp"
 
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
+
+void errorNotif() {
+	HyprlandAPI::addNotificationV2(PHANDLE, {
+		{"text", "Something has gone very wrong. Check the log for details."},
+		{"time", (uint64_t)10000},
+		{"color", CColor(1.0, 0.0, 0.0, 1.0)},
+		{"icon", ICON_ERROR},
+	});
+}
 
 Hy3GroupData::Hy3GroupData(Hy3GroupLayout layout): layout(layout) {}
 
@@ -116,6 +126,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 		if (child == this) {
 			Debug::log(ERR, "a group (%p) has become its own child", this);
+			errorNotif();
 		}
 
 		double distortOut;
@@ -300,7 +311,11 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 			}
 		}
 
-		group.children.remove(child);
+		if (!group.children.remove(child)) {
+			Debug::log(ERR, "Was unable to remove child node %p from parent %p. Child likely has a false parent pointer.", child, parent);
+			errorNotif();
+			return nullptr;
+		}
 
 		if (group.children.size() == 1) {
 			group.lastFocusedChild = group.children.front();
@@ -417,6 +432,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 
 	if (monitor == nullptr) {
 		Debug::log(ERR, "Orphaned Node %x (workspace ID: %i)!!", node, node->workspace_id);
+		errorNotif();
 		return;
 	}
 
@@ -433,6 +449,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 
 	if (!g_pCompositor->windowExists(window) || !window->m_bIsMapped) {
 		Debug::log(ERR, "Node %p holding invalid window %p!!", node, window);
+		errorNotif();
 		this->onWindowRemovedTiling(window);
 		return;
 	}
@@ -547,6 +564,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 
 	if (opening_into->data.type != Hy3NodeData::Group) {
 		Debug::log(ERR, "opening_into node %p was not of type Group", opening_into);
+		errorNotif();
 		return;
 	}
 
