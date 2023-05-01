@@ -62,7 +62,7 @@
 
       config = lib.mkIf cfg.enable {
         wayland.windowManager.hyprland.extraConfig = ''
-          exec-once = hyprctl plugin load ${cfg.package}/lib/libhy3.so && hyprctl reload
+          plugin = ${cfg.package}/lib/libhy3.so
         '';
       };
     };
