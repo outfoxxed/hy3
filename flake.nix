@@ -19,6 +19,10 @@
           hyprland.packages.${system}.hyprland.dev
         ] ++ hyprland.packages.${system}.hyprland.buildInputs;
 
+        # no noticeable impact on performance and greatly assists debugging
+        cmakeBuildType = "Debug";
+        dontStrip = true;
+
         meta = with pkgs.lib; {
           homepage = "https://github.com/outfoxxed/hy3";
           description = "Hyprland plugin for an i3 / sway like manual tiling layout";
