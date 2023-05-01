@@ -53,11 +53,16 @@
     in {
       options.wayland.windowManager.hyprland.plugins.hy3 = {
         enable = lib.mkEnableOption "hy3 plugin";
+
+        package = lib.mkOption {
+          type = lib.types.package;
+          default = hy3Package;
+        };
       };
 
       config = lib.mkIf cfg.enable {
         wayland.windowManager.hyprland.extraConfig = ''
-          exec-once = hyprctl plugin load ${hy3Package}/lib/libhy3.so && hyprctl reload
+          exec-once = hyprctl plugin load ${cfg.package}/lib/libhy3.so && hyprctl reload
         '';
       };
     };
