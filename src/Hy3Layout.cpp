@@ -295,11 +295,22 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 
 	Debug::log(LOG, "Recursively removing parent nodes of %p", parent);
 
-	while (parent->parent != nullptr) {
+	while (parent != nullptr) {
+		if (parent->parent == nullptr) {
+			Debug::log(ERR, "* UAF DEBUGGING - %p's parent is null, its the root group", parent);
+
+			if (parent == this) {
+				Debug::log(ERR, "* UAF DEBUGGING - returning nullptr as this == root group");
+			} else {
+				Debug::log(ERR, "* UAF DEBUGGING - deallocing %p and returning nullptr", parent);
+				parent->layout->nodes.remove(*parent);
+			}
+			return nullptr;
+		}
+
 		auto* child = parent;
 		parent = parent->parent;
 		auto& group = parent->data.as_group;
-
 
 		if (group.children.size() > 2) {
 			auto iter = std::find(group.children.begin(), group.children.end(), child);
@@ -323,10 +334,12 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 
 		if (child != this) {
 			parent->layout->nodes.remove(*child);
+		} else {
+			child->parent = nullptr;
 		}
 
 		if (!group.children.empty()) {
-			auto splitmod = group.children.empty() ? 0.0 : -((1.0 - child->size_ratio) / group.children.size());
+			auto splitmod = -((1.0 - child->size_ratio) / group.children.size());
 
 			for (auto* child: group.children) {
 				child->size_ratio += splitmod;
@@ -1248,7 +1261,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 		node.parent = target_group;
 		node.size_ratio = 1.0;
 
-		old_parent->recalcSizePosRecursive();
+		if (old_parent != nullptr) old_parent->recalcSizePosRecursive();
 		target_group->recalcSizePosRecursive();
 
 		auto* target_parent = target_group->parent;
