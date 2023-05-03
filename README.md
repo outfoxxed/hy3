@@ -42,7 +42,7 @@ You can use `hy3:makegroup` to create a new split.
 
 ### Nix
 #### Using the home-manager module
-Assuming you use hyprland's home manager module, you can easily integrate hy3, as hy3 provides a home manager module that exposes the `wayland.windowManager.hyprland.plugins.hy3.enable` option.
+Assuming you use hyprland's home manager module, you can easily integrate hy3 by adding it to the plugins array.
 
 ```nix
 # flake.nix
@@ -70,12 +70,11 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3, a
 
       modules = [
         hyprland.homeManagerModules.default
-        hy3.homeManagerModules.default
 
         {
           wayland.windowManager.hyprland = {
             enable = true;
-            plugins.hy3.enable = true;
+            plugins = [ hy3.packages.x86_64-linux.hy3 ];
           };
         }
       ];
@@ -93,7 +92,7 @@ directly use it in your hyprland config like so:
 wayland.windowManager.hyprland = {
   # ...
   extraConfig = ''
-    exec-once = hyprctl plugin load ${hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
+    plugin = ${hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
   '';
 };
 ```

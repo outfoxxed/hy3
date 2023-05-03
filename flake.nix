@@ -46,25 +46,5 @@
         inputsFrom = [ self.packages.${system}.hy3 ];
       };
     });
-
-    homeManagerModules.default = { config, lib, pkgs, ... }: let
-      cfg = config.wayland.windowManager.hyprland.plugins.hy3;
-      hy3Package = self.packages.${pkgs.hostPlatform.system}.default;
-    in {
-      options.wayland.windowManager.hyprland.plugins.hy3 = {
-        enable = lib.mkEnableOption "hy3 plugin";
-
-        package = lib.mkOption {
-          type = lib.types.package;
-          default = hy3Package;
-        };
-      };
-
-      config = lib.mkIf cfg.enable {
-        wayland.windowManager.hyprland.extraConfig = ''
-          plugin = ${cfg.package}/lib/libhy3.so
-        '';
-      };
-    };
   };
 }
