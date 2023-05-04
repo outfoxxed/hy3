@@ -118,6 +118,7 @@ public:
 	bool shouldRenderSelected(CWindow*);
 
 	Hy3Node* getWorkspaceRootGroup(const int&);
+	Hy3Node* getWorkspaceFocusedNode(const int&);
 
 	std::list<Hy3Node> nodes;
 private:

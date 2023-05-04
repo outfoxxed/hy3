@@ -426,6 +426,12 @@ Hy3Node* Hy3Layout::getWorkspaceRootGroup(const int& id) {
 	return nullptr;
 }
 
+Hy3Node* Hy3Layout::getWorkspaceFocusedNode(const int& id) {
+	auto* rootNode = this->getWorkspaceRootGroup(id);
+	if (rootNode == nullptr) return nullptr;
+	return rootNode->getFocusedNode();
+}
+
 void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 	if (node->data.type != Hy3NodeData::Window) return;
 	CWindow* window = node->data.as_window;
@@ -648,10 +654,7 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 }
 
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
-	auto* node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
-	if (node == nullptr) return nullptr;
-
-	node = node->getFocusedNode();
+	auto* node = this->getWorkspaceFocusedNode(window->m_iWorkspaceID);
 
 	switch (node->data.type) {
 	case Hy3NodeData::Window:
@@ -1057,7 +1060,7 @@ void Hy3Layout::onDisable() {
 }
 
 void Hy3Layout::makeGroupOn(int workspace, Hy3GroupLayout layout) {
-	auto* node = this->getWorkspaceRootGroup(workspace)->getFocusedNode();
+	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 
 	if (node->parent->data.as_group.children.size() == 1
@@ -1087,9 +1090,7 @@ void Hy3Layout::makeGroupOn(int workspace, Hy3GroupLayout layout) {
 Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift);
 
 void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
-	auto* root = this->getWorkspaceRootGroup(workspace);
-	if (root == nullptr) return;
-	auto* node = root->getFocusedNode();
+	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftFocus %p %d", node, direction);
 	if (node == nullptr) return;
 
@@ -1100,9 +1101,7 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
 }
 
 void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction) {
-	auto* root = this->getWorkspaceRootGroup(workspace);
-	if (root == nullptr) return;
-	auto* node = root->getFocusedNode();
+	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
 
@@ -1279,9 +1278,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 }
 
 void Hy3Layout::raiseFocus(int workspace) {
-	auto* root = this->getWorkspaceRootGroup(workspace);
-	if (root == nullptr) return;
-	auto* node = root->getFocusedNode();
+	auto* node = this->getWorkspaceFocusedNode(workspace);
+	if (node == nullptr) return;
 
 	if (node->parent != nullptr && node->parent->parent != nullptr) {
 		node->parent->focus();
