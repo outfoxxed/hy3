@@ -355,12 +355,13 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout) {
 	this->layout->nodes.push_back({
 		.parent = this,
-		.data = this->data,
+		.data = layout,
 		.workspace_id = this->workspace_id,
 		.layout = this->layout,
 	});
 
 	auto* node = &this->layout->nodes.back();
+	swapData(*this, *node);
 
 	this->data = layout;
 	this->data.as_group.children.push_back(node);
