@@ -40,9 +40,11 @@ void dispatch_makegroup(std::string arg) {
 	if (workspace < 0) return;
 
 	if (arg == "h") {
-		g_Hy3Layout->makeGroupOn(workspace, Hy3GroupLayout::SplitH);
+		g_Hy3Layout->makeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitH);
 	} else if (arg == "v") {
-		g_Hy3Layout->makeGroupOn(workspace, Hy3GroupLayout::SplitV);
+		g_Hy3Layout->makeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitV);
+	} else if (arg == "opposite") {
+		g_Hy3Layout->makeOppositeGroupOnWorkspace(workspace);
 	}
 }
 

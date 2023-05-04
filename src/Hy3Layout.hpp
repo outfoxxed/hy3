@@ -85,6 +85,9 @@ struct Hy3Node {
 	// the only child and recursing if the parent was the only child of it's parent.
 	Hy3Node* removeFromParentRecursive();
 
+	// Replace this node with a group, returning this node's new address.
+	Hy3Node* intoGroup(Hy3GroupLayout);
+
 	static void swapData(Hy3Node&, Hy3Node&);
 };
 
@@ -110,7 +113,10 @@ public:
 	virtual void onEnable();
 	virtual void onDisable();
 
-	void makeGroupOn(int, Hy3GroupLayout);
+	void makeGroupOnWorkspace(int, Hy3GroupLayout);
+	void makeOppositeGroupOnWorkspace(int);
+	void makeGroupOn(Hy3Node*, Hy3GroupLayout);
+	void makeOppositeGroupOn(Hy3Node*);
 	void shiftWindow(int, ShiftDirection);
 	void shiftFocus(int, ShiftDirection);
 	void raiseFocus(int);

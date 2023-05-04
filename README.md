@@ -32,7 +32,7 @@ In your hyprland config replace the following dispatchers:
 You can use `hy3:makegroup` to create a new split.
 
 ### Dispatcher list
- - `hy3:makegroup, <h | v>` - make a vertical or horizontal split
+ - `hy3:makegroup, <h | v | opposite>` - make a vertical or horizontal split
  - `hy3:movefocus, <l | u | d | r>` - move the focus left, up, down, or right
  - `hy3:movewindow, <l | u | d | r>` - move a window left, up, down, or right
  - `hy3:raisefocus` - raise the active focus one level

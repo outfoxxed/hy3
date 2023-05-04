@@ -352,6 +352,24 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 	return parent;
 }
 
+Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout) {
+	this->layout->nodes.push_back({
+		.parent = this,
+		.data = this->data,
+		.workspace_id = this->workspace_id,
+		.layout = this->layout,
+	});
+
+	auto* node = &this->layout->nodes.back();
+
+	this->data = layout;
+	this->data.as_group.children.push_back(node);
+	this->data.as_group.lastFocusedChild = node;
+	this->recalcSizePosRecursive();
+
+	return node;
+}
+
 bool Hy3GroupData::hasChild(Hy3Node* node) {
 	Debug::log(LOG, "Searching for child %p of %p", this, node);
 	for (auto child: this->children) {
@@ -655,6 +673,7 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 	auto* node = this->getWorkspaceFocusedNode(window->m_iWorkspaceID);
+	if (node == nullptr) return nullptr;
 
 	switch (node->data.type) {
 	case Hy3NodeData::Window:
@@ -1059,32 +1078,52 @@ void Hy3Layout::onDisable() {
 	this->nodes.clear();
 }
 
-void Hy3Layout::makeGroupOn(int workspace, Hy3GroupLayout layout) {
+void Hy3Layout::makeGroupOnWorkspace(int workspace, Hy3GroupLayout layout) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
+	this->makeGroupOn(node, layout);
+}
+
+void Hy3Layout::makeOppositeGroupOnWorkspace(int workspace) {
+	auto* node = this->getWorkspaceFocusedNode(workspace);
+	this->makeOppositeGroupOn(node);
+}
+
+void Hy3Layout::makeGroupOn(Hy3Node* node, Hy3GroupLayout layout) {
 	if (node == nullptr) return;
 
-	if (node->parent->data.as_group.children.size() == 1
-			&& (node->parent->data.as_group.layout == Hy3GroupLayout::SplitH
-			|| node->parent->data.as_group.layout == Hy3GroupLayout::SplitV))
-	{
-			node->parent->data.as_group.layout = layout;
-			node->parent->recalcSizePosRecursive();
-			return;
+	if (node->parent != nullptr) {
+		auto& group = node->parent->data.as_group;
+		if (group.children.size() == 1
+				&& (group.layout == Hy3GroupLayout::SplitH
+				|| group.layout == Hy3GroupLayout::SplitV))
+		{
+				group.layout = layout;
+				node->parent->recalcSizePosRecursive();
+				return;
+		}
 	}
 
-	this->nodes.push_back({
-			.parent = node,
-			.data = node->data,
-			.workspace_id = node->workspace_id,
-			.layout = this,
-	});
+	node->intoGroup(layout);
+}
 
-	node->data = layout;
-	node->data.as_group.children.push_back(&this->nodes.back());
-	node->data.as_group.lastFocusedChild = &this->nodes.back();
-	node->recalcSizePosRecursive();
+void Hy3Layout::makeOppositeGroupOn(Hy3Node* node) {
+	if (node == nullptr) return;
 
-	return;
+	if (node->parent == nullptr) {
+		node->intoGroup(Hy3GroupLayout::SplitH);
+	} else {
+		auto& group = node->parent->data.as_group;
+		auto layout = group.layout == Hy3GroupLayout::SplitH
+			? Hy3GroupLayout::SplitV
+			: Hy3GroupLayout::SplitH;
+
+		if (group.children.size() == 1) {
+			group.layout = layout;
+			node->parent->recalcSizePosRecursive();
+		} else {
+			node->intoGroup(layout);
+		}
+	}
 }
 
 Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift);
