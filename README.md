@@ -33,8 +33,9 @@ You can use `hy3:makegroup` to create a new split.
 
 ### Dispatcher list
  - `hy3:makegroup, <h | v | opposite>` - make a vertical or horizontal split
- - `hy3:movefocus, <l | u | d | r>` - move the focus left, up, down, or right
- - `hy3:movewindow, <l | u | d | r>` - move a window left, up, down, or right
+ - `hy3:movefocus, <l | u | d | r | left | down | up | right>` - move the focus left, up, down, or right
+ - `hy3:movewindow, <l | u | d | r | left | down | up | right> [, once]` - move a window left, up, down, or right
+   - `once` - only move directly to the neighboring group, without moving into any of its subgroups
  - `hy3:raisefocus` - raise the active focus one level
  - `hy3:debugnodes` - print the node tree into the hyprland log
 

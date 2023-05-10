@@ -1127,26 +1127,24 @@ void Hy3Layout::makeOppositeGroupOn(Hy3Node* node) {
 	}
 }
 
-Hy3Node* shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift);
-
 void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftFocus %p %d", node, direction);
 	if (node == nullptr) return;
 
 	Hy3Node* target;
-	if ((target = this->shiftOrGetFocus(*node, direction, false))) {
+	if ((target = this->shiftOrGetFocus(*node, direction, false, false))) {
 		g_pCompositor->focusWindow(target->data.as_window);
 	}
 }
 
-void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction) {
+void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
 
 
-	this->shiftOrGetFocus(*node, direction, true);
+	this->shiftOrGetFocus(*node, direction, true, once);
 }
 
 bool shiftIsForward(ShiftDirection direction) {
@@ -1162,15 +1160,19 @@ bool shiftMatchesLayout(Hy3GroupLayout layout, ShiftDirection direction) {
 		|| (layout != Hy3GroupLayout::SplitV && !shiftIsVertical(direction));
 }
 
-Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift) {
+Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift, bool once) {
 	auto* break_origin = &node;
 	auto* break_parent = break_origin->parent;
+
+	auto has_broken_once = false;
 
 	// break parents until we hit a container oriented the same way as the shift direction
 	while (true) {
 		if (break_parent == nullptr) return nullptr;
 
 		auto& group = break_parent->data.as_group; // must be a group in order to be a parent
+
+		if (has_broken_once) break;
 
 		if (shiftMatchesLayout(group.layout, direction)) {
 			// group has the correct orientation
@@ -1181,6 +1183,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 						|| (shiftIsForward(direction) && group.children.back() == break_origin)))
 				break;
 		}
+
+		has_broken_once = true;
 
 		if (break_parent->parent == nullptr) {
 			if (!shift) return nullptr;
@@ -1233,7 +1237,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 		if (shiftIsForward(direction)) iter = std::next(iter);
 		else iter = std::prev(iter);
 
-		if ((*iter)->data.type == Hy3NodeData::Window) {
+		if ((*iter)->data.type == Hy3NodeData::Window || (shift && once && has_broken_once)) {
 			if (shift) {
 				if (target_group == node.parent) {
 					if (shiftIsForward(direction)) insert = std::next(iter);
@@ -1268,6 +1272,12 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 					} else {
 						iter = group_data.children.begin();
 					}
+				}
+
+				if (shift && once) {
+					if (shift_after) insert = std::next(iter);
+					else insert = iter;
+					break;
 				}
 
 				if ((*iter)->data.type == Hy3NodeData::Window) {

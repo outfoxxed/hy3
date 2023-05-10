@@ -1,3 +1,5 @@
+#include <optional>
+
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/Compositor.hpp>
 
@@ -48,18 +50,23 @@ void dispatch_makegroup(std::string arg) {
 	}
 }
 
-void dispatch_movewindow(std::string arg) {
+std::optional<ShiftDirection> parseShiftArg(std::string arg) {
+	if (arg == "l" || arg == "left") return ShiftDirection::Left;
+	else if (arg == "r" || arg == "right") return ShiftDirection::Right;
+	else if (arg == "u" || arg == "up") return ShiftDirection::Up;
+	else if (arg == "d" || arg == "down") return ShiftDirection::Down;
+	else return {};
+}
+
+void dispatch_movewindow(std::string value) {
 	int workspace = workspace_for_action();
 	if (workspace < 0) return;
 
-	if (arg == "l") {
-		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Left);
-	} else if (arg == "u") {
-		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Up);
-	} else if (arg == "d") {
-		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Down);
-	} else if (arg == "r") {
-		g_Hy3Layout->shiftWindow(workspace, ShiftDirection::Right);
+	auto args = CVarList(value);
+
+	if (auto shift = parseShiftArg(args[0])) {
+		auto once = args[1] == "once";
+		g_Hy3Layout->shiftWindow(workspace, shift.value(), once);
 	}
 }
 
@@ -67,14 +74,8 @@ void dispatch_movefocus(std::string arg) {
 	int workspace = workspace_for_action();
 	if (workspace < 0) return;
 
-	if (arg == "l") {
-		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Left);
-	} else if (arg == "u") {
-		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Up);
-	} else if (arg == "d") {
-		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Down);
-	} else if (arg == "r") {
-		g_Hy3Layout->shiftFocus(workspace, ShiftDirection::Right);
+	if (auto shift = parseShiftArg(arg)) {
+		g_Hy3Layout->shiftFocus(workspace, shift.value());
 	}
 }
 
