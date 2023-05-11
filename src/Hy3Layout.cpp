@@ -339,7 +339,12 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 		}
 
 		if (!group.children.empty()) {
-			auto splitmod = -((1.0 - child->size_ratio) / group.children.size());
+			auto child_count = group.children.size();
+			if (std::find(group.children.begin(), group.children.end(), this) != group.children.end()) {
+				child_count -= 1;
+			}
+
+			auto splitmod = -((1.0 - child->size_ratio) / child_count);
 
 			for (auto* child: group.children) {
 				child->size_ratio += splitmod;
@@ -1363,7 +1368,8 @@ std::string Hy3Node::debugNode() {
 		buf << std::hex << this;
 		buf << ") [hypr ";
 		buf << this->data.as_window;
-		buf << "]";
+		buf << "] size ratio: ";
+		buf << this->size_ratio;
 		break;
 	case Hy3NodeData::Group:
 		buf << "group(";
@@ -1382,13 +1388,18 @@ std::string Hy3Node::debugNode() {
 			break;
 		}
 
-		buf << "]";
+		buf << "] size ratio: ";
+		buf << this->size_ratio;
 		for (auto* child: this->data.as_group.children) {
 			buf << "\n|-";
-			// this is terrible
-			for (char c: child->debugNode()) {
-				buf << c;
-				if (c == '\n') buf << "  ";
+			if (child == nullptr) {
+				buf << "nullptr";
+			} else {
+				// this is terrible
+				for (char c: child->debugNode()) {
+					buf << c;
+					if (c == '\n') buf << "  ";
+				}
 			}
 		}
 
