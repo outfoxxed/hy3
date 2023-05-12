@@ -1187,9 +1187,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 			if (!((!shiftIsForward(direction) && group.children.front() == break_origin)
 						|| (shiftIsForward(direction) && group.children.back() == break_origin)))
 				break;
+		} else {
+			has_broken_once = true;
 		}
-
-		has_broken_once = true;
 
 		if (break_parent->parent == nullptr) {
 			if (!shift) return nullptr;
@@ -1198,7 +1198,10 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 			// there's no reason to wrap the root group.
 			if (shiftMatchesLayout(group.layout, direction)) break;
 
-			if (group.layout != Hy3GroupLayout::Tabbed && group.children.size() == 2) {
+			if (group.layout != Hy3GroupLayout::Tabbed
+				&& group.children.size() == 2
+				&& std::find(group.children.begin(), group.children.end(), &node) != group.children.end()
+			) {
 				group.layout = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
 			} else {
 				// wrap the root group in another group
