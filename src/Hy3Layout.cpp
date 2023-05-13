@@ -1177,7 +1177,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 
 		auto& group = break_parent->data.as_group; // must be a group in order to be a parent
 
-		if (has_broken_once) break;
+		if (once && shift && has_broken_once) break;
 
 		if (shiftMatchesLayout(group.layout, direction)) {
 			// group has the correct orientation
