@@ -769,16 +769,24 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 	if (node == nullptr) return;
 
 	if (!this->drag_flags.started) {
-		auto mouse = g_pInputManager->getMouseCoordsInternal();
-		auto mouseOffset = mouse - window->m_vPosition;
+		if (g_pInputManager->currentlyDraggedWindow == window) {
+			auto mouse = g_pInputManager->getMouseCoordsInternal();
+			auto mouse_offset = mouse - window->m_vPosition;
 
-		this->drag_flags = {
-			.started = true,
-			.xExtent = mouseOffset.x > window->m_vSize.x / 2,
-			.yExtent = mouseOffset.y > window->m_vSize.y / 2,
-		};
+			this->drag_flags = {
+				.started = true,
+				.xExtent = mouse_offset.x > window->m_vSize.x / 2,
+				.yExtent = mouse_offset.y > window->m_vSize.y / 2,
+			};
 
-		Debug::log(LOG, "Positive offsets - x: %d, y: %d", this->drag_flags.xExtent, this->drag_flags.yExtent);
+			Debug::log(LOG, "Positive offsets - x: %d, y: %d", this->drag_flags.xExtent, this->drag_flags.yExtent);
+		} else {
+			this->drag_flags = {
+				.started = false,
+				.xExtent = delta.x > 0,
+				.yExtent = delta.y > 0,
+			};
+		}
 	}
 
 	const auto animate = &g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
