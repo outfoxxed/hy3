@@ -1177,18 +1177,19 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 
 		auto& group = break_parent->data.as_group; // must be a group in order to be a parent
 
-		if (once && shift && has_broken_once) break;
 
 		if (shiftMatchesLayout(group.layout, direction)) {
 			// group has the correct orientation
 
+			if (once && shift && has_broken_once) break;
+			if (break_origin != &node) has_broken_once = true;
+
 			// if this movement would break out of the group, continue the break loop (do not enter this if)
 			// otherwise break.
-			if (!((!shiftIsForward(direction) && group.children.front() == break_origin)
-						|| (shiftIsForward(direction) && group.children.back() == break_origin)))
+			if ((has_broken_once && once && shift)
+					|| !((!shiftIsForward(direction) && group.children.front() == break_origin)
+							 || (shiftIsForward(direction) && group.children.back() == break_origin)))
 				break;
-		} else {
-			has_broken_once = true;
 		}
 
 		if (break_parent->parent == nullptr) {
