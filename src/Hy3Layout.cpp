@@ -332,6 +332,7 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 			group.lastFocusedChild = group.children.front();
 		}
 
+		auto child_size_ratio = child->size_ratio;
 		if (child != this) {
 			parent->layout->nodes.remove(*child);
 		} else {
@@ -344,7 +345,7 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 				child_count -= 1;
 			}
 
-			auto splitmod = -((1.0 - child->size_ratio) / child_count);
+			auto splitmod = -((1.0 - child_size_ratio) / child_count);
 
 			for (auto* child: group.children) {
 				child->size_ratio += splitmod;
