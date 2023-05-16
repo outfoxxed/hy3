@@ -5,6 +5,8 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
+#include <sstream>
+
 void errorNotif() {
 	HyprlandAPI::addNotificationV2(PHANDLE, {
 		{"text", "Something has gone very wrong. Check the log for details."},
