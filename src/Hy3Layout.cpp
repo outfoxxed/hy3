@@ -98,15 +98,7 @@ Hy3NodeData& Hy3NodeData::operator=(Hy3GroupLayout layout) {
 }
 
 bool Hy3NodeData::operator==(const Hy3NodeData& rhs) const {
-	if (this->type != rhs.type) return false;
-	switch (this->type) {
-	case Hy3NodeData::Window:
-		return this->as_window == rhs.as_window;
-	case Hy3NodeData::Group:
-		return this->as_group.children == rhs.as_group.children;
-	}
-
-	return false;
+	return this == &rhs;
 }
 
 bool Hy3Node::operator==(const Hy3Node& rhs) const {
