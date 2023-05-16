@@ -1,5 +1,8 @@
 #pragma once
 
+struct Hy3Node;
+#include "TabGroup.hpp"
+
 #include <list>
 #include <hyprland/src/layout/IHyprLayout.hpp>
 
@@ -23,6 +26,7 @@ struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
 	Hy3Node* lastFocusedChild = nullptr;
+	std::unique_ptr<Hy3TabGroup> tab_bar;
 
 	bool hasChild(Hy3Node* child);
 
@@ -30,7 +34,6 @@ struct Hy3GroupData {
 
 private:
 	Hy3GroupData(Hy3GroupData&&) = default;
-	Hy3GroupData(const Hy3GroupData&) = default;
 
 	friend class Hy3NodeData;
 };
@@ -54,9 +57,8 @@ public:
 
 	//private: - I give up, C++ wins
 	Hy3NodeData(Hy3GroupData);
-	Hy3NodeData(const Hy3NodeData&);
 	Hy3NodeData(Hy3NodeData&&);
-	Hy3NodeData& operator=(const Hy3NodeData&);
+	Hy3NodeData& operator=(Hy3NodeData&&);
 };
 
 struct Hy3Node {
@@ -76,6 +78,9 @@ struct Hy3Node {
 	void raiseToTop();
 	Hy3Node* getFocusedNode();
 	void updateDecos();
+	void setHidden(bool hidden);
+	bool isUrgent();
+	std::string getTitle();
 
 	bool operator==(const Hy3Node&) const;
 
@@ -125,6 +130,8 @@ public:
 
 	Hy3Node* getWorkspaceRootGroup(const int&);
 	Hy3Node* getWorkspaceFocusedNode(const int&);
+
+	static void renderHook(void*, std::any);
 
 	std::list<Hy3Node> nodes;
 private:

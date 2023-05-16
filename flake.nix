@@ -15,8 +15,10 @@
 
         nativeBuildInputs = with pkgs; [ cmake pkg-config ];
 
-        buildInputs = [
+        buildInputs = with pkgs; [
           hyprland.packages.${system}.hyprland.dev
+          pango
+          cairo
         ] ++ hyprland.packages.${system}.hyprland.buildInputs;
 
         # no noticeable impact on performance and greatly assists debugging

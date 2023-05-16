@@ -41,18 +41,6 @@ Hy3NodeData::~Hy3NodeData() {
 	}
 }
 
-Hy3NodeData::Hy3NodeData(const Hy3NodeData& from): type(from.type) {
-	Debug::log(LOG, "Copy CTor type matches? %d is group? %d", this->type == from.type, this->type == Hy3NodeData::Group);
-	switch (from.type) {
-	case Hy3NodeData::Window:
-		this->as_window = from.as_window;
-		break;
-	case Hy3NodeData::Group:
-		new(&this->as_group) Hy3GroupData(from.as_group);
-		break;
-	}
-}
-
 Hy3NodeData::Hy3NodeData(Hy3NodeData&& from): type(from.type) {
 	Debug::log(LOG, "Move CTor type matches? %d is group? %d", this->type == from.type, this->type == Hy3NodeData::Group);
 	switch (from.type) {
@@ -65,7 +53,7 @@ Hy3NodeData::Hy3NodeData(Hy3NodeData&& from): type(from.type) {
 	}
 }
 
-Hy3NodeData& Hy3NodeData::operator=(const Hy3NodeData& from) {
+Hy3NodeData& Hy3NodeData::operator=(Hy3NodeData&& from) {
 	Debug::log(LOG, "operator= type matches? %d is group? %d", this->type == from.type, this->type == Hy3NodeData::Group);
 	if (this->type == Hy3NodeData::Group) {
 		this->as_group.~Hy3GroupData();
@@ -78,7 +66,7 @@ Hy3NodeData& Hy3NodeData::operator=(const Hy3NodeData& from) {
 		this->as_window = from.as_window;
 		break;
 	case Hy3NodeData::Group:
-		new(&this->as_group) Hy3GroupData(from.as_group);
+		new(&this->as_group) Hy3GroupData(std::move(from.as_group));
 		break;
 	}
 
@@ -121,36 +109,44 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			errorNotif();
 		}
 
-		double distortOut;
-		double distortIn;
+		double distort_out;
+		double distort_in;
+		double tab_height_offset;
 
-		const auto* gaps_in     = &g_pConfigManager->getConfigValuePtr("general:gaps_in")->intValue;
-		const auto* gaps_out    = &g_pConfigManager->getConfigValuePtr("general:gaps_out")->intValue;
+		static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+		static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+		static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
+
+		tab_height_offset = *gaps_in * 2 + *tab_bar_height;
 
 		if (gaps_in > gaps_out) {
-			distortOut = *gaps_out - 1.0;
+			distort_out = *gaps_out - 1.0;
 		} else {
-			distortOut = *gaps_in - 1.0;
+			distort_out = *gaps_in - 1.0;
 		}
 
-		if (distortOut < 0) distortOut = 0.0;
+		if (distort_out < 0) distort_out = 0.0;
 
-		distortIn = *gaps_in * 2;
+		distort_in = *gaps_in * 2;
 
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
-			child->position.x = this->position.x - distortOut;
-			child->size.x = this->size.x - distortIn;
+			child->position.x = this->position.x - distort_out;
+			child->size.x = this->size.x - distort_in;
 			child->position.y = this->position.y;
 			child->size.y = this->size.y;
 			break;
 		case Hy3GroupLayout::SplitV:
-			child->position.y = this->position.y - distortOut;
-			child->size.y = this->size.y - distortIn;
+			child->position.y = this->position.y - distort_out;
+			child->size.y = this->size.y - distort_in;
 			child->position.x = this->position.x;
 			child->size.x = this->size.x;
+			break;
 		case Hy3GroupLayout::Tabbed:
-			// TODO
+			child->position.y = this->position.y + tab_height_offset;
+			child->size.y = this->size.y - tab_height_offset;
+			child->position.x = this->position.x;
+			child->size.x = this->size.x;
 			break;
 		}
 
@@ -182,6 +178,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			offset += child->size.x;
 			child->position.y = this->position.y;
 			child->size.y = this->size.y;
+			//child->setHidden(false);
 			break;
 		case Hy3GroupLayout::SplitV:
 			child->position.y = this->position.y + offset;
@@ -189,16 +186,75 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			offset += child->size.y;
 			child->position.x = this->position.x;
 			child->size.x = this->size.x;
+			//child->setHidden(false);
 			break;
 		case Hy3GroupLayout::Tabbed:
-			// TODO: tab bars
-			child->position = this->position;
-			child->size = this->size;
+			child->position.y = this->position.y + 20;
+			child->size.y = this->size.y - 20;
+			child->position.x = this->position.x;
+			child->size.x = this->size.x;
+			//child->setHidden(group->lastFocusedChild != child);
 			break;
 		}
 
 		child->recalcSizePosRecursive(force);
 	}
+}
+
+void Hy3Node::setHidden(bool hidden) {
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		this->data.as_window->setHidden(hidden);
+		break;
+	case Hy3NodeData::Group:
+		for (auto* child: this->data.as_group.children) {
+			child->setHidden(hidden);
+		}
+	}
+}
+
+bool Hy3Node::isUrgent() {
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		return this->data.as_window->m_bIsUrgent;
+	case Hy3NodeData::Group:
+		for (auto* child: this->data.as_group.children) {
+			if (child->isUrgent()) return true;
+		}
+
+		return false;
+	}
+}
+
+std::string Hy3Node::getTitle() {
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+		return this->data.as_window->m_szTitle;
+	case Hy3NodeData::Group:
+		std::string title;
+
+		switch (this->data.as_group.layout) {
+		case Hy3GroupLayout::SplitH:
+			title = "[H] ";
+			break;
+		case Hy3GroupLayout::SplitV:
+			title = "[V] ";
+			break;
+		case Hy3GroupLayout::Tabbed:
+			title = "[T] ";
+			break;
+		}
+
+		if (this->data.as_group.lastFocusedChild == nullptr) {
+			title += "Group";
+		} else {
+			title += this->data.as_group.lastFocusedChild->getTitle();
+		}
+
+		return title;
+	}
+
+	return "";
 }
 
 void Hy3Node::markFocused() {
@@ -384,8 +440,8 @@ bool Hy3GroupData::hasChild(Hy3Node* node) {
 
 void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 	Hy3NodeData aData = std::move(a.data);
-	a.data = b.data;
-	b.data = aData;
+	a.data = std::move(b.data);
+	b.data = std::move(aData);
 
 	if (a.data.type == Hy3NodeData::Group) {
 		for (auto child: a.data.as_group.children) {
@@ -686,6 +742,10 @@ void Hy3Layout::onWindowFocusChange(CWindow* window) {
 	Debug::log(LOG, "Switched windows to %p", window);
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
+
+	if (node->parent != nullptr && node->parent->data.as_group.layout == Hy3GroupLayout::Tabbed) {
+		node->parent->recalcSizePosRecursive();
+	}
 
 	node->markFocused();
 }
@@ -1066,6 +1126,8 @@ void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
 	this->applyNodeDataToWindow(node);
 }
 
+std::unique_ptr<HOOK_CALLBACK_FN> renderHookPtr = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::renderHook);
+
 void Hy3Layout::onEnable() {
 	for (auto &window : g_pCompositor->m_vWindows) {
 		if (window->isHidden()
@@ -1077,10 +1139,12 @@ void Hy3Layout::onEnable() {
 		this->onWindowCreatedTiling(window.get());
 	}
 
+	HyprlandAPI::registerCallbackStatic(PHANDLE, "render", renderHookPtr.get());
 	selection_hook::enable();
 }
 
 void Hy3Layout::onDisable() {
+	HyprlandAPI::unregisterCallback(PHANDLE, renderHookPtr.get());
 	selection_hook::disable();
 	this->nodes.clear();
 }
@@ -1198,7 +1262,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 
 			// if we haven't gone up any levels and the group is in the same direction
 			// there's no reason to wrap the root group.
-			if (shiftMatchesLayout(group.layout, direction)) break;
+			if (group.layout != Hy3GroupLayout::Tabbed && shiftMatchesLayout(group.layout, direction)) break;
 
 			if (group.layout != Hy3GroupLayout::Tabbed
 				&& group.children.size() == 2
@@ -1412,4 +1476,49 @@ std::string Hy3Node::debugNode() {
 	}
 
 	return buf.str();
+}
+
+// Recursively render tabs on all tab groups.
+void renderTabsRecursive(Hy3Node& node);
+
+// Render tabs for the provided node, blindly assuming it is a tab group.
+void renderTabs(Hy3Node& node);
+
+void Hy3Layout::renderHook(void*, std::any data) {
+	auto render_stage = std::any_cast<eRenderStage>(data);
+	if (render_stage == RENDER_POST_WINDOWS) {
+		auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
+		auto workspace = monitor->activeWorkspace;
+		auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace);
+
+		if (root != nullptr) renderTabsRecursive(*root);
+	}
+}
+
+void renderTabsRecursive(Hy3Node& node) {
+	if (node.data.type == Hy3NodeData::Group) {
+		for (auto* child: node.data.as_group.children) {
+			if (node.data.as_group.layout != Hy3GroupLayout::Tabbed
+					|| node.data.as_group.lastFocusedChild == child)
+			{
+				renderTabsRecursive(*child);
+			}
+		}
+
+		if (node.data.as_group.layout == Hy3GroupLayout::Tabbed) {
+			renderTabs(node);
+		}
+	}
+}
+
+void renderTabs(Hy3Node& node) {
+	auto& group = node.data.as_group;
+
+	if (!group.tab_bar) {
+		group.tab_bar = std::unique_ptr<Hy3TabGroup>(new Hy3TabGroup(node));
+	} else {
+		group.tab_bar->updateWithGroup(node);
+	}
+
+	group.tab_bar->renderTabBar();
 }

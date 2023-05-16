@@ -45,6 +45,8 @@ void dispatch_makegroup(std::string arg) {
 		g_Hy3Layout->makeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitH);
 	} else if (arg == "v") {
 		g_Hy3Layout->makeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitV);
+	} else if (arg == "tab") {
+		g_Hy3Layout->makeGroupOnWorkspace(workspace, Hy3GroupLayout::Tabbed);
 	} else if (arg == "opposite") {
 		g_Hy3Layout->makeOppositeGroupOnWorkspace(workspace);
 	}
@@ -104,6 +106,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	selection_hook::init();
 
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only", SConfigValue{.intValue = 0});
+	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height", SConfigValue{.intValue = 15});
+	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:rounding", SConfigValue{.intValue = 3});
 
 	g_Hy3Layout = std::make_unique<Hy3Layout>();
 	HyprlandAPI::addLayout(PHANDLE, "hy3", g_Hy3Layout.get());

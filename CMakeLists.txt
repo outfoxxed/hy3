@@ -11,11 +11,12 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
 endif()
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm)
+pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm pango pangocairo)
 
 add_library(hy3 SHARED
 	src/main.cpp
 	src/Hy3Layout.cpp
+	src/TabGroup.cpp
 	src/SelectionHook.cpp
 )
 
