@@ -94,6 +94,11 @@ bool Hy3Node::operator==(const Hy3Node& rhs) const {
 }
 
 void Hy3Node::recalcSizePosRecursive(bool force) {
+	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+	static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
+	double tab_height_offset = *gaps_in * 2 + *tab_bar_height;
+
 	if (this->data.type != Hy3NodeData::Group) {
 		this->layout->applyNodeDataToWindow(this, force);
 		return;
@@ -111,13 +116,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 		double distort_out;
 		double distort_in;
-		double tab_height_offset;
 
-		static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
-		static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
-		static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
-
-		tab_height_offset = *gaps_in * 2 + *tab_bar_height;
 
 		if (gaps_in > gaps_out) {
 			distort_out = *gaps_out - 1.0;
@@ -189,8 +188,8 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			//child->setHidden(false);
 			break;
 		case Hy3GroupLayout::Tabbed:
-			child->position.y = this->position.y + 20;
-			child->size.y = this->size.y - 20;
+			child->position.y = this->position.y + tab_height_offset;
+			child->size.y = this->size.y - tab_height_offset;
 			child->position.x = this->position.x;
 			child->size.x = this->size.x;
 			//child->setHidden(group->lastFocusedChild != child);
