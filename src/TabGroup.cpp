@@ -21,8 +21,8 @@ bool Hy3TabBarEntry::operator==(const Hy3Node& node) const {
 }
 
 Hy3TabBar::Hy3TabBar() {
-	this->vertical_pos.create(AVARTYPE_FLOAT, 20.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
-	this->fade_opacity.create(AVARTYPE_FLOAT, 0.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
+	this->vertical_pos.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
+	this->fade_opacity.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 	this->focus_start.create(AVARTYPE_FLOAT, 0.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
 	this->focus_end.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
 	this->vertical_pos.registerVar();
@@ -221,16 +221,22 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 	if (this->size.goalv() != tsize) this->size = tsize;
 
 	this->bar.updateNodeList(node.data.as_group.children);
+
+	if (node.data.as_group.lastFocusedChild != nullptr) {
+		this->updateStencilWindows(*node.data.as_group.lastFocusedChild);
+	}
 }
 
 void Hy3TabGroup::renderTabBar() {
+	static auto* const window_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
+	static auto* const enter_from_top = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
 
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
 	auto scale = monitor->scale;
 
 	auto pos = this->pos.vec();
-	pos.y += this->bar.vertical_pos.fl();
 	auto size = this->size.vec();
+	pos.y += (this->bar.vertical_pos.fl() * size.y) * (*enter_from_top ? -1 : 1);
 
 	auto scaled_pos = Vector2D(std::round(pos.x * scale), std::round(pos.y * scale));
 	auto scaled_size = Vector2D(std::round(size.x * scale), std::round(size.y * scale));
@@ -238,7 +244,76 @@ void Hy3TabGroup::renderTabBar() {
 
 	this->bar.setSize(scaled_size);
 
+	{
+		glClearStencil(0);
+		glClear(GL_STENCIL_BUFFER_BIT);
+		glEnable(GL_STENCIL_TEST);
+		glStencilMask(0xff);
+		glStencilFunc(GL_ALWAYS, 1, 0xff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		for (auto* window: this->stencil_windows) {
+			if (!g_pCompositor->windowExists(window)) continue;
+
+			auto wpos = window->m_vRealPosition.vec();
+			auto wsize = window->m_vRealPosition.vec();
+
+			wlr_box window_box = { wpos.x, wpos.y, wsize.x, wsize.y };
+			g_pHyprOpenGL->renderRect(&window_box, CColor(0, 0, 0, 0), *window_rounding);
+		}
+
+
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+		glStencilMask(0x00);
+		glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+	}
+
 	this->bar.prepareMask();
 	g_pHyprOpenGL->renderTexture(this->bar.mask_texture, &box, this->bar.fade_opacity.fl());
+
+	{
+		glClearStencil(0);
+		glClear(GL_STENCIL_BUFFER_BIT);
+		glDisable(GL_STENCIL_TEST);
+		glStencilMask(0xff);
+		glStencilFunc(GL_ALWAYS, 1, 0xff);
+	}
+
 	g_pHyprRenderer->damageBox(&box);
+}
+
+void findOverlappingWindows(Hy3Node& node, float height, std::vector<CWindow*>& windows) {
+	switch (node.data.type) {
+	case Hy3NodeData::Window:
+		windows.push_back(node.data.as_window);
+		break;
+	case Hy3NodeData::Group:
+		auto& group = node.data.as_group;
+
+		switch (group.layout) {
+		case Hy3GroupLayout::SplitH:
+			for (auto* node: group.children) {
+				findOverlappingWindows(*node, height, windows);
+			}
+			break;
+		case Hy3GroupLayout::SplitV:
+			for (auto* node: group.children) {
+				findOverlappingWindows(*node, height, windows);
+				height -= node->size.y;
+				if (height <= 0) break;
+			}
+			break;
+		case Hy3GroupLayout::Tabbed:
+			// assume the height of that node's tab bar already pushes it out of range
+			break;
+		}
+	}
+}
+
+void Hy3TabGroup::updateStencilWindows(Hy3Node& group) {
+	this->stencil_windows.clear();
+	findOverlappingWindows(group, this->size.goalv().y, this->stencil_windows);
 }

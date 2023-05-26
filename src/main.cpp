@@ -107,6 +107,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only", SConfigValue{.intValue = 0});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height", SConfigValue{.intValue = 15});
+	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:from_top", SConfigValue{.intValue = 0});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:rounding", SConfigValue{.intValue = 3});
 
 	g_Hy3Layout = std::make_unique<Hy3Layout>();

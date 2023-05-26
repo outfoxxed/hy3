@@ -3,6 +3,7 @@
 #include <hyprland/src/helpers/AnimatedVariable.hpp>
 #include <hyprland/src/helpers/Vector2D.hpp>
 #include <list>
+#include <vector>
 
 class Hy3TabGroup;
 class Hy3TabBar;
@@ -66,6 +67,11 @@ public:
 	void renderTabBar();
 
 private:
+	std::vector<CWindow*> stencil_windows;
+
 	// moving a Hy3TabGroup will unregister any active animations
 	Hy3TabGroup(Hy3TabGroup&&) = delete;
+
+	// UB if node is not a group.
+	void updateStencilWindows(Hy3Node&);
 };
