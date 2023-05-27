@@ -31,6 +31,16 @@ In your hyprland config replace the following dispatchers:
 
 You can use `hy3:makegroup` to create a new split.
 
+### Config fields
+```conf
+plugin {
+  hy3 {
+    # disable gaps when only one window is onscreen
+    no_gaps_when_only = <bool>
+  }
+}
+```
+
 ### Dispatcher list
  - `hy3:makegroup, <h | v | opposite>` - make a vertical or horizontal split
  - `hy3:movefocus, <l | u | d | r | left | down | up | right>` - move the focus left, up, down, or right

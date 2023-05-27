@@ -5,6 +5,8 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
+#include <sstream>
+
 void errorNotif() {
 	HyprlandAPI::addNotificationV2(PHANDLE, {
 		{"text", "Something has gone very wrong. Check the log for details."},
@@ -192,7 +194,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			child->size.y = this->size.y - tab_height_offset;
 			child->position.x = this->position.x;
 			child->size.x = this->size.x;
-			//child->setHidden(group->lastFocusedChild != child);
+			//child->setHidden(group->focused_child != child);
 			break;
 		}
 
@@ -244,10 +246,10 @@ std::string Hy3Node::getTitle() {
 			break;
 		}
 
-		if (this->data.as_group.lastFocusedChild == nullptr) {
+		if (this->data.as_group.focused_child == nullptr) {
 			title += "Group";
 		} else {
-			title += this->data.as_group.lastFocusedChild->getTitle();
+			title += this->data.as_group.focused_child->getTitle();
 		}
 
 		return title;
@@ -266,11 +268,13 @@ void Hy3Node::markFocused() {
 
 	// update focus
 	if (this->data.type == Hy3NodeData::Group) {
-		this->data.as_group.lastFocusedChild = nullptr;
+		this->data.as_group.group_focused = true;
+		this->data.as_group.focused_child = nullptr;
 	}
 
 	while (node->parent != nullptr) {
-		node->parent->data.as_group.lastFocusedChild = node;
+		node->parent->data.as_group.focused_child = node;
+		node->parent->data.as_group.group_focused = false;
 		node = node->parent;
 	}
 
@@ -311,10 +315,10 @@ Hy3Node* Hy3Node::getFocusedNode() {
 	case Hy3NodeData::Window:
 		return this;
 	case Hy3NodeData::Group:
-		if (this->data.as_group.lastFocusedChild == nullptr) {
+		if (this->data.as_group.focused_child == nullptr || this->data.as_group.group_focused) {
 			return this;
 		} else {
-			return this->data.as_group.lastFocusedChild->getFocusedNode();
+			return this->data.as_group.focused_child->getFocusedNode();
 		}
 	}
 }
@@ -362,10 +366,11 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 		if (group.children.size() > 2) {
 			auto iter = std::find(group.children.begin(), group.children.end(), child);
 
+			group.group_focused = false;
 			if (iter == group.children.begin()) {
-				group.lastFocusedChild = *std::next(iter);
+				group.focused_child = *std::next(iter);
 			} else {
-				group.lastFocusedChild = *std::prev(iter);
+				group.focused_child = *std::prev(iter);
 			}
 		}
 
@@ -375,8 +380,9 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 			return nullptr;
 		}
 
+		group.group_focused = false;
 		if (group.children.size() == 1) {
-			group.lastFocusedChild = group.children.front();
+			group.focused_child = group.children.front();
 		}
 
 		auto child_size_ratio = child->size_ratio;
@@ -418,7 +424,8 @@ Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout) {
 
 	this->data = layout;
 	this->data.as_group.children.push_back(node);
-	this->data.as_group.lastFocusedChild = node;
+	this->data.as_group.group_focused = false;
+	this->data.as_group.focused_child = node;
 	this->recalcSizePosRecursive();
 
 	return node;
@@ -533,10 +540,10 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 	const bool display_top    = STICKS(node->position.y, monitor->vecPosition.y + monitor->vecReservedTopLeft.y);
 	const bool display_bottom = STICKS(node->position.y + node->size.y, monitor->vecPosition.y + monitor->vecSize.y - monitor->vecReservedBottomRight.y);
 
-	const auto* border_size = &g_pConfigManager->getConfigValuePtr("general:border_size")->intValue;
-	const auto* gaps_in     = &g_pConfigManager->getConfigValuePtr("general:gaps_in")->intValue;
-	const auto* gaps_out    = &g_pConfigManager->getConfigValuePtr("general:gaps_out")->intValue;
-	static auto* const single_window_no_gaps = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only")->intValue;
+	static const auto* border_size           = &HyprlandAPI::getConfigValue(PHANDLE, "general:border_size")->intValue;
+	static const auto* gaps_in               = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+	static const auto* gaps_out              = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+	static const auto* single_window_no_gaps = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only")->intValue;
 
 	if (!g_pCompositor->windowExists(window) || !window->m_bIsMapped) {
 		Debug::log(ERR, "Node %p holding invalid window %p!!", node, window);
@@ -551,14 +558,15 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 	auto calcPos = window->m_vPosition + Vector2D(*border_size, *border_size);
 	auto calcSize = window->m_vSize - Vector2D(2 * *border_size, 2 * *border_size);
 
-	const auto workspace_node_count = this->getWorkspaceNodeCount(window->m_iWorkspaceID);
+	auto root_node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
+	auto only_node = root_node->data.as_group.children.size() == 1
+		&& root_node->data.as_group.children.front()->data.type == Hy3NodeData::Window;
 
-	if (*single_window_no_gaps
-			&& !g_pCompositor->isWorkspaceSpecial(window->m_iWorkspaceID)
-			&& (workspace_node_count == 1
-					|| (window->m_bIsFullscreen
-							&& g_pCompositor->getWorkspaceByID(window->m_iWorkspaceID)->m_efFullscreenMode == FULLSCREEN_MAXIMIZED)))
-	{
+	if (!g_pCompositor->isWorkspaceSpecial(window->m_iWorkspaceID)
+			&& ((*single_window_no_gaps && only_node)
+					 || (window->m_bIsFullscreen
+							 && g_pCompositor->getWorkspaceByID(window->m_iWorkspaceID)->m_efFullscreenMode == FULLSCREEN_FULL))
+	) {
 		window->m_vRealPosition = window->m_vPosition;
 		window->m_vRealSize = window->m_vSize;
 
@@ -1282,7 +1290,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 				auto* newChild = &this->nodes.back();
 				Hy3Node::swapData(*break_parent, *newChild);
 				break_parent->data.as_group.children.push_back(newChild);
-				break_parent->data.as_group.lastFocusedChild = newChild;
+				break_parent->data.as_group.group_focused = false;
+				break_parent->data.as_group.focused_child = newChild;
 				break_origin = newChild;
 			}
 
@@ -1339,8 +1348,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 						shift_after = true;
 					}
 				} else {
-					if (group_data.lastFocusedChild != nullptr) {
-						iter = std::find(group_data.children.begin(), group_data.children.end(), group_data.lastFocusedChild);
+					if (group_data.focused_child != nullptr) {
+						iter = std::find(group_data.children.begin(), group_data.children.end(), group_data.focused_child);
 						shift_after = true;
 					} else {
 						iter = group_data.children.begin();
@@ -1413,7 +1422,7 @@ void Hy3Layout::raiseFocus(int workspace) {
 bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 	if (window == nullptr) return false;
 	auto* root = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
-	if (root == nullptr || root->data.as_group.lastFocusedChild == nullptr) return false;
+	if (root == nullptr || root->data.as_group.focused_child == nullptr) return false;
 	auto* focused = root->getFocusedNode();
 	if (focused == nullptr) return false;
 
@@ -1498,7 +1507,7 @@ void renderTabsRecursive(Hy3Node& node) {
 	if (node.data.type == Hy3NodeData::Group) {
 		for (auto* child: node.data.as_group.children) {
 			if (node.data.as_group.layout != Hy3GroupLayout::Tabbed
-					|| node.data.as_group.lastFocusedChild == child)
+					|| node.data.as_group.focused_child == child)
 			{
 				renderTabsRecursive(*child);
 			}

@@ -84,7 +84,7 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 				this->entries.splice(std::next(entry), removed_entries, moved);
 				entry = moved;
 			} else {
-				entry = this->entries.insert(std::next(entry), Hy3TabBarEntry(*this, **node));
+				entry = this->entries.emplace(std::next(entry), *this, **node);
 			}
 		}
 
@@ -222,8 +222,8 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 
 	this->bar.updateNodeList(node.data.as_group.children);
 
-	if (node.data.as_group.lastFocusedChild != nullptr) {
-		this->updateStencilWindows(*node.data.as_group.lastFocusedChild);
+	if (node.data.as_group.focused_child != nullptr) {
+		this->updateStencilWindows(*node.data.as_group.focused_child);
 	}
 }
 
