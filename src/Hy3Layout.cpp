@@ -213,11 +213,13 @@ void Hy3Node::markFocused() {
 
 	// update focus
 	if (this->data.type == Hy3NodeData::Group) {
-		this->data.as_group.lastFocusedChild = nullptr;
+		this->data.as_group.group_focused = true;
+		this->data.as_group.focused_child = nullptr;
 	}
 
 	while (node->parent != nullptr) {
-		node->parent->data.as_group.lastFocusedChild = node;
+		node->parent->data.as_group.focused_child = node;
+		node->parent->data.as_group.group_focused = false;
 		node = node->parent;
 	}
 
@@ -258,10 +260,10 @@ Hy3Node* Hy3Node::getFocusedNode() {
 	case Hy3NodeData::Window:
 		return this;
 	case Hy3NodeData::Group:
-		if (this->data.as_group.lastFocusedChild == nullptr) {
+		if (this->data.as_group.focused_child == nullptr || this->data.as_group.group_focused) {
 			return this;
 		} else {
-			return this->data.as_group.lastFocusedChild->getFocusedNode();
+			return this->data.as_group.focused_child->getFocusedNode();
 		}
 	}
 }
@@ -309,10 +311,11 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 		if (group.children.size() > 2) {
 			auto iter = std::find(group.children.begin(), group.children.end(), child);
 
+			group.group_focused = false;
 			if (iter == group.children.begin()) {
-				group.lastFocusedChild = *std::next(iter);
+				group.focused_child = *std::next(iter);
 			} else {
-				group.lastFocusedChild = *std::prev(iter);
+				group.focused_child = *std::prev(iter);
 			}
 		}
 
@@ -322,8 +325,9 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 			return nullptr;
 		}
 
+		group.group_focused = false;
 		if (group.children.size() == 1) {
-			group.lastFocusedChild = group.children.front();
+			group.focused_child = group.children.front();
 		}
 
 		auto child_size_ratio = child->size_ratio;
@@ -365,7 +369,8 @@ Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout) {
 
 	this->data = layout;
 	this->data.as_group.children.push_back(node);
-	this->data.as_group.lastFocusedChild = node;
+	this->data.as_group.group_focused = false;
+	this->data.as_group.focused_child = node;
 	this->recalcSizePosRecursive();
 
 	return node;
@@ -1222,7 +1227,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 				auto* newChild = &this->nodes.back();
 				Hy3Node::swapData(*break_parent, *newChild);
 				break_parent->data.as_group.children.push_back(newChild);
-				break_parent->data.as_group.lastFocusedChild = newChild;
+				break_parent->data.as_group.group_focused = false;
+				break_parent->data.as_group.focused_child = newChild;
 				break_origin = newChild;
 			}
 
@@ -1279,8 +1285,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 						shift_after = true;
 					}
 				} else {
-					if (group_data.lastFocusedChild != nullptr) {
-						iter = std::find(group_data.children.begin(), group_data.children.end(), group_data.lastFocusedChild);
+					if (group_data.focused_child != nullptr) {
+						iter = std::find(group_data.children.begin(), group_data.children.end(), group_data.focused_child);
 						shift_after = true;
 					} else {
 						iter = group_data.children.begin();
@@ -1353,7 +1359,7 @@ void Hy3Layout::raiseFocus(int workspace) {
 bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 	if (window == nullptr) return false;
 	auto* root = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
-	if (root == nullptr || root->data.as_group.lastFocusedChild == nullptr) return false;
+	if (root == nullptr || root->data.as_group.focused_child == nullptr) return false;
 	auto* focused = root->getFocusedNode();
 	if (focused == nullptr) return false;
 

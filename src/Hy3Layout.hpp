@@ -22,7 +22,8 @@ enum class ShiftDirection {
 struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
-	Hy3Node* lastFocusedChild = nullptr;
+	bool group_focused = true;
+	Hy3Node* focused_child = nullptr;
 
 	bool hasChild(Hy3Node* child);
 
