@@ -81,10 +81,10 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 		if (entry == this->entries.end() || *entry != **node) {
 			auto moved = std::find(removed_entries.begin(), removed_entries.end(), **node);
 			if (moved != removed_entries.end()) {
-				this->entries.splice(std::next(entry), removed_entries, moved);
+				this->entries.splice(entry, removed_entries, moved);
 				entry = moved;
 			} else {
-				entry = this->entries.emplace(std::next(entry), *this, **node);
+				entry = this->entries.emplace(entry, *this, **node);
 			}
 		}
 
