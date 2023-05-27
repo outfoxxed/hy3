@@ -116,14 +116,14 @@ void Hy3TabBar::updateAnimations(bool warp) {
 		}
 
 		auto warp_init = entry->offset.goalf() == -1.0;
-		entry->offset = offset;
+		if (entry->offset.goalf() != offset) entry->offset = offset;
 
 		if (warp_init) {
 			entry->offset.warp();
 			entry->width.setValueAndWarp(0.0);
 		}
 
-		entry->width = entry_width;
+		if (entry->width.goalf() != entry_width) entry->width = entry_width;
 		offset += entry_width;
 
 		entry = std::next(entry);
