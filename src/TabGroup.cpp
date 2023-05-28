@@ -301,12 +301,13 @@ void Hy3TabGroup::renderTabBar() {
 	}
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
-		entry.prepareTexture(scale, size);
+		Vector2D entry_size = { (entry.width.fl() * size.x) - *padding, size.y };
+		entry.prepareTexture(scale, entry_size);
 
 		wlr_box box = {
 			(pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale,
 			scaled_pos.y,
-			((entry.width.fl() * size.x) - *padding) * scale,
+			entry_size.x * scale,
 			scaled_size.y,
 		};
 
