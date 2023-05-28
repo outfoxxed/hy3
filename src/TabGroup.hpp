@@ -13,19 +13,26 @@ class Hy3TabBar;
 
 struct Hy3TabBarEntry {
 	std::string window_title;
+	bool focused = false;
 	bool urgent = false;
+	bool needs_redraw = false;
+	CTexture texture;
 	CAnimatedVariable offset; // offset 0, 0.0-1.0 of total bar
 	CAnimatedVariable width; // 0.0-1.0 of total bar
 	Hy3TabBar& tab_bar;
 	Hy3Node& node; // only used for comparioson. do not deref.
+	Vector2D last_render_size;
+	float last_render_scale = 0.0;
+	float last_render_rounding = 0.0;
 
 	Hy3TabBarEntry(Hy3TabBar&, Hy3Node&);
 	bool operator==(const Hy3Node& node) const;
+
+	void prepareTexture(float scale, Vector2D size);
 };
 
 class Hy3TabBar {
 public:
-	CTexture mask_texture;
 	CAnimatedVariable vertical_pos;
 	CAnimatedVariable fade_opacity;
 
@@ -36,19 +43,13 @@ public:
 	void updateAnimations(bool warp = false);
 	void setSize(Vector2D);
 
-	// Redraw the mask texture if necessary, and bind it to GL_TEXTURE_2D
-	void prepareMask();
-
+	std::list<Hy3TabBarEntry> entries;
 private:
-	bool need_mask_redraw = false;
-	int last_mask_rounding = 0;
-
 	Hy3Node* focused_node = nullptr;
 	CAnimatedVariable focus_opacity;
 	CAnimatedVariable focus_start;
 	CAnimatedVariable focus_end;
 
-	std::list<Hy3TabBarEntry> entries;
 	Vector2D size;
 };
 

@@ -6,8 +6,8 @@
 #include <cairo/cairo.h>
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
-	this->offset.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
-	this->width.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
+	this->offset.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
+	this->width.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 
 	this->offset.registerVar();
 	this->width.registerVar();
@@ -19,6 +19,77 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 bool Hy3TabBarEntry::operator==(const Hy3Node& node) const {
 	return this->node == node;
 }
+
+void Hy3TabBarEntry::prepareTexture(float scale, Vector2D size) {
+	static const auto* rounding_setting = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
+	auto rounding = *rounding_setting;
+
+	auto width = size.x * scale;
+	auto height = size.y * scale;
+
+	if (this->needs_redraw
+			|| this->texture.m_iTexID == 0
+			|| this->last_render_rounding == rounding
+			|| this->last_render_scale == scale
+			|| this->last_render_size == size
+			|| true // todo
+	) {
+		this->needs_redraw = false;
+		this->last_render_rounding = rounding;
+		this->last_render_scale = scale;
+		this->last_render_size = size;
+
+		auto cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
+		auto cairo = cairo_create(cairo_surface);
+
+		// clear pixmap
+		cairo_save(cairo);
+		cairo_set_operator(cairo, CAIRO_OPERATOR_CLEAR);
+		cairo_paint(cairo);
+		cairo_restore(cairo);
+
+		// set brush
+		if (this->focused) {
+			cairo_set_source_rgba(cairo, 0.2, 0.7, 1.0, 1.0);
+		} else {
+			cairo_set_source_rgba(cairo, 0.5, 0.5, 0.5, 1.0);
+		}
+
+		// outline bar shape
+		cairo_move_to(cairo, 0, rounding);
+		cairo_arc(cairo, rounding, rounding, rounding, -180.0 * (M_PI / 180.0), -90.0 * (M_PI / 180.0));
+		cairo_line_to(cairo, width - rounding, 0);
+		cairo_arc(cairo, width - rounding, rounding, rounding, -90.0 * (M_PI / 180.0), 0.0);
+		cairo_line_to(cairo, width, height - rounding);
+		cairo_arc(cairo, width - rounding, height - rounding, rounding, 0.0, 90.0 * (M_PI / 180.0));
+		cairo_line_to(cairo, rounding, height);
+		cairo_arc(cairo, rounding, height - rounding, rounding, -270.0 * (M_PI / 180.0), -180.0 * (M_PI / 180.0));
+		cairo_close_path(cairo);
+
+		// draw
+		cairo_fill(cairo);
+
+		auto data = cairo_image_surface_get_data(cairo_surface);
+		this->texture.allocate();
+
+		glBindTexture(GL_TEXTURE_2D, this->texture.m_iTexID);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	#ifdef GLES32
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+	#endif
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+
+		cairo_destroy(cairo);
+		cairo_surface_destroy(cairo_surface);
+	} else {
+		glBindTexture(GL_TEXTURE_2D, this->texture.m_iTexID);
+	}
+}
+
 
 Hy3TabBar::Hy3TabBar() {
 	this->vertical_pos.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
@@ -88,6 +159,13 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 			}
 		}
 
+		// set stats from node data
+		auto* root = *node;
+		while (root->parent != nullptr) root = root->parent;
+		auto* focused = root->getFocusedNode();
+		entry->focused = focused == *node;
+		entry->urgent = (*node)->isUrgent();
+
 		node = std::next(node);
 		if (entry != this->entries.end()) entry = std::next(entry);
 	}
@@ -141,69 +219,7 @@ void Hy3TabBar::updateAnimations(bool warp) {
 
 void Hy3TabBar::setSize(Vector2D size) {
 	if (size == this->size) return;
-	this->need_mask_redraw = true;
 	this->size = size;
-}
-
-void Hy3TabBar::prepareMask() {
-	static const auto* rounding_setting = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
-	auto rounding = *rounding_setting;
-
-	auto width = this->size.x;
-	auto height = this->size.y;
-
-	if (this->need_mask_redraw
-			|| this->last_mask_rounding != rounding
-			|| this->mask_texture.m_iTexID == 0
-	) {
-		this->last_mask_rounding = rounding;
-
-		auto cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
-		auto cairo = cairo_create(cairo_surface);
-
-		// clear pixmap
-		cairo_save(cairo);
-		cairo_set_operator(cairo, CAIRO_OPERATOR_CLEAR);
-		cairo_paint(cairo);
-		cairo_restore(cairo);
-
-		// set brush
-		cairo_set_source_rgba(cairo, 0.2, 0.7, 1.0, 0.5);
-		cairo_set_line_width(cairo, 2.0);
-
-		// outline bar shape
-		cairo_move_to(cairo, 0, rounding);
-		cairo_arc(cairo, rounding, rounding, rounding, -180.0 * (M_PI / 180.0), -90.0 * (M_PI / 180.0));
-		cairo_line_to(cairo, width - rounding, 0);
-		cairo_arc(cairo, width - rounding, rounding, rounding, -90.0 * (M_PI / 180.0), 0.0);
-		cairo_line_to(cairo, width, height - rounding);
-		cairo_arc(cairo, width - rounding, height - rounding, rounding, 0.0, 90.0 * (M_PI / 180.0));
-		cairo_line_to(cairo, rounding, height);
-		cairo_arc(cairo, rounding, height - rounding, rounding, -270.0 * (M_PI / 180.0), -180.0 * (M_PI / 180.0));
-		cairo_close_path(cairo);
-
-		// draw
-		cairo_fill(cairo);
-
-		auto data = cairo_image_surface_get_data(cairo_surface);
-		this->mask_texture.allocate();
-
-		glBindTexture(GL_TEXTURE_2D, this->mask_texture.m_iTexID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-	#ifdef GLES32
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-	#endif
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-
-		cairo_destroy(cairo);
-		cairo_surface_destroy(cairo_surface);
-	} else {
-		glBindTexture(GL_TEXTURE_2D, this->mask_texture.m_iTexID);
-	}
 }
 
 Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
@@ -230,6 +246,7 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 	if (this->size.goalv() != tsize) this->size = tsize;
 
 	this->bar.updateNodeList(node.data.as_group.children);
+	this->bar.updateAnimations();
 
 	if (node.data.as_group.focused_child != nullptr) {
 		this->updateStencilWindows(*node.data.as_group.focused_child);
@@ -237,8 +254,9 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 }
 
 void Hy3TabGroup::renderTabBar() {
-	static auto* const window_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
-	static auto* const enter_from_top = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
+	static const auto* window_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
+	static const auto* enter_from_top = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
+	static const auto* padding = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
 	auto scale = monitor->scale;
@@ -254,9 +272,9 @@ void Hy3TabGroup::renderTabBar() {
 	this->bar.setSize(scaled_size);
 
 	{
+		glEnable(GL_STENCIL_TEST);
 		glClearStencil(0);
 		glClear(GL_STENCIL_BUFFER_BIT);
-		glEnable(GL_STENCIL_TEST);
 		glStencilMask(0xff);
 		glStencilFunc(GL_ALWAYS, 1, 0xff);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
@@ -270,18 +288,40 @@ void Hy3TabGroup::renderTabBar() {
 			auto wsize = window->m_vRealPosition.vec();
 
 			wlr_box window_box = { wpos.x, wpos.y, wsize.x, wsize.y };
+			scaleBox(&window_box, scale);
+
 			g_pHyprOpenGL->renderRect(&window_box, CColor(0, 0, 0, 0), *window_rounding);
 		}
-
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		glStencilMask(0x00);
-		glStencilFunc(GL_NOTEQUAL, 1, 0xff);
+		glStencilFunc(GL_EQUAL, 0, 0xff);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
 	}
 
-	this->bar.prepareMask();
-	g_pHyprOpenGL->renderTexture(this->bar.mask_texture, &box, this->bar.fade_opacity.fl());
+	auto render_entry = [&](Hy3TabBarEntry& entry) {
+		entry.prepareTexture(scale, size);
+
+		wlr_box box = {
+			(pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale,
+			scaled_pos.y,
+			((entry.width.fl() * size.x) - *padding) * scale,
+			scaled_size.y,
+		};
+
+		g_pHyprOpenGL->renderTexture(entry.texture, &box, this->bar.fade_opacity.fl());
+	};
+
+	for (auto& entry: this->bar.entries) {
+		if (entry.focused) continue;
+		render_entry(entry);
+	}
+
+	for (auto& entry: this->bar.entries) {
+		if (!entry.focused) continue;
+		render_entry(entry);
+	}
 
 	{
 		glClearStencil(0);
