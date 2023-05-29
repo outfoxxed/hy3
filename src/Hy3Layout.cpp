@@ -298,7 +298,6 @@ void Hy3Node::markFocused() {
 	// update focus
 	if (this->data.type == Hy3NodeData::Group) {
 		this->data.as_group.group_focused = true;
-		this->data.as_group.focused_child = nullptr;
 	}
 
 	auto* node2 = node;
@@ -507,6 +506,39 @@ void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 	}
 }
 
+struct FindTopWindowInNodeResult {
+	CWindow* window = nullptr;
+	size_t index = 0;
+};
+
+void findTopWindowInNode(Hy3Node& node, FindTopWindowInNodeResult& result) {
+	switch(node.data.type) {
+	case Hy3NodeData::Window: {
+		auto* window = node.data.as_window;
+		auto& windows = g_pCompositor->m_vWindows;
+
+		for (; result.index < windows.size(); result.index++) {
+			if (&*windows[result.index] == window) {
+				result.window = window;
+				break;
+			}
+		}
+
+	} break;
+	case Hy3NodeData::Group: {
+		auto& group = node.data.as_group;
+
+		if (group.layout == Hy3GroupLayout::Tabbed) {
+			if (group.focused_child != nullptr) findTopWindowInNode(*group.focused_child, result);
+		} else {
+			for (auto* child: group.children) {
+				findTopWindowInNode(*child, result);
+			}
+		}
+	} break;
+	}
+}
+
 void Hy3Node::updateTabBar() {
 	if (this->data.type == Hy3NodeData::Group) {
 		auto& group = this->data.as_group;
@@ -514,6 +546,10 @@ void Hy3Node::updateTabBar() {
 		if (group.layout == Hy3GroupLayout::Tabbed) {
 			if (group.tab_bar == nullptr) group.tab_bar = &this->layout->tab_groups.emplace_back(*this);
 			group.tab_bar->updateWithGroup(*this);
+
+			FindTopWindowInNodeResult result;
+			findTopWindowInNode(*this, result);
+			group.tab_bar->target_window = result.window;
 		} else if (group.tab_bar != nullptr) {
 			group.tab_bar->bar.beginDestroy();
 			group.tab_bar = nullptr;
@@ -1553,12 +1589,13 @@ void renderTabs(Hy3Node& node);
 
 void Hy3Layout::renderHook(void*, std::any data) {
 	auto render_stage = std::any_cast<eRenderStage>(data);
-	if (render_stage == RENDER_POST_WINDOWS) {
+	if (render_stage == RENDER_POST_WINDOW) {
 		auto& tab_groups = g_Hy3Layout->tab_groups;
 		auto entry = tab_groups.begin();
 		while (entry != tab_groups.end()) {
 			if (entry->bar.destroy) tab_groups.erase(entry++);
-			else entry++->renderTabBar();
+			else if (entry->target_window == g_pHyprOpenGL->m_pCurrentWindow) entry++->renderTabBar();
+			else entry++;
 		}
 	}
 }
