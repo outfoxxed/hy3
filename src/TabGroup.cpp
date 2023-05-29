@@ -5,7 +5,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <cairo/cairo.h>
 
-Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
+Hy3TabBarEntry::Hy3TabBarEntry(std::shared_ptr<Hy3TabGroup> tab_group, Hy3Node& node): tab_group(tab_group), node(node) {
 	this->offset.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 	this->width.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 
@@ -18,6 +18,10 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 
 bool Hy3TabBarEntry::operator==(const Hy3Node& node) const {
 	return this->node == node;
+}
+
+bool Hy3TabBarEntry::operator==(const Hy3TabBarEntry& entry) const {
+	return this->node == entry.node;
 }
 
 void Hy3TabBarEntry::prepareTexture(float scale, Vector2D size) {
@@ -91,6 +95,16 @@ void Hy3TabBarEntry::prepareTexture(float scale, Vector2D size) {
 	}
 }
 
+void Hy3TabBarEntry::animateRemoval() {
+	if (this->width.goalf() == 0.0) return;
+	this->width = 0.0;
+
+	// not removing the callback is required for soundness, as the animation will
+	// be deleted once the callback ends.
+	this->width.setCallbackOnEnd([this](void*) {
+		this->tab_group->bar.entries.remove(*this);
+	}, false);
+}
 
 Hy3TabBar::Hy3TabBar() {
 	this->vertical_pos.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
@@ -123,7 +137,7 @@ void Hy3TabBar::focusNode(Hy3Node* node) {
 }
 
 void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
-	std::list<Hy3TabBarEntry> removed_entries;
+	std::list<std::list<Hy3TabBarEntry>::iterator> removed_entries;
 
 	auto entry = this->entries.begin();
 	auto node = nodes.begin();
@@ -133,7 +147,8 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 		while (true) {
 			if (entry == this->entries.end()) goto exitloop;
 			if (*entry == **node) break;
-			removed_entries.splice(removed_entries.end(), this->entries, entry++);
+			removed_entries.push_back(entry);
+			entry = std::next(entry);
 		}
 
 		node = std::next(node);
@@ -143,7 +158,10 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
  exitloop:
 
 	// move any extra entries to removed_entries
-	removed_entries.splice(removed_entries.end(), this->entries, entry, this->entries.end());
+	while (entry != this->entries.end()) {
+		removed_entries.push_back(entry);
+		entry = std::next(entry);
+	}
 
 	entry = this->entries.begin();
 	node = nodes.begin();
@@ -151,13 +169,24 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 	// add missing entries, taking first from removed_entries
 	while (node != nodes.end()) {
 		if (entry == this->entries.end() || *entry != **node) {
-			auto moved = std::find(removed_entries.begin(), removed_entries.end(), **node);
-			if (moved != removed_entries.end()) {
-				this->entries.splice(entry, removed_entries, moved);
-				entry = moved;
-			} else {
-				entry = this->entries.emplace(entry, *this, **node);
+			if (std::find(removed_entries.begin(), removed_entries.end(), entry) != removed_entries.end()) {
+				entry = std::next(entry);
+				continue;
 			}
+
+			auto moved = std::find_if(removed_entries.begin(), removed_entries.end(), [&node](auto entry) { return **node == *entry; });
+			if (moved != removed_entries.end()) {
+				this->entries.splice(entry, this->entries, *moved);
+				entry = *moved;
+				removed_entries.erase(moved);
+			} else {
+				entry = this->entries.emplace(entry, this->group.lock(), **node);
+			}
+		}
+
+		if (entry->width.goalf() == 0.0) {
+			entry->width.setCallbackOnEnd(nullptr);
+			entry->width = -1.0;
 		}
 
 		// set stats from node data
@@ -173,8 +202,7 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 
 	// initiate remove animations for any removed entries
 	for (auto& entry: removed_entries) {
-		// TODO: working entry remove anim
-		entry.width = 0.0;
+		entry->animateRemoval();
 	}
 }
 
@@ -210,10 +238,10 @@ void Hy3TabBar::updateAnimations(bool warp) {
 			}
 
 			if (entry->offset.goalf() != offset) entry->offset = offset;
-			if (entry->width.goalf() != entry_width) entry->width = entry_width;
+			if ((warp_init || entry->width.goalf() != 0.0) && entry->width.goalf() != entry_width) entry->width = entry_width;
 		}
 
-		offset += entry_width;
+		offset += entry->width.goalf();
 		entry = std::next(entry);
 	}
 }
@@ -223,17 +251,24 @@ void Hy3TabBar::setSize(Vector2D size) {
 	this->size = size;
 }
 
-Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
+Hy3TabGroup::Hy3TabGroup() {
 	this->pos.create(AVARTYPE_VECTOR, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
 	this->size.create(AVARTYPE_VECTOR, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
-	Debug::log(LOG, "registered anims");
 	this->pos.registerVar();
 	this->size.registerVar();
+}
 
-	this->updateWithGroup(node);
-	this->bar.updateAnimations(true);
-	this->pos.warp();
-	this->size.warp();
+std::shared_ptr<Hy3TabGroup> Hy3TabGroup::new_(Hy3Node& node) {
+	auto ptr = std::shared_ptr<Hy3TabGroup>(new Hy3TabGroup());
+	ptr->self = ptr;
+	ptr->bar.group = ptr;
+
+	ptr->updateWithGroup(node);
+	ptr->bar.updateAnimations(true);
+	ptr->pos.warp();
+	ptr->size.warp();
+
+	return ptr;
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
@@ -291,7 +326,7 @@ void Hy3TabGroup::renderTabBar() {
 			wlr_box window_box = { wpos.x, wpos.y, wsize.x, wsize.y };
 			scaleBox(&window_box, scale);
 
-			g_pHyprOpenGL->renderRect(&window_box, CColor(0, 0, 0, 0), *window_rounding);
+			if (window_box.width > 0 && window_box.height > 0) g_pHyprOpenGL->renderRect(&window_box, CColor(0, 0, 0, 0), *window_rounding);
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);

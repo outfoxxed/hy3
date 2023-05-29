@@ -3,6 +3,7 @@
 #include <hyprland/src/helpers/AnimatedVariable.hpp>
 #include <hyprland/src/helpers/Vector2D.hpp>
 #include <list>
+#include <memory>
 #include <vector>
 
 class Hy3TabGroup;
@@ -19,16 +20,19 @@ struct Hy3TabBarEntry {
 	CTexture texture;
 	CAnimatedVariable offset; // offset 0, 0.0-1.0 of total bar
 	CAnimatedVariable width; // 0.0-1.0 of total bar
-	Hy3TabBar& tab_bar;
+	std::shared_ptr<Hy3TabGroup> tab_group;
 	Hy3Node& node; // only used for comparioson. do not deref.
 	Vector2D last_render_size;
 	float last_render_scale = 0.0;
 	float last_render_rounding = 0.0;
 
-	Hy3TabBarEntry(Hy3TabBar&, Hy3Node&);
-	bool operator==(const Hy3Node& node) const;
+	Hy3TabBarEntry(std::shared_ptr<Hy3TabGroup>, Hy3Node&);
+	bool operator==(const Hy3Node&) const;
+	bool operator==(const Hy3TabBarEntry&) const;
 
-	void prepareTexture(float scale, Vector2D size);
+	void prepareTexture(float, Vector2D);
+
+	void animateRemoval();
 };
 
 class Hy3TabBar {
@@ -44,6 +48,7 @@ public:
 	void setSize(Vector2D);
 
 	std::list<Hy3TabBarEntry> entries;
+	std::weak_ptr<Hy3TabGroup> group;
 private:
 	Hy3Node* focused_node = nullptr;
 	CAnimatedVariable focus_opacity;
@@ -60,7 +65,7 @@ public:
 	CAnimatedVariable size;
 
 	// initialize a group with the given node. UB if node is not a group.
-	Hy3TabGroup(Hy3Node&);
+	static std::shared_ptr<Hy3TabGroup> new_(Hy3Node&);
 
 	// update tab bar with node position and data. UB if node is not a group.
 	void updateWithGroup(Hy3Node&);
@@ -68,7 +73,10 @@ public:
 	void renderTabBar();
 
 private:
+	std::weak_ptr<Hy3TabGroup> self;
 	std::vector<CWindow*> stencil_windows;
+
+	Hy3TabGroup();
 
 	// moving a Hy3TabGroup will unregister any active animations
 	Hy3TabGroup(Hy3TabGroup&&) = delete;

@@ -1523,7 +1523,7 @@ void renderTabs(Hy3Node& node) {
 	auto& group = node.data.as_group;
 
 	if (!group.tab_bar) {
-		group.tab_bar = std::unique_ptr<Hy3TabGroup>(new Hy3TabGroup(node));
+		group.tab_bar = Hy3TabGroup::new_(node);
 	} else {
 		group.tab_bar->updateWithGroup(node);
 	}

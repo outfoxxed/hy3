@@ -27,7 +27,7 @@ struct Hy3GroupData {
 	std::list<Hy3Node*> children;
 	bool group_focused = true;
 	Hy3Node* focused_child = nullptr;
-	std::unique_ptr<Hy3TabGroup> tab_bar;
+	std::shared_ptr<Hy3TabGroup> tab_bar;
 
 	bool hasChild(Hy3Node* child);
 
