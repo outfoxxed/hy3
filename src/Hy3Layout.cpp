@@ -18,6 +18,20 @@ void errorNotif() {
 
 Hy3GroupData::Hy3GroupData(Hy3GroupLayout layout): layout(layout) {}
 
+Hy3GroupData::Hy3GroupData(Hy3GroupData&& from) {
+	this->layout = from.layout;
+	this->children = std::move(from.children);
+	this->group_focused = from.group_focused;
+	this->focused_child = from.focused_child;
+	from.focused_child = nullptr;
+	this->tab_bar = from.tab_bar;
+	from.tab_bar = nullptr;
+}
+
+Hy3GroupData::~Hy3GroupData() {
+	if (this->tab_bar != nullptr) this->tab_bar->bar.beginDestroy();
+}
+
 Hy3NodeData::Hy3NodeData(): Hy3NodeData((CWindow*)nullptr) {}
 
 Hy3NodeData::Hy3NodeData(CWindow *window): type(Hy3NodeData::Window) {
@@ -151,6 +165,8 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			break;
 		}
 
+		this->updateTabBar();
+
 		child->recalcSizePosRecursive(force);
 		return;
 	}
@@ -200,6 +216,8 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 		child->recalcSizePosRecursive(force);
 	}
+
+	this->updateTabBar();
 }
 
 void Hy3Node::setHidden(bool hidden) {
@@ -225,6 +243,17 @@ bool Hy3Node::isUrgent() {
 
 		return false;
 	}
+}
+
+bool Hy3Node::isIndirectlyFocused() {
+	Hy3Node* node = this;
+
+	while (node->parent != nullptr) {
+		if (node->parent->data.as_group.focused_child != node) return false;
+		node = node->parent;
+	}
+
+	return true;
 }
 
 std::string Hy3Node::getTitle() {
@@ -272,14 +301,30 @@ void Hy3Node::markFocused() {
 		this->data.as_group.focused_child = nullptr;
 	}
 
+	auto* node2 = node;
+	while (node2->parent != nullptr) {
+		node2->parent->data.as_group.focused_child = node2;
+		node2->parent->data.as_group.group_focused = false;
+		node2 = node2->parent;
+	}
+
 	while (node->parent != nullptr) {
-		node->parent->data.as_group.focused_child = node;
-		node->parent->data.as_group.group_focused = false;
+		node->parent->updateTabBar();
 		node = node->parent;
+	}
+	while (node2->parent != nullptr) {
+		node2->parent->data.as_group.focused_child = node2;
+		node2->parent->data.as_group.group_focused = false;
+		node2->parent->updateTabBar();
+		node2 = node2->parent;
 	}
 
 	if (oldfocus != nullptr) {
 		oldfocus->updateDecos();
+		while (oldfocus != nullptr) {
+			oldfocus->updateTabBar();
+			oldfocus = oldfocus->parent;
+		}
 	}
 }
 
@@ -458,6 +503,20 @@ void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 	if (b.data.type == Hy3NodeData::Group) {
 		for (auto child: b.data.as_group.children) {
 			child->parent = &b;
+		}
+	}
+}
+
+void Hy3Node::updateTabBar() {
+	if (this->data.type == Hy3NodeData::Group) {
+		auto& group = this->data.as_group;
+
+		if (group.layout == Hy3GroupLayout::Tabbed) {
+			if (group.tab_bar == nullptr) group.tab_bar = &this->layout->tab_groups.emplace_back(*this);
+			group.tab_bar->updateWithGroup(*this);
+		} else if (group.tab_bar != nullptr) {
+			group.tab_bar->bar.beginDestroy();
+			group.tab_bar = nullptr;
 		}
 	}
 }
@@ -1495,11 +1554,12 @@ void renderTabs(Hy3Node& node);
 void Hy3Layout::renderHook(void*, std::any data) {
 	auto render_stage = std::any_cast<eRenderStage>(data);
 	if (render_stage == RENDER_POST_WINDOWS) {
-		auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
-		auto workspace = monitor->activeWorkspace;
-		auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace);
-
-		if (root != nullptr) renderTabsRecursive(*root);
+		auto& tab_groups = g_Hy3Layout->tab_groups;
+		auto entry = tab_groups.begin();
+		while (entry != tab_groups.end()) {
+			if (entry->bar.destroy) tab_groups.erase(entry++);
+			else entry++->renderTabBar();
+		}
 	}
 }
 
@@ -1521,12 +1581,6 @@ void renderTabsRecursive(Hy3Node& node) {
 
 void renderTabs(Hy3Node& node) {
 	auto& group = node.data.as_group;
-
-	if (!group.tab_bar) {
-		group.tab_bar = Hy3TabGroup::new_(node);
-	} else {
-		group.tab_bar->updateWithGroup(node);
-	}
 
 	group.tab_bar->renderTabBar();
 }

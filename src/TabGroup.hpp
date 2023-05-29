@@ -16,31 +16,31 @@ struct Hy3TabBarEntry {
 	std::string window_title;
 	bool focused = false;
 	bool urgent = false;
-	bool needs_redraw = false;
 	CTexture texture;
 	CAnimatedVariable offset; // offset 0, 0.0-1.0 of total bar
 	CAnimatedVariable width; // 0.0-1.0 of total bar
-	std::shared_ptr<Hy3TabGroup> tab_group;
+	Hy3TabBar& tab_bar;
 	Hy3Node& node; // only used for comparioson. do not deref.
-	Vector2D last_render_size;
-	float last_render_scale = 0.0;
+	wlr_box last_render_box;
 	float last_render_rounding = 0.0;
+	bool last_render_focused = false;
+	bool last_render_urgent = false;
 
-	Hy3TabBarEntry(std::shared_ptr<Hy3TabGroup>, Hy3Node&);
+	Hy3TabBarEntry(Hy3TabBar&, Hy3Node&);
 	bool operator==(const Hy3Node&) const;
 	bool operator==(const Hy3TabBarEntry&) const;
 
-	void prepareTexture(float, Vector2D);
-
-	void animateRemoval();
+	void prepareTexture(float, wlr_box&);
 };
 
 class Hy3TabBar {
 public:
+	bool destroy = false;
 	CAnimatedVariable vertical_pos;
 	CAnimatedVariable fade_opacity;
 
 	Hy3TabBar();
+	void beginDestroy();
 
 	void focusNode(Hy3Node*);
 	void updateNodeList(std::list<Hy3Node*>& nodes);
@@ -48,7 +48,6 @@ public:
 	void setSize(Vector2D);
 
 	std::list<Hy3TabBarEntry> entries;
-	std::weak_ptr<Hy3TabGroup> group;
 private:
 	Hy3Node* focused_node = nullptr;
 	CAnimatedVariable focus_opacity;
@@ -56,6 +55,10 @@ private:
 	CAnimatedVariable focus_end;
 
 	Vector2D size;
+
+	// Tab bar entries take a reference to `this`.
+	Hy3TabBar(Hy3TabBar&&) = delete;
+	Hy3TabBar(const Hy3TabBar&) = delete;
 };
 
 class Hy3TabGroup {
@@ -65,7 +68,7 @@ public:
 	CAnimatedVariable size;
 
 	// initialize a group with the given node. UB if node is not a group.
-	static std::shared_ptr<Hy3TabGroup> new_(Hy3Node&);
+	Hy3TabGroup(Hy3Node&);
 
 	// update tab bar with node position and data. UB if node is not a group.
 	void updateWithGroup(Hy3Node&);
@@ -73,7 +76,6 @@ public:
 	void renderTabBar();
 
 private:
-	std::weak_ptr<Hy3TabGroup> self;
 	std::vector<CWindow*> stencil_windows;
 
 	Hy3TabGroup();

@@ -27,14 +27,16 @@ struct Hy3GroupData {
 	std::list<Hy3Node*> children;
 	bool group_focused = true;
 	Hy3Node* focused_child = nullptr;
-	std::shared_ptr<Hy3TabGroup> tab_bar;
+	Hy3TabGroup* tab_bar = nullptr;
 
 	bool hasChild(Hy3Node* child);
 
 	Hy3GroupData(Hy3GroupLayout layout);
+	~Hy3GroupData();
 
 private:
-	Hy3GroupData(Hy3GroupData&&) = default;
+	Hy3GroupData(Hy3GroupData&&);
+	Hy3GroupData(const Hy3GroupData&) = delete;
 
 	friend class Hy3NodeData;
 };
@@ -81,6 +83,7 @@ struct Hy3Node {
 	void updateDecos();
 	void setHidden(bool hidden);
 	bool isUrgent();
+	bool isIndirectlyFocused();
 	std::string getTitle();
 
 	bool operator==(const Hy3Node&) const;
@@ -95,6 +98,9 @@ struct Hy3Node {
 	Hy3Node* intoGroup(Hy3GroupLayout);
 
 	static void swapData(Hy3Node&, Hy3Node&);
+
+private:
+	void updateTabBar();
 };
 
 class Hy3Layout: public IHyprLayout {
@@ -135,6 +141,7 @@ public:
 	static void renderHook(void*, std::any);
 
 	std::list<Hy3Node> nodes;
+	std::list<Hy3TabGroup> tab_groups;
 private:
 	struct {
 		bool started = false;

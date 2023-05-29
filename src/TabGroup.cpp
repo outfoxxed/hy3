@@ -5,7 +5,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <cairo/cairo.h>
 
-Hy3TabBarEntry::Hy3TabBarEntry(std::shared_ptr<Hy3TabGroup> tab_group, Hy3Node& node): tab_group(tab_group), node(node) {
+Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->offset.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 	this->width.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 
@@ -24,25 +24,24 @@ bool Hy3TabBarEntry::operator==(const Hy3TabBarEntry& entry) const {
 	return this->node == entry.node;
 }
 
-void Hy3TabBarEntry::prepareTexture(float scale, Vector2D size) {
+void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 	static const auto* rounding_setting = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
 
-	auto width = size.x * scale;
-	auto height = size.y * scale;
+	auto width = box.width;
+	auto height = box.height;
 
 	auto rounding = std::min((double) *rounding_setting, std::min(width * 0.5, height * 0.5));
 
-	if (this->needs_redraw
-			|| this->texture.m_iTexID == 0
-			|| this->last_render_rounding == rounding
-			|| this->last_render_scale == scale
-			|| this->last_render_size == size
-			|| true // todo
+	if (this->texture.m_iTexID == 0
+			|| this->last_render_rounding != rounding
+			|| this->last_render_focused != focused
+			|| this->last_render_urgent != urgent
+			|| !wlr_box_equal(&this->last_render_box, &box)
 	) {
-		this->needs_redraw = false;
 		this->last_render_rounding = rounding;
-		this->last_render_scale = scale;
-		this->last_render_size = size;
+		this->last_render_focused = this->focused;
+		this->last_render_urgent = this->urgent;
+		this->last_render_box = box;
 
 		auto cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
 		auto cairo = cairo_create(cairo_surface);
@@ -95,17 +94,6 @@ void Hy3TabBarEntry::prepareTexture(float scale, Vector2D size) {
 	}
 }
 
-void Hy3TabBarEntry::animateRemoval() {
-	if (this->width.goalf() == 0.0) return;
-	this->width = 0.0;
-
-	// not removing the callback is required for soundness, as the animation will
-	// be deleted once the callback ends.
-	this->width.setCallbackOnEnd([this](void*) {
-		this->tab_group->bar.entries.remove(*this);
-	}, false);
-}
-
 Hy3TabBar::Hy3TabBar() {
 	this->vertical_pos.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 	this->fade_opacity.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
@@ -118,6 +106,12 @@ Hy3TabBar::Hy3TabBar() {
 
 	this->vertical_pos = 0.0;
 	this->fade_opacity = 1.0;
+}
+
+void Hy3TabBar::beginDestroy() {
+	this->vertical_pos = 1.0;
+	this->fade_opacity = 0.0;
+	this->fade_opacity.setCallbackOnEnd([this](void*) { this->destroy = true; });
 }
 
 void Hy3TabBar::focusNode(Hy3Node* node) {
@@ -180,7 +174,7 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 				entry = *moved;
 				removed_entries.erase(moved);
 			} else {
-				entry = this->entries.emplace(entry, this->group.lock(), **node);
+				entry = this->entries.emplace(entry, *this, **node);
 			}
 		}
 
@@ -190,10 +184,7 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 		}
 
 		// set stats from node data
-		auto* root = *node;
-		while (root->parent != nullptr) root = root->parent;
-		auto* focused = root->getFocusedNode();
-		entry->focused = focused == *node;
+		entry->focused = (*node)->isIndirectlyFocused();
 		entry->urgent = (*node)->isUrgent();
 
 		node = std::next(node);
@@ -202,7 +193,8 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 
 	// initiate remove animations for any removed entries
 	for (auto& entry: removed_entries) {
-		entry->animateRemoval();
+		if (entry->width.goalf() != 0.0) entry->width = 0.0;
+		if (entry->width.fl() == 0.0) this->entries.erase(entry);
 	}
 }
 
@@ -251,27 +243,20 @@ void Hy3TabBar::setSize(Vector2D size) {
 	this->size = size;
 }
 
-Hy3TabGroup::Hy3TabGroup() {
+Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	this->pos.create(AVARTYPE_VECTOR, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
 	this->size.create(AVARTYPE_VECTOR, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
 	this->pos.registerVar();
 	this->size.registerVar();
-}
 
-std::shared_ptr<Hy3TabGroup> Hy3TabGroup::new_(Hy3Node& node) {
-	auto ptr = std::shared_ptr<Hy3TabGroup>(new Hy3TabGroup());
-	ptr->self = ptr;
-	ptr->bar.group = ptr;
-
-	ptr->updateWithGroup(node);
-	ptr->bar.updateAnimations(true);
-	ptr->pos.warp();
-	ptr->size.warp();
-
-	return ptr;
+	this->updateWithGroup(node);
+	this->bar.updateAnimations(true);
+	this->pos.warp();
+	this->size.warp();
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
+	Debug::log(LOG, "updated tab bar for %p", &node);
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
 
@@ -340,8 +325,6 @@ void Hy3TabGroup::renderTabBar() {
 		Vector2D entry_size = { (entry.width.fl() * size.x) - *padding, size.y };
 		if (entry_size.x < 0 || entry_size.y < 0) return;
 
-		entry.prepareTexture(scale, entry_size);
-
 		wlr_box box = {
 			(pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale,
 			scaled_pos.y,
@@ -349,6 +332,7 @@ void Hy3TabGroup::renderTabBar() {
 			scaled_size.y,
 		};
 
+		entry.prepareTexture(scale, box);
 		g_pHyprOpenGL->renderTexture(entry.texture, &box, this->bar.fade_opacity.fl());
 	};
 
