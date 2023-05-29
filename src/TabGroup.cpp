@@ -306,7 +306,7 @@ void Hy3TabGroup::renderTabBar() {
 			if (!g_pCompositor->windowExists(window)) continue;
 
 			auto wpos = window->m_vRealPosition.vec();
-			auto wsize = window->m_vRealPosition.vec();
+			auto wsize = window->m_vRealSize.vec();
 
 			wlr_box window_box = { wpos.x, wpos.y, wsize.x, wsize.y };
 			scaleBox(&window_box, scale);
@@ -318,7 +318,7 @@ void Hy3TabGroup::renderTabBar() {
 
 		glStencilMask(0x00);
 		glStencilFunc(GL_EQUAL, 0, 0xff);
-		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	}
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
