@@ -22,10 +22,11 @@ bool Hy3TabBarEntry::operator==(const Hy3Node& node) const {
 
 void Hy3TabBarEntry::prepareTexture(float scale, Vector2D size) {
 	static const auto* rounding_setting = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
-	auto rounding = *rounding_setting;
 
 	auto width = size.x * scale;
 	auto height = size.y * scale;
+
+	auto rounding = std::min((double) *rounding_setting, std::min(width * 0.5, height * 0.5));
 
 	if (this->needs_redraw
 			|| this->texture.m_iTexID == 0
@@ -302,6 +303,8 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
 		Vector2D entry_size = { (entry.width.fl() * size.x) - *padding, size.y };
+		if (entry_size.x < 0 || entry_size.y < 0) return;
+
 		entry.prepareTexture(scale, entry_size);
 
 		wlr_box box = {
