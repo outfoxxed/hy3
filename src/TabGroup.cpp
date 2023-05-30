@@ -288,7 +288,7 @@ void Hy3TabGroup::renderTabBar() {
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
 	auto scale = monitor->scale;
 
-	auto pos = this->pos.vec();
+	auto pos = this->pos.vec() - monitor->vecPosition;
 	auto size = this->size.vec();
 	pos.y += (this->bar.vertical_pos.fl() * size.y) * (*enter_from_top ? -1 : 1);
 
@@ -331,7 +331,7 @@ void Hy3TabGroup::renderTabBar() {
 		for (auto* window: this->stencil_windows) {
 			if (!g_pCompositor->windowExists(window)) continue;
 
-			auto wpos = window->m_vRealPosition.vec();
+			auto wpos = window->m_vRealPosition.vec() - monitor->vecPosition;
 			auto wsize = window->m_vRealSize.vec();
 
 			wlr_box window_box = { wpos.x, wpos.y, wsize.x, wsize.y };

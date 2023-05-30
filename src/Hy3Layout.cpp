@@ -1618,14 +1618,15 @@ void Hy3Layout::renderHook(void*, std::any data) {
 		auto& tab_groups = g_Hy3Layout->tab_groups;
 		auto entry = tab_groups.begin();
 		while (entry != tab_groups.end()) {
-			if (std::find(rendered_groups.begin(), rendered_groups.end(), &*entry) == rendered_groups.end()) {
+			if (entry->target_window->m_iMonitorID == g_pHyprOpenGL->m_RenderData.pMonitor->ID
+					&& std::find(rendered_groups.begin(), rendered_groups.end(), &*entry) == rendered_groups.end()
+			) {
 				entry->renderTabBar();
 				if (entry->bar.destroy) tab_groups.erase(entry++);
 			}
 
 			entry = std::next(entry);
-		}
-
+			}
 	} break;
 	default:
 		break;
