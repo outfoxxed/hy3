@@ -4,6 +4,8 @@
 
 #include <hyprland/src/Compositor.hpp>
 #include <cairo/cairo.h>
+#include <hyprland/src/render/OpenGL.hpp>
+#include <pixman.h>
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->offset.create(AVARTYPE_FLOAT, -1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
@@ -11,6 +13,11 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 
 	this->offset.registerVar();
 	this->width.registerVar();
+
+	auto update_callback = [this](void*) { this->tab_bar.needs_redraw = true; };
+
+	this->offset.setUpdateCallback(update_callback);
+	this->width.setUpdateCallback(update_callback);
 
 	this->window_title = node.getTitle();
 	this->urgent = node.isUrgent();
@@ -22,6 +29,20 @@ bool Hy3TabBarEntry::operator==(const Hy3Node& node) const {
 
 bool Hy3TabBarEntry::operator==(const Hy3TabBarEntry& entry) const {
 	return this->node == entry.node;
+}
+
+void Hy3TabBarEntry::setFocused(bool focused) {
+	if (this->focused != focused) {
+		this->focused = focused;
+		this->tab_bar.needs_redraw = true;
+	}
+}
+
+void Hy3TabBarEntry::setUrgent(bool urgent) {
+	if (this->urgent != urgent) {
+		this->urgent = urgent;
+		this->tab_bar.needs_redraw = true;
+	}
 }
 
 void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
@@ -96,13 +117,14 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 
 Hy3TabBar::Hy3TabBar() {
 	this->vertical_pos.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
-	this->fade_opacity.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
-	this->focus_start.create(AVARTYPE_FLOAT, 0.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
-	this->focus_end.create(AVARTYPE_FLOAT, 1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), nullptr, AVARDAMAGE_NONE);
+	this->fade_opacity.create(AVARTYPE_FLOAT, 0.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), nullptr, AVARDAMAGE_NONE);
 	this->vertical_pos.registerVar();
 	this->fade_opacity.registerVar();
-	this->focus_start.registerVar();
-	this->focus_end.registerVar();
+
+	auto update_callback = [this](void*) { this->needs_redraw = true; };
+
+	this->vertical_pos.setUpdateCallback(update_callback);
+	this->fade_opacity.setUpdateCallback(update_callback);
 
 	this->vertical_pos = 0.0;
 	this->fade_opacity = 1.0;
@@ -112,22 +134,6 @@ void Hy3TabBar::beginDestroy() {
 	this->vertical_pos = 1.0;
 	this->fade_opacity = 0.0;
 	this->fade_opacity.setCallbackOnEnd([this](void*) { this->destroy = true; });
-}
-
-void Hy3TabBar::focusNode(Hy3Node* node) {
-	this->focused_node = node;
-
-	if (this->focused_node == nullptr) {
-		this->focus_start = 0.0;
-		this->focus_end = 1.0;
-	} else {
-		auto entry = std::find(this->entries.begin(), this->entries.end(), *node);
-
-		if (entry != this->entries.end()) {
-			this->focus_start = entry->offset.goalf();
-			this->focus_end = entry->offset.goalf() + entry->width.goalf();
-		}
-	}
 }
 
 void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
@@ -184,8 +190,8 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 		}
 
 		// set stats from node data
-		entry->focused = (*node)->isIndirectlyFocused();
-		entry->urgent = (*node)->isUrgent();
+		entry->setFocused((*node)->isIndirectlyFocused());
+		entry->setUrgent((*node)->isUrgent());
 
 		node = std::next(node);
 		if (entry != this->entries.end()) entry = std::next(entry);
@@ -288,7 +294,27 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto scaled_pos = Vector2D(std::round(pos.x * scale), std::round(pos.y * scale));
 	auto scaled_size = Vector2D(std::round(size.x * scale), std::round(size.y * scale));
-	auto box = wlr_box { scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y };
+	wlr_box box = { scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y };
+
+	this->bar.needs_redraw = true;
+	/*if (!this->bar.needs_redraw) {
+		pixman_region32 damage;
+		pixman_region32_init(&damage);
+		pixman_region32_intersect_rect(&damage, g_pHyprOpenGL->m_RenderData.pDamage, box.x, box.y, box.width, box.height);
+		this->bar.needs_redraw = pixman_region32_not_empty(&damage);
+		pixman_region32_fini(&damage);
+	}*/
+
+	if (this->bar.destroy || this->last_pos != scaled_pos || this->last_size != scaled_size) {
+		wlr_box damage_box = { this->last_pos.x, this->last_pos.y, this->last_size.x, this->last_size.y };
+		monitor->addDamage(&damage_box);
+		this->last_pos = scaled_pos;
+		this->last_size = scaled_size;
+		this->bar.needs_redraw = true;
+	}
+
+	if (!this->bar.needs_redraw || this->bar.destroy) return;
+	this->bar.needs_redraw = false;
 
 	this->bar.setSize(scaled_size);
 
@@ -354,7 +380,7 @@ void Hy3TabGroup::renderTabBar() {
 		glStencilFunc(GL_ALWAYS, 1, 0xff);
 	}
 
-	g_pHyprRenderer->damageBox(&box);
+	monitor->addDamage(&box);
 }
 
 void findOverlappingWindows(Hy3Node& node, float height, std::vector<CWindow*>& windows) {

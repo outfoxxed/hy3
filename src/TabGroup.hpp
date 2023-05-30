@@ -30,19 +30,21 @@ struct Hy3TabBarEntry {
 	bool operator==(const Hy3Node&) const;
 	bool operator==(const Hy3TabBarEntry&) const;
 
+	void setFocused(bool);
+	void setUrgent(bool);
 	void prepareTexture(float, wlr_box&);
 };
 
 class Hy3TabBar {
 public:
 	bool destroy = false;
+	bool needs_redraw = true;
 	CAnimatedVariable vertical_pos;
 	CAnimatedVariable fade_opacity;
 
 	Hy3TabBar();
 	void beginDestroy();
 
-	void focusNode(Hy3Node*);
 	void updateNodeList(std::list<Hy3Node*>& nodes);
 	void updateAnimations(bool warp = false);
 	void setSize(Vector2D);
@@ -50,10 +52,6 @@ public:
 	std::list<Hy3TabBarEntry> entries;
 private:
 	Hy3Node* focused_node = nullptr;
-	CAnimatedVariable focus_opacity;
-	CAnimatedVariable focus_start;
-	CAnimatedVariable focus_end;
-
 	Vector2D size;
 
 	// Tab bar entries take a reference to `this`.
@@ -78,6 +76,8 @@ public:
 
 private:
 	std::vector<CWindow*> stencil_windows;
+	Vector2D last_pos;
+	Vector2D last_size;
 
 	Hy3TabGroup();
 

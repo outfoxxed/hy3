@@ -1588,36 +1588,46 @@ void renderTabsRecursive(Hy3Node& node);
 void renderTabs(Hy3Node& node);
 
 void Hy3Layout::renderHook(void*, std::any data) {
+	static bool rendering_normally = false;
+	static std::vector<Hy3TabGroup*> rendered_groups;
+
 	auto render_stage = std::any_cast<eRenderStage>(data);
-	if (render_stage == RENDER_POST_WINDOW) {
+
+	switch (render_stage) {
+	case RENDER_PRE_WINDOWS:
+		rendering_normally = true;
+		rendered_groups.clear();
+		break;
+	case RENDER_POST_WINDOW: {
+		if (!rendering_normally) break;
+
 		auto& tab_groups = g_Hy3Layout->tab_groups;
 		auto entry = tab_groups.begin();
 		while (entry != tab_groups.end()) {
-			if (entry->bar.destroy) tab_groups.erase(entry++);
-			else if (entry->target_window == g_pHyprOpenGL->m_pCurrentWindow) entry++->renderTabBar();
-			else entry++;
-		}
-	}
-}
-
-void renderTabsRecursive(Hy3Node& node) {
-	if (node.data.type == Hy3NodeData::Group) {
-		for (auto* child: node.data.as_group.children) {
-			if (node.data.as_group.layout != Hy3GroupLayout::Tabbed
-					|| node.data.as_group.focused_child == child)
-			{
-				renderTabsRecursive(*child);
+			if (entry->target_window == g_pHyprOpenGL->m_pCurrentWindow && std::find(rendered_groups.begin(), rendered_groups.end(), &*entry) == rendered_groups.end()) {
+				entry->renderTabBar();
+				rendered_groups.push_back(&*entry);
 			}
+
+			entry = std::next(entry);
+		}
+	} break;
+	case RENDER_POST_WINDOWS: {
+		rendering_normally = false;
+
+		auto& tab_groups = g_Hy3Layout->tab_groups;
+		auto entry = tab_groups.begin();
+		while (entry != tab_groups.end()) {
+			if (std::find(rendered_groups.begin(), rendered_groups.end(), &*entry) == rendered_groups.end()) {
+				entry->renderTabBar();
+				if (entry->bar.destroy) tab_groups.erase(entry++);
+			}
+
+			entry = std::next(entry);
 		}
 
-		if (node.data.as_group.layout == Hy3GroupLayout::Tabbed) {
-			renderTabs(node);
-		}
+	} break;
+	default:
+		break;
 	}
-}
-
-void renderTabs(Hy3Node& node) {
-	auto& group = node.data.as_group;
-
-	group.tab_bar->renderTabBar();
 }
