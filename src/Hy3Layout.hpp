@@ -139,6 +139,7 @@ public:
 	Hy3Node* getWorkspaceFocusedNode(const int&);
 
 	static void renderHook(void*, std::any);
+	static void tickHook(void*, std::any);
 
 	std::list<Hy3Node> nodes;
 	std::list<Hy3TabGroup> tab_groups;

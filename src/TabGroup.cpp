@@ -14,7 +14,7 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	this->offset.registerVar();
 	this->width.registerVar();
 
-	auto update_callback = [this](void*) { this->tab_bar.needs_redraw = true; };
+	auto update_callback = [this](void*) { this->tab_bar.dirty = true; };
 
 	this->offset.setUpdateCallback(update_callback);
 	this->width.setUpdateCallback(update_callback);
@@ -34,14 +34,14 @@ bool Hy3TabBarEntry::operator==(const Hy3TabBarEntry& entry) const {
 void Hy3TabBarEntry::setFocused(bool focused) {
 	if (this->focused != focused) {
 		this->focused = focused;
-		this->tab_bar.needs_redraw = true;
+		this->tab_bar.dirty = true;
 	}
 }
 
 void Hy3TabBarEntry::setUrgent(bool urgent) {
 	if (this->urgent != urgent) {
 		this->urgent = urgent;
-		this->tab_bar.needs_redraw = true;
+		this->tab_bar.dirty = true;
 	}
 }
 
@@ -121,7 +121,7 @@ Hy3TabBar::Hy3TabBar() {
 	this->vertical_pos.registerVar();
 	this->fade_opacity.registerVar();
 
-	auto update_callback = [this](void*) { this->needs_redraw = true; };
+	auto update_callback = [this](void*) { this->dirty = true; };
 
 	this->vertical_pos.setUpdateCallback(update_callback);
 	this->fade_opacity.setUpdateCallback(update_callback);
@@ -280,6 +280,31 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 	}
 }
 
+void Hy3TabGroup::damageIfRequired() {
+	static const auto* enter_from_top = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
+
+	auto pos = this->pos.vec();
+	auto size = this->size.vec();
+	pos.y += (this->bar.vertical_pos.fl() * size.y) * (*enter_from_top ? -1 : 1);
+
+	if (this->last_pos != pos || this->last_size != size) {
+		wlr_box damage_box = { this->last_pos.x, this->last_pos.y, this->last_size.x, this->last_size.y };
+		g_pHyprRenderer->damageBox(&damage_box);
+
+		this->bar.damaged = true;
+		this->last_pos = pos;
+		this->last_size = size;
+	}
+
+	if (this->bar.destroy || this->bar.dirty) {
+		wlr_box damage_box = { pos.x, pos.y, size.x, size.y };
+		g_pHyprRenderer->damageBox(&damage_box);
+
+		this->bar.damaged = true;
+		this->bar.dirty = false;
+	}
+}
+
 void Hy3TabGroup::renderTabBar() {
 	static const auto* window_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
 	static const auto* enter_from_top = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
@@ -296,25 +321,16 @@ void Hy3TabGroup::renderTabBar() {
 	auto scaled_size = Vector2D(std::round(size.x * scale), std::round(size.y * scale));
 	wlr_box box = { scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y };
 
-	this->bar.needs_redraw = true;
-	/*if (!this->bar.needs_redraw) {
+	if (!this->bar.damaged) {
 		pixman_region32 damage;
 		pixman_region32_init(&damage);
 		pixman_region32_intersect_rect(&damage, g_pHyprOpenGL->m_RenderData.pDamage, box.x, box.y, box.width, box.height);
-		this->bar.needs_redraw = pixman_region32_not_empty(&damage);
+		this->bar.damaged = pixman_region32_not_empty(&damage);
 		pixman_region32_fini(&damage);
-	}*/
-
-	if (this->bar.destroy || this->last_pos != scaled_pos || this->last_size != scaled_size) {
-		wlr_box damage_box = { this->last_pos.x, this->last_pos.y, this->last_size.x, this->last_size.y };
-		monitor->addDamage(&damage_box);
-		this->last_pos = scaled_pos;
-		this->last_size = scaled_size;
-		this->bar.needs_redraw = true;
 	}
 
-	if (!this->bar.needs_redraw || this->bar.destroy) return;
-	this->bar.needs_redraw = false;
+	if (!this->bar.damaged || this->bar.destroy) return;
+	this->bar.damaged = false;
 
 	this->bar.setSize(scaled_size);
 
@@ -379,8 +395,6 @@ void Hy3TabGroup::renderTabBar() {
 		glStencilMask(0xff);
 		glStencilFunc(GL_ALWAYS, 1, 0xff);
 	}
-
-	monitor->addDamage(&box);
 }
 
 void findOverlappingWindows(Hy3Node& node, float height, std::vector<CWindow*>& windows) {

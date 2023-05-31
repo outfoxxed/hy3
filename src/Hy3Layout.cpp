@@ -1229,6 +1229,7 @@ void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
 }
 
 std::unique_ptr<HOOK_CALLBACK_FN> renderHookPtr = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::renderHook);
+std::unique_ptr<HOOK_CALLBACK_FN> tickHookPtr = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::tickHook);
 
 void Hy3Layout::onEnable() {
 	for (auto &window : g_pCompositor->m_vWindows) {
@@ -1242,11 +1243,13 @@ void Hy3Layout::onEnable() {
 	}
 
 	HyprlandAPI::registerCallbackStatic(PHANDLE, "render", renderHookPtr.get());
+	HyprlandAPI::registerCallbackStatic(PHANDLE, "tick", tickHookPtr.get());
 	selection_hook::enable();
 }
 
 void Hy3Layout::onDisable() {
 	HyprlandAPI::unregisterCallback(PHANDLE, renderHookPtr.get());
+	HyprlandAPI::unregisterCallback(PHANDLE, tickHookPtr.get());
 	selection_hook::disable();
 	this->nodes.clear();
 }
@@ -1531,6 +1534,57 @@ bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 	}
 }
 
+void Hy3Layout::renderHook(void*, std::any data) {
+	static bool rendering_normally = false;
+	static std::vector<Hy3TabGroup*> rendered_groups;
+
+	auto render_stage = std::any_cast<eRenderStage>(data);
+
+	switch (render_stage) {
+	case RENDER_PRE_WINDOWS:
+		rendering_normally = true;
+		rendered_groups.clear();
+		break;
+	case RENDER_POST_WINDOW:
+		if (!rendering_normally) break;
+
+		for (auto& entry: g_Hy3Layout->tab_groups) {
+			if (entry.target_window == g_pHyprOpenGL->m_pCurrentWindow
+					&& std::find(rendered_groups.begin(), rendered_groups.end(), &entry) == rendered_groups.end()
+			) {
+				entry.renderTabBar();
+				rendered_groups.push_back(&entry);
+			}
+		}
+
+		break;
+	case RENDER_POST_WINDOWS:
+		rendering_normally = false;
+
+		for (auto& entry: g_Hy3Layout->tab_groups) {
+			if (entry.target_window->m_iMonitorID == g_pHyprOpenGL->m_RenderData.pMonitor->ID
+					&& std::find(rendered_groups.begin(), rendered_groups.end(), &entry) == rendered_groups.end()
+			) {
+				entry.renderTabBar();
+			}
+		}
+
+		break;
+	default:
+		break;
+	}
+}
+
+void Hy3Layout::tickHook(void*, std::any) {
+	auto& tab_groups = g_Hy3Layout->tab_groups;
+	auto entry = tab_groups.begin();
+	while (entry != tab_groups.end()) {
+		entry->damageIfRequired();
+		if (entry->bar.destroy) tab_groups.erase(entry++);
+		else entry = std::next(entry);
+	}
+}
+
 std::string Hy3Node::debugNode() {
 	std::stringstream buf;
 	std::string addr = "0x" + std::to_string((size_t)this);
@@ -1579,56 +1633,4 @@ std::string Hy3Node::debugNode() {
 	}
 
 	return buf.str();
-}
-
-// Recursively render tabs on all tab groups.
-void renderTabsRecursive(Hy3Node& node);
-
-// Render tabs for the provided node, blindly assuming it is a tab group.
-void renderTabs(Hy3Node& node);
-
-void Hy3Layout::renderHook(void*, std::any data) {
-	static bool rendering_normally = false;
-	static std::vector<Hy3TabGroup*> rendered_groups;
-
-	auto render_stage = std::any_cast<eRenderStage>(data);
-
-	switch (render_stage) {
-	case RENDER_PRE_WINDOWS:
-		rendering_normally = true;
-		rendered_groups.clear();
-		break;
-	case RENDER_POST_WINDOW: {
-		if (!rendering_normally) break;
-
-		auto& tab_groups = g_Hy3Layout->tab_groups;
-		auto entry = tab_groups.begin();
-		while (entry != tab_groups.end()) {
-			if (entry->target_window == g_pHyprOpenGL->m_pCurrentWindow && std::find(rendered_groups.begin(), rendered_groups.end(), &*entry) == rendered_groups.end()) {
-				entry->renderTabBar();
-				rendered_groups.push_back(&*entry);
-			}
-
-			entry = std::next(entry);
-		}
-	} break;
-	case RENDER_POST_WINDOWS: {
-		rendering_normally = false;
-
-		auto& tab_groups = g_Hy3Layout->tab_groups;
-		auto entry = tab_groups.begin();
-		while (entry != tab_groups.end()) {
-			if (entry->target_window->m_iMonitorID == g_pHyprOpenGL->m_RenderData.pMonitor->ID
-					&& std::find(rendered_groups.begin(), rendered_groups.end(), &*entry) == rendered_groups.end()
-			) {
-				entry->renderTabBar();
-				if (entry->bar.destroy) tab_groups.erase(entry++);
-			}
-
-			entry = std::next(entry);
-			}
-	} break;
-	default:
-		break;
-	}
 }

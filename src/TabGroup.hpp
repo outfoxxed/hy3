@@ -38,7 +38,8 @@ struct Hy3TabBarEntry {
 class Hy3TabBar {
 public:
 	bool destroy = false;
-	bool needs_redraw = true;
+	bool dirty = true;
+	bool damaged = true;
 	CAnimatedVariable vertical_pos;
 	CAnimatedVariable fade_opacity;
 
@@ -71,6 +72,7 @@ public:
 
 	// update tab bar with node position and data. UB if node is not a group.
 	void updateWithGroup(Hy3Node&);
+	void damageIfRequired();
 	// render the scaled tab bar on the current monitor.
 	void renderTabBar();
 
