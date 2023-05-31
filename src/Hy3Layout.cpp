@@ -130,9 +130,12 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			errorNotif();
 		}
 
+		if (child->data.type == Hy3NodeData::Window) {
+			child->data.as_window->setHidden(false);
+		}
+
 		double distort_out;
 		double distort_in;
-
 
 		if (gaps_in > gaps_out) {
 			distort_out = *gaps_out - 1.0;
@@ -187,7 +190,13 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 	double offset = 0;
 
-	for(auto child: group->children) {
+	if (group->layout == Hy3GroupLayout::Tabbed && group->focused_child != nullptr) {
+		group->focused_child->setHidden(false);
+	}
+
+	bool hid_focused = false;
+
+	for(auto* child: group->children) {
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
 			child->position.x = this->position.x + offset;
@@ -195,7 +204,8 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			offset += child->size.x;
 			child->position.y = this->position.y;
 			child->size.y = this->size.y;
-			//child->setHidden(false);
+			child->setHidden(false);
+			child->recalcSizePosRecursive(force);
 			break;
 		case Hy3GroupLayout::SplitV:
 			child->position.y = this->position.y + offset;
@@ -203,19 +213,22 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			offset += child->size.y;
 			child->position.x = this->position.x;
 			child->size.x = this->size.x;
-			//child->setHidden(false);
+			child->setHidden(false);
+			child->recalcSizePosRecursive(force);
 			break;
 		case Hy3GroupLayout::Tabbed:
 			child->position.y = this->position.y + tab_height_offset;
 			child->size.y = this->size.y - tab_height_offset;
 			child->position.x = this->position.x;
 			child->size.x = this->size.x;
-			//child->setHidden(group->focused_child != child);
+			bool hidden = group->focused_child != child;
+			Debug::log(LOG, "set %p hidden: %d", child, hidden);
+			if (child->isIndirectlyFocused()) hid_focused = true;
+			child->setHidden(hidden);
+			if (!hidden) child->recalcSizePosRecursive(force);
 			break;
-		}
-
-		child->recalcSizePosRecursive(force);
-	}
+    }
+  }
 
 	this->updateTabBar();
 }
@@ -332,12 +345,35 @@ void Hy3Node::focus() {
 
 	switch (this->data.type) {
 	case Hy3NodeData::Window:
+		this->data.as_window->setHidden(false);
 		g_pCompositor->focusWindow(this->data.as_window);
 		break;
 	case Hy3NodeData::Group:
 		g_pCompositor->focusWindow(nullptr);
 		this->raiseToTop();
 		break;
+	}
+}
+
+bool Hy3Node::focusWindow() {
+	switch (this->data.type) {
+	case Hy3NodeData::Window:
+	  this->markFocused();
+		g_pCompositor->focusWindow(this->data.as_window);
+
+		return true;
+	case Hy3NodeData::Group:
+		if (this->data.as_group.layout == Hy3GroupLayout::Tabbed) {
+			if (this->data.as_group.focused_child != nullptr) {
+				return this->data.as_group.focused_child->focusWindow();
+			}
+		} else {
+			for (auto* node: this->data.as_group.children) {
+				if (node->focusWindow()) break;
+			}
+		}
+
+		return false;
 	}
 }
 
@@ -1309,7 +1345,7 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
 
 	Hy3Node* target;
 	if ((target = this->shiftOrGetFocus(*node, direction, false, false))) {
-		g_pCompositor->focusWindow(target->data.as_window);
+		target->focus();
 	}
 }
 
@@ -1498,7 +1534,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 			target_parent = target_parent->parent;
 		}
 
-		node.markFocused();
+		node.focus();
 
 		if (target_parent != target_group && target_parent != nullptr)
 			target_parent->recalcSizePosRecursive();

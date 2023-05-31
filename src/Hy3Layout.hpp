@@ -78,6 +78,7 @@ struct Hy3Node {
 	std::string debugNode();
 	void markFocused();
 	void focus();
+	bool focusWindow();
 	void raiseToTop();
 	Hy3Node* getFocusedNode();
 	void updateDecos();
