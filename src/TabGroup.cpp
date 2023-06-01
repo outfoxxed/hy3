@@ -311,15 +311,27 @@ void Hy3TabGroup::renderTabBar() {
 	static const auto* padding = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
+	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
 	auto scale = monitor->scale;
 
+	auto monitor_size = monitor->vecSize;
 	auto pos = this->pos.vec() - monitor->vecPosition;
 	auto size = this->size.vec();
 	pos.y += (this->bar.vertical_pos.fl() * size.y) * (*enter_from_top ? -1 : 1);
 
+	if (workspace != nullptr) {
+		pos = pos + workspace->m_vRenderOffset.vec();
+	}
+
 	auto scaled_pos = Vector2D(std::round(pos.x * scale), std::round(pos.y * scale));
 	auto scaled_size = Vector2D(std::round(size.x * scale), std::round(size.y * scale));
 	wlr_box box = { scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y };
+
+	if (scaled_pos.x > monitor_size.x
+			|| scaled_pos.y > monitor_size.y
+			|| scaled_pos.x + scaled_size.x < 0
+			|| scaled_pos.y + scaled_size.y < 0)
+		return;
 
 	if (!this->bar.damaged) {
 		pixman_region32 damage;

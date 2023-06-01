@@ -586,6 +586,7 @@ void Hy3Node::updateTabBar() {
 			FindTopWindowInNodeResult result;
 			findTopWindowInNode(*this, result);
 			group.tab_bar->target_window = result.window;
+			if (result.window != nullptr) group.tab_bar->workspace_id = result.window->m_iWorkspaceID;
 		} else if (group.tab_bar != nullptr) {
 			group.tab_bar->bar.beginDestroy();
 			group.tab_bar = nullptr;

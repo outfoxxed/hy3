@@ -63,6 +63,7 @@ private:
 class Hy3TabGroup {
 public:
 	CWindow* target_window = nullptr;
+	int workspace_id = -1;
 	Hy3TabBar bar;
 	CAnimatedVariable pos;
 	CAnimatedVariable size;
