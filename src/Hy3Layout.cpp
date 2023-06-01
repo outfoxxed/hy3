@@ -1473,7 +1473,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 
 				bool shift_after = false;
 
-				if (shiftMatchesLayout(group_data.layout, direction)) {
+				if (!shift && group_data.layout == Hy3GroupLayout::Tabbed && group_data.focused_child != nullptr) {
+					iter = std::find(group_data.children.begin(), group_data.children.end(), group_data.focused_child);
+				} else if (shiftMatchesLayout(group_data.layout, direction)) {
 					// if the group has the same orientation as movement pick the last/first child based
 					// on movement direction
 					if (shiftIsForward(direction)) iter = group_data.children.begin();
