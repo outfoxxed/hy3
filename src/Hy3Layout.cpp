@@ -1617,7 +1617,7 @@ void Hy3Layout::tickHook(void*, std::any) {
 	auto& tab_groups = g_Hy3Layout->tab_groups;
 	auto entry = tab_groups.begin();
 	while (entry != tab_groups.end()) {
-		entry->damageIfRequired();
+		entry->tick();
 		if (entry->bar.destroy) tab_groups.erase(entry++);
 		else entry = std::next(entry);
 	}

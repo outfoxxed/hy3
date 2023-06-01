@@ -133,6 +133,7 @@ Hy3TabBar::Hy3TabBar() {
 void Hy3TabBar::beginDestroy() {
 	this->vertical_pos = 1.0;
 	this->fade_opacity = 0.0;
+	this->destroying = true;
 	this->fade_opacity.setCallbackOnEnd([this](void*) { this->destroy = true; });
 }
 
@@ -280,8 +281,17 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 	}
 }
 
-void Hy3TabGroup::damageIfRequired() {
+void Hy3TabGroup::tick() {
 	static const auto* enter_from_top = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
+	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
+
+	if (!this->bar.destroying && workspace != nullptr) {
+		if (workspace->m_bHasFullscreenWindow) {
+			if (this->bar.fade_opacity.goalf() != 0.0) this->bar.fade_opacity = 0.0;
+		} else {
+			if (this->bar.fade_opacity.goalf() != 1.0) this->bar.fade_opacity = 1.0;
+		}
+	}
 
 	auto pos = this->pos.vec();
 	auto size = this->size.vec();
@@ -375,9 +385,11 @@ void Hy3TabGroup::renderTabBar() {
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	}
 
+	auto fade_opacity = this->bar.fade_opacity.fl() * (workspace == nullptr ? 1.0 : workspace->m_fAlpha.fl());
+
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
 		Vector2D entry_size = { (entry.width.fl() * size.x) - *padding, size.y };
-		if (entry_size.x < 0 || entry_size.y < 0) return;
+		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
 
 		wlr_box box = {
 			(pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale,
@@ -387,7 +399,7 @@ void Hy3TabGroup::renderTabBar() {
 		};
 
 		entry.prepareTexture(scale, box);
-		g_pHyprOpenGL->renderTexture(entry.texture, &box, this->bar.fade_opacity.fl());
+		g_pHyprOpenGL->renderTexture(entry.texture, &box, fade_opacity);
 	};
 
 	for (auto& entry: this->bar.entries) {
