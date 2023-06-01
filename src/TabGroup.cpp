@@ -390,14 +390,15 @@ void Hy3TabGroup::renderTabBar() {
 	auto fade_opacity = this->bar.fade_opacity.fl() * (workspace == nullptr ? 1.0 : workspace->m_fAlpha.fl());
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
-		Vector2D entry_size = { (entry.width.fl() * size.x) - *padding, size.y };
+		Vector2D entry_pos = { (pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale, scaled_pos.y };
+		Vector2D entry_size = { ((entry.width.fl() * size.x) - *padding) * scale, scaled_size.y };
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
 
 		wlr_box box = {
-			(pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale,
-			scaled_pos.y,
-			entry_size.x * scale,
-			scaled_size.y,
+			entry_pos.x,
+			entry_pos.y,
+			entry_size.x,
+			entry_size.y,
 		};
 
 		entry.prepareTexture(scale, box);
