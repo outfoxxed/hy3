@@ -191,7 +191,9 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 		}
 
 		// set stats from node data
-		entry->setFocused((*node)->isIndirectlyFocused());
+		auto* parent = (*node)->parent;
+		auto& parent_group = parent->data.as_group;
+		entry->setFocused(parent_group.focused_child == *node || (parent_group.group_focused && parent->isIndirectlyFocused()));
 		entry->setUrgent((*node)->isUrgent());
 
 		node = std::next(node);
