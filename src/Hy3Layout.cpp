@@ -882,11 +882,9 @@ void Hy3Layout::onWindowFocusChange(CWindow* window) {
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
 
-	if (node->parent != nullptr && node->parent->data.as_group.layout == Hy3GroupLayout::Tabbed) {
-		node->parent->recalcSizePosRecursive();
-	}
-
 	node->markFocused();
+	while (node->parent != nullptr) node = node->parent;
+	node->recalcSizePosRecursive();
 }
 
 bool Hy3Layout::isWindowTiled(CWindow* window) {
@@ -1347,6 +1345,8 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
 	Hy3Node* target;
 	if ((target = this->shiftOrGetFocus(*node, direction, false, false))) {
 		target->focus();
+		while (target->parent != nullptr) target = target->parent;
+		target->recalcSizePosRecursive();
 	}
 }
 
@@ -1383,7 +1383,6 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, boo
 		if (break_parent == nullptr) return nullptr;
 
 		auto& group = break_parent->data.as_group; // must be a group in order to be a parent
-
 
 		if (shiftMatchesLayout(group.layout, direction)) {
 			// group has the correct orientation
