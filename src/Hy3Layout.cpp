@@ -225,7 +225,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			Debug::log(LOG, "set %p hidden: %d", child, hidden);
 			if (child->isIndirectlyFocused()) hid_focused = true;
 			child->setHidden(hidden);
-			child->recalcSizePosRecursive(force);
+			if (!hidden) child->recalcSizePosRecursive(force);
 			break;
     }
   }
