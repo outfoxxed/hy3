@@ -215,6 +215,7 @@ void Hy3TabBar::updateAnimations(bool warp) {
 
 	float entry_width = active_entries == 0 ? 0.0 : 1.0 / active_entries;
 	float offset = 0.0;
+	float real_offset = 0.0;
 
 	auto entry = this->entries.begin();
 	while (entry != this->entries.end()) {
@@ -230,11 +231,7 @@ void Hy3TabBar::updateAnimations(bool warp) {
 			auto warp_init = entry->offset.goalf() == -1.0;
 
 			if (warp_init) {
-				float start_offset = offset;
-				if (entry == std::prev(this->entries.end())) start_offset += entry_width;
-				else if (entry != this->entries.begin()) start_offset += (entry_width * 0.5);
-
-				entry->offset.setValueAndWarp(start_offset);
+				entry->offset.setValueAndWarp(real_offset);
 				entry->width.setValueAndWarp(0.0);
 			}
 
@@ -243,6 +240,7 @@ void Hy3TabBar::updateAnimations(bool warp) {
 		}
 
 		offset += entry->width.goalf();
+		real_offset += entry->width.fl();
 		entry = std::next(entry);
 	}
 }
