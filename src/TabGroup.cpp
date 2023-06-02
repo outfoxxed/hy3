@@ -267,10 +267,12 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 	Debug::log(LOG, "updated tab bar for %p", &node);
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
 	static const auto* bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
 
-	auto tpos = node.position + Vector2D(*gaps_in, *gaps_in);
-	auto tsize = Vector2D(node.size.x - *gaps_in * 2, *bar_height);
+	auto gaps = node.parent == nullptr ? *gaps_out : *gaps_in;
+	auto tpos = node.position + Vector2D(gaps, gaps);
+	auto tsize = Vector2D(node.size.x - gaps * 2, *bar_height);
 
 	this->hidden = node.hidden;
 	if (this->pos.goalv() != tpos) this->pos = tpos;

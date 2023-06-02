@@ -112,8 +112,17 @@ bool Hy3Node::operator==(const Hy3Node& rhs) const {
 void Hy3Node::recalcSizePosRecursive(bool force) {
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+
+	int outer_gaps = 0;
+	if (this->parent == nullptr) {
+		outer_gaps = *gaps_out - *gaps_in;
+	}
+
+	auto tpos = this->position + Vector2D(outer_gaps, outer_gaps);
+	auto tsize = this->size - Vector2D(outer_gaps * 2, outer_gaps * 2);
+
 	static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
-	double tab_height_offset = *gaps_in * 2 + *tab_bar_height;
+	double tab_height_offset = *gaps_in + *tab_bar_height;
 
 	if (this->data.type != Hy3NodeData::Group) {
 		this->data.as_window->setHidden(this->hidden);
@@ -131,37 +140,24 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			errorNotif();
 		}
 
-		double distort_out;
-		double distort_in;
-
-		if (gaps_in > gaps_out) {
-			distort_out = *gaps_out - 1.0;
-		} else {
-			distort_out = *gaps_in - 1.0;
-		}
-
-		if (distort_out < 0) distort_out = 0.0;
-
-		distort_in = *gaps_in * 2;
-
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
-			child->position.x = this->position.x - distort_out;
-			child->size.x = this->size.x - distort_in;
-			child->position.y = this->position.y;
-			child->size.y = this->size.y;
+			child->position.x = tpos.x;
+			child->size.x = tsize.x;
+			child->position.y = tpos.y;
+			child->size.y = tsize.y;
 			break;
 		case Hy3GroupLayout::SplitV:
-			child->position.y = this->position.y - distort_out;
-			child->size.y = this->size.y - distort_in;
-			child->position.x = this->position.x;
-			child->size.x = this->size.x;
+			child->position.y = tpos.y;
+			child->size.y = tsize.y;
+			child->position.x = tpos.x;
+			child->size.x = tsize.x;
 			break;
 		case Hy3GroupLayout::Tabbed:
-			child->position.y = this->position.y + tab_height_offset;
-			child->size.y = this->size.y - tab_height_offset;
-			child->position.x = this->position.x;
-			child->size.x = this->size.x;
+			child->position.y = tpos.y + tab_height_offset;
+			child->size.y = tsize.y - tab_height_offset;
+			child->position.x = tpos.x;
+			child->size.x = tsize.x;
 			break;
 		}
 
@@ -176,17 +172,16 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 	int constraint;
 	switch (group->layout) {
 	case Hy3GroupLayout::SplitH:
-		constraint = this->size.x;
+		constraint = tsize.x;
 		break;
 	case Hy3GroupLayout::SplitV:
-		constraint = this->size.y;
+		constraint = tsize.y;
 		break;
 	case Hy3GroupLayout::Tabbed:
 		break;
 	}
 
 	double ratio_mul = group->layout != Hy3GroupLayout::Tabbed ? group->children.empty() ? 0 : constraint / group->children.size() : 0;
-
 	double offset = 0;
 
 	if (group->layout == Hy3GroupLayout::Tabbed && group->focused_child != nullptr) {
@@ -196,28 +191,28 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 	for(auto* child: group->children) {
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
-			child->position.x = this->position.x + offset;
+			child->position.x = tpos.x + offset;
 			child->size.x = child->size_ratio * ratio_mul;
 			offset += child->size.x;
-			child->position.y = this->position.y;
-			child->size.y = this->size.y;
+			child->position.y = tpos.y;
+			child->size.y = tsize.y;
 			child->setHidden(this->hidden);
 			child->recalcSizePosRecursive(force);
 			break;
 		case Hy3GroupLayout::SplitV:
-			child->position.y = this->position.y + offset;
+			child->position.y = tpos.y + offset;
 			child->size.y = child->size_ratio * ratio_mul;
 			offset += child->size.y;
-			child->position.x = this->position.x;
-			child->size.x = this->size.x;
+			child->position.x = tpos.x;
+			child->size.x = tsize.x;
 			child->setHidden(this->hidden);
 			child->recalcSizePosRecursive(force);
 			break;
 		case Hy3GroupLayout::Tabbed:
-			child->position.y = this->position.y + tab_height_offset;
-			child->size.y = this->size.y - tab_height_offset;
-			child->position.x = this->position.x;
-			child->size.x = this->size.x;
+			child->position.y = tpos.y + tab_height_offset;
+			child->size.y = tsize.y - tab_height_offset;
+			child->position.x = tpos.x;
+			child->size.x = tsize.x;
 			bool hidden = this->hidden || group->focused_child != child;
 			child->setHidden(hidden);
 			child->recalcSizePosRecursive(force);
@@ -659,15 +654,9 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 		return;
 	}
 
-	// for gaps outer
-	const bool display_left   = STICKS(node->position.x, monitor->vecPosition.x + monitor->vecReservedTopLeft.x);
-	const bool display_right  = STICKS(node->position.x + node->size.x, monitor->vecPosition.x + monitor->vecSize.x - monitor->vecReservedBottomRight.x);
-	const bool display_top    = STICKS(node->position.y, monitor->vecPosition.y + monitor->vecReservedTopLeft.y);
-	const bool display_bottom = STICKS(node->position.y + node->size.y, monitor->vecPosition.y + monitor->vecSize.y - monitor->vecReservedBottomRight.y);
-
 	static const auto* border_size           = &HyprlandAPI::getConfigValue(PHANDLE, "general:border_size")->intValue;
 	static const auto* gaps_in               = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
-	static const auto* gaps_out              = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+	//static const auto* gaps_out              = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
 	static const auto* single_window_no_gaps = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only")->intValue;
 
 	if (!g_pCompositor->windowExists(window) || !window->m_bIsMapped) {
@@ -705,18 +694,10 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 		window->m_sSpecialRenderData.border = true;
 		window->m_sSpecialRenderData.decorate = true;
 
-		Vector2D offset_topleft(
-			display_left ? *gaps_out : *gaps_in,
-			display_top ? *gaps_out : *gaps_in
-		);
+		Vector2D gaps_offset(*gaps_in, *gaps_in);
 
-		Vector2D offset_bottomright(
-			display_right ? *gaps_out : *gaps_in,
-			display_bottom ? *gaps_out : *gaps_in
-		);
-
-		calcPos = calcPos + offset_topleft;
-		calcSize = calcSize - offset_topleft - offset_bottomright;
+		calcPos = calcPos + gaps_offset;
+		calcSize = calcSize - (gaps_offset * 2);
 
 		const auto reserved_area = window->getFullWindowReservedArea();
 		calcPos = calcPos + reserved_area.topLeft;
@@ -1093,6 +1074,8 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 		inner_node->size_ratio += ratio_mod;
 		neighbor->size_ratio -= ratio_mod;
 	} break;
+	case Hy3GroupLayout::Tabbed:
+		break;
 	}
 
 	inner_parent->recalcSizePosRecursive(*animate == 0);
@@ -1140,6 +1123,8 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 			outer_node->size_ratio += ratio_mod;
 			neighbor->size_ratio -= ratio_mod;
 		} break;
+		case Hy3GroupLayout::Tabbed:
+			break;
 		}
 
 		outer_parent->recalcSizePosRecursive(*animate == 0);
