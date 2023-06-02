@@ -71,6 +71,7 @@ struct Hy3Node {
 	Vector2D size;
 	float size_ratio = 1.0;
 	int workspace_id = -1;
+	bool hidden = false;
 	bool valid = true;
 	Hy3Layout* layout = nullptr;
 
