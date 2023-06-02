@@ -8,6 +8,12 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 - [x] Window resizing
 - [x] Selecting a group of windows at once (and related movement)
 - [ ] Tabbed groups
+  - [x] Usable
+  - [x] Tab bar
+    - [x] Animations
+    - [x] Colors
+    - [ ] Window Titles
+  - [ ] No window shifitng bugs
 - [ ] Some convenience dispatchers not found in i3 or sway
 
 ### Stability
@@ -37,12 +43,33 @@ plugin {
   hy3 {
     # disable gaps when only one window is onscreen
     no_gaps_when_only = <bool>
+
+	# tab group settings
+	tabs {
+	  # height of the tab bar
+	  height = <int>
+
+	  # padding between the tab bar and its focused node
+	  padding = <int>
+
+	  # active tab bar segment color
+	  col.active = <color>
+
+	  # inactive tab bar segment color
+	  col.inactive = <color>
+
+	  # the tab bar should animate in/out from the top instead of below the window
+	  from_top = <bool>
+
+	  # rounding of tab bar corners
+	  rounding = <int>
+	}
   }
 }
 ```
 
 ### Dispatcher list
- - `hy3:makegroup, <h | v | opposite>` - make a vertical or horizontal split
+ - `hy3:makegroup, <h | v | opposite | tab>` - make a vertical / horizontal split or tab group
  - `hy3:movefocus, <l | u | d | r | left | down | up | right>` - move the focus left, up, down, or right
  - `hy3:movewindow, <l | u | d | r | left | down | up | right> [, once]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
