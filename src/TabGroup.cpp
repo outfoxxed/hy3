@@ -4,6 +4,8 @@
 
 #include <hyprland/src/Compositor.hpp>
 #include <cairo/cairo.h>
+#include <hyprland/src/helpers/Color.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <pixman.h>
 
@@ -47,6 +49,8 @@ void Hy3TabBarEntry::setUrgent(bool urgent) {
 
 void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 	static const auto* rounding_setting = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
+	static const auto* col_active = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.active")->intValue;
+	static const auto* col_inactive = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.inactive")->intValue;
 
 	auto width = box.width;
 	auto height = box.height;
@@ -75,9 +79,11 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 
 		// set brush
 		if (this->focused) {
-			cairo_set_source_rgba(cairo, 0.2, 0.7, 1.0, 1.0);
+			auto c = CColor(*col_active);
+			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 		} else {
-			cairo_set_source_rgba(cairo, 0.5, 0.5, 0.5, 1.0);
+			auto c = CColor(*col_inactive);
+			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 		}
 
 		// outline bar shape
@@ -266,7 +272,7 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 	Debug::log(LOG, "updated tab bar for %p", &node);
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
-	static const auto* bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
+	static const auto* bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
 
 	auto gaps = node.parent == nullptr ? *gaps_out : *gaps_in;
 	auto tpos = node.position + Vector2D(gaps, gaps);

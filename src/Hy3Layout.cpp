@@ -121,8 +121,9 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 	auto tpos = this->position + Vector2D(outer_gaps, outer_gaps);
 	auto tsize = this->size - Vector2D(outer_gaps * 2, outer_gaps * 2);
 
-	static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:bar_height")->intValue;
-	double tab_height_offset = *gaps_in + *tab_bar_height;
+	static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
+	static const auto* tab_bar_padding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
+	double tab_height_offset = *tab_bar_height + *tab_bar_padding;
 
 	if (this->data.type != Hy3NodeData::Group) {
 		this->data.as_window->setHidden(this->hidden);
