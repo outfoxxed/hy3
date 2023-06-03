@@ -109,6 +109,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:height", SConfigValue{.intValue = 15});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:padding", SConfigValue{.intValue = 5});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:col.active", SConfigValue{.intValue = 0xff32b4ff});
+	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:col.urgent", SConfigValue{.intValue = 0xffff4f4f});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:col.inactive", SConfigValue{.intValue = 0x80808080});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:from_top", SConfigValue{.intValue = 0});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:rounding", SConfigValue{.intValue = 3});

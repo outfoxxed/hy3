@@ -55,6 +55,9 @@ plugin {
 	  # active tab bar segment color
 	  col.active = <color>
 
+	  # urgent tab bar segment color
+	  col.urgent = <color>
+
 	  # inactive tab bar segment color
 	  col.inactive = <color>
 

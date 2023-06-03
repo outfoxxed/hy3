@@ -50,6 +50,7 @@ void Hy3TabBarEntry::setUrgent(bool urgent) {
 void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 	static const auto* rounding_setting = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
 	static const auto* col_active = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.active")->intValue;
+	static const auto* col_urgent = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.urgent")->intValue;
 	static const auto* col_inactive = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.inactive")->intValue;
 
 	auto width = box.width;
@@ -78,13 +79,16 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 		cairo_restore(cairo);
 
 		// set brush
+		CColor c;
 		if (this->focused) {
-			auto c = CColor(*col_active);
-			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
+			c = CColor(*col_active);
+		} else if (this->urgent) {
+			c = CColor(*col_urgent);
 		} else {
-			auto c = CColor(*col_inactive);
-			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
+			c = CColor(*col_inactive);
 		}
+
+		cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
 		// outline bar shape
 		cairo_move_to(cairo, 0, rounding);
