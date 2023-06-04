@@ -29,7 +29,7 @@ int workspace_for_action() {
 
 	int workspace_id = g_pCompositor->m_pLastMonitor->activeWorkspace;
 
-	if (workspace_id < 0) return -1;
+	if (workspace_id == -1) return -1;
 	auto* workspace = g_pCompositor->getWorkspaceByID(workspace_id);
 	if (workspace == nullptr) return -1;
 	if (workspace->m_bHasFullscreenWindow) return -1;
@@ -39,7 +39,7 @@ int workspace_for_action() {
 
 void dispatch_makegroup(std::string arg) {
 	int workspace = workspace_for_action();
-	if (workspace < 0) return;
+	if (workspace == -1) return;
 
 	if (arg == "h") {
 		g_Hy3Layout->makeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitH);
@@ -60,7 +60,7 @@ std::optional<ShiftDirection> parseShiftArg(std::string arg) {
 
 void dispatch_movewindow(std::string value) {
 	int workspace = workspace_for_action();
-	if (workspace < 0) return;
+	if (workspace == -1) return;
 
 	auto args = CVarList(value);
 
@@ -72,7 +72,7 @@ void dispatch_movewindow(std::string value) {
 
 void dispatch_movefocus(std::string arg) {
 	int workspace = workspace_for_action();
-	if (workspace < 0) return;
+	if (workspace == -1) return;
 
 	if (auto shift = parseShiftArg(arg)) {
 		g_Hy3Layout->shiftFocus(workspace, shift.value());
@@ -81,17 +81,17 @@ void dispatch_movefocus(std::string arg) {
 
 void dispatch_raisefocus(std::string arg) {
 	int workspace = workspace_for_action();
-	if (workspace < 0) return;
+	if (workspace == -1) return;
 
 	g_Hy3Layout->raiseFocus(workspace);
 }
 
 void dispatch_debug(std::string arg) {
 	int workspace = workspace_for_action();
-	if (workspace < 0) return;
+	if (workspace == -1) return;
 
 	auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace);
-	if (workspace < 0) {
+	if (workspace == -1) {
 		Debug::log(LOG, "DEBUG NODES: no nodes on workspace");
 	} else {
 		Debug::log(LOG, "DEBUG NODES\n%s", root->debugNode().c_str());
