@@ -1144,11 +1144,48 @@ void Hy3Layout::makeOppositeGroupOn(Hy3Node* node) {
 void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftFocus %p %d", node, direction);
-	if (node == nullptr) return;
+	if (node == nullptr) {
+		shiftFocusMonitor(direction);
+		return;
+	}
 
-	Hy3Node* target;
-	if ((target = this->shiftOrGetFocus(*node, direction, false, false))) {
+	Hy3Node* target = this->shiftOrGetFocus(*node, direction, false, false);
+	if ((target != nullptr)) {
 		g_pCompositor->focusWindow(target->data.as_window);
+	} else if (target == node) {
+		shiftFocusMonitor(direction);
+	} else {
+		shiftFocusMonitor(direction);
+    }
+}
+
+void Hy3Layout::shiftFocusMonitor(ShiftDirection direction) {
+	char direction_str;
+	switch (direction) {
+		case ShiftDirection::Up:
+			direction_str = 'u';
+			break;
+		case ShiftDirection::Left:
+			direction_str = 'l';
+			break;
+		case ShiftDirection::Down:
+			direction_str = 'd';
+			break;
+		case ShiftDirection::Right:
+			direction_str = 'r';
+			break;
+	}
+
+	auto target = g_pCompositor->getMonitorInDirection(direction_str);
+
+	if(target != nullptr) {
+		g_pCompositor->setActiveMonitor(target);
+
+		// Focus
+		auto* target_node = getWorkspaceFocusedNode(target->activeWorkspace);
+		if (target_node != nullptr) {
+			target_node->focus();
+		}
 	}
 }
 
