@@ -120,6 +120,7 @@ public:
 	void makeOppositeGroupOn(Hy3Node*);
 	void shiftWindow(int, ShiftDirection, bool);
 	void shiftFocus(int, ShiftDirection);
+	void shiftFocusMonitor(ShiftDirection direction);
 	void raiseFocus(int);
 
 	bool shouldRenderSelected(CWindow*);
