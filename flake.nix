@@ -9,7 +9,7 @@
     hyprlandSystems = fn: nixpkgs.lib.genAttrs (builtins.attrNames hyprland.packages) (system: fn system nixpkgs.legacyPackages.${system});
   in {
     packages = hyprlandSystems (system: pkgs: rec {
-      hy3 = pkgs.gcc12Stdenv.mkDerivation {
+      hy3 = pkgs.stdenv.mkDerivation {
         pname = "hy3";
         version = "0.1";
         src = ./.;
@@ -38,7 +38,7 @@
     });
 
     devShells = hyprlandSystems (system: pkgs: {
-      default = pkgs.mkShell.override { stdenv = pkgs.gcc12Stdenv; } {
+      default = pkgs.mkShell {
         name = "hy3";
 
         nativeBuildInputs = with pkgs; [
