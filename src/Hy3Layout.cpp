@@ -1296,10 +1296,7 @@ void Hy3Layout::makeGroupOn(Hy3Node* node, Hy3GroupLayout layout) {
 
 	if (node->parent != nullptr) {
 		auto& group = node->parent->data.as_group;
-		if (group.children.size() == 1
-			&& (group.layout == Hy3GroupLayout::SplitH
-			|| group.layout == Hy3GroupLayout::SplitV))
-		{
+		if (group.children.size() == 1) {
 			group.layout = layout;
 			node->parent->recalcSizePosRecursive();
 			return;
