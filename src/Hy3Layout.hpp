@@ -88,6 +88,7 @@ struct Hy3Node {
 	void updateTabBarRecursive();
 	bool isUrgent();
 	bool isIndirectlyFocused();
+	Hy3Node* findNodeForTabGroup(Hy3TabGroup&);
 	std::string getTitle();
 
 	bool operator==(const Hy3Node&) const;
@@ -133,6 +134,7 @@ public:
 	void shiftWindow(int, ShiftDirection, bool);
 	void shiftFocus(int, ShiftDirection);
 	void raiseFocus(int);
+	void focusTab(int);
 
 	bool shouldRenderSelected(CWindow*);
 

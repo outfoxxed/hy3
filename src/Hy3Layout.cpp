@@ -1544,6 +1544,57 @@ void Hy3Layout::raiseFocus(int workspace) {
 	}
 }
 
+Hy3Node* Hy3Node::findNodeForTabGroup(Hy3TabGroup& tab_group) {
+	if (this->data.type == Hy3NodeData::Group) {
+		auto& group = this->data.as_group;
+
+		if (group.layout == Hy3GroupLayout::Tabbed && group.tab_bar == &tab_group) {
+			return this;
+		}
+
+		for (auto& node: group.children) {
+			auto* r = node->findNodeForTabGroup(tab_group);
+			if (r != nullptr) return r;
+		}
+	} else return nullptr;
+
+	return nullptr;
+}
+
+void Hy3Layout::focusTab(int workspace) {
+	auto* node = this->getWorkspaceRootGroup(workspace);
+	if (node == nullptr) return;
+
+	auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
+
+	for (auto& tab_group: this->tab_groups) {
+		auto pos = tab_group.pos.vec();
+		if (pos.x > mouse_pos.x || pos.y > mouse_pos.y) continue;
+		auto size = tab_group.size.vec();
+		if (pos.x + size.x < mouse_pos.x || pos.y + size.y < mouse_pos.y) continue;
+
+		Debug::log(LOG, "!!! tab group clicked: %f %f, %f %f [%f %f]", pos.x, pos.y, size.x, size.y, mouse_pos.x, mouse_pos.y);
+		auto* group = node->findNodeForTabGroup(tab_group);
+		if (group == nullptr) continue;
+
+		auto delta = mouse_pos - pos;
+
+		auto& node_list = group->data.as_group.children;
+		auto node_iter = node_list.begin();
+
+		for (auto& tab: tab_group.bar.entries) {
+			if (node_iter == node_list.end()) break;
+
+			if (delta.x > tab.offset.fl() * size.x && delta.x < (tab.offset.fl() + tab.width.fl()) * size.x) {
+				(*node_iter)->focus();
+				break;
+			}
+
+			node_iter = std::next(node_iter);
+		}
+	}
+}
+
 bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 	if (window == nullptr) return false;
 	auto* root = this->getWorkspaceRootGroup(window->m_iWorkspaceID);

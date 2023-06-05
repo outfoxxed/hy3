@@ -98,6 +98,7 @@ plugin {
  - `hy3:movewindow, <l | u | d | r | left | down | up | right> [, once]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
  - `hy3:raisefocus` - raise the active focus one level
+ - `hy3:focustab` - focus a tab under the mouse (bind to `mouse:272` for left click)
  - `hy3:debugnodes` - print the node tree into the hyprland log
 
 ## Installing

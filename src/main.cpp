@@ -88,6 +88,13 @@ void dispatch_raisefocus(std::string arg) {
 	g_Hy3Layout->raiseFocus(workspace);
 }
 
+void dispatch_focustab(std::string arg) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	g_Hy3Layout->focusTab(workspace);
+}
+
 void dispatch_debug(std::string arg) {
 	int workspace = workspace_for_action();
 	if (workspace == -1) return;
@@ -128,6 +135,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:raisefocus", dispatch_raisefocus);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:focustab", dispatch_focustab);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:debugnodes", dispatch_debug);
 
 	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};
