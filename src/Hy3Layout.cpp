@@ -112,6 +112,7 @@ bool Hy3Node::operator==(const Hy3Node& rhs) const {
 void Hy3Node::recalcSizePosRecursive(bool force) {
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+	static const auto* group_inset = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:group_inset")->intValue;
 
 	int outer_gaps = 0;
 	Vector2D gap_pos_offset;
@@ -151,9 +152,16 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
+			child->position.x = tpos.x;
+			child->size.x = tsize.x - *group_inset;
+			child->position.y = tpos.y;
+			child->size.y = tsize.y;
+			break;
 		case Hy3GroupLayout::SplitV:
-			child->position = tpos;
-			child->size = tsize;
+			child->position.y = tpos.y;
+			child->size.y = tsize.y - *group_inset;
+			child->position.x = tpos.x;
+			child->size.x = tsize.x;
 			break;
 		case Hy3GroupLayout::Tabbed:
 			child->position.y = tpos.y + tab_height_offset;

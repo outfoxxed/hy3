@@ -38,6 +38,9 @@ plugin {
     # disable gaps when only one window is onscreen
     no_gaps_when_only = <bool>
 
+    # offset from group split direction when only one window is in a group
+    group_inset = <int>
+
     # tab group settings
     tabs {
       # height of the tab bar
