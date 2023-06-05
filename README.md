@@ -12,7 +12,7 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
   - [x] Tab bar
     - [x] Animations
     - [x] Colors
-    - [ ] Window Titles
+    - [x] Window Titles
   - [ ] No window shifitng bugs
 - [ ] Some convenience dispatchers not found in i3 or sway
 
@@ -44,29 +44,50 @@ plugin {
     # disable gaps when only one window is onscreen
     no_gaps_when_only = <bool>
 
-	# tab group settings
-	tabs {
-	  # height of the tab bar
-	  height = <int>
+    # tab group settings
+    tabs {
+      # height of the tab bar
+      height = <int>
 
-	  # padding between the tab bar and its focused node
-	  padding = <int>
+      # padding between the tab bar and its focused node
+      padding = <int>
 
-	  # active tab bar segment color
-	  col.active = <color>
+      # the tab bar should animate in/out from the top instead of below the window
+      from_top = <bool>
 
-	  # urgent tab bar segment color
-	  col.urgent = <color>
+      # render the window title on the bar
+      render_text = <bool>
 
-	  # inactive tab bar segment color
-	  col.inactive = <color>
+      # rounding of tab bar corners
+      rounding = <int>
 
-	  # the tab bar should animate in/out from the top instead of below the window
-	  from_top = <bool>
+      # font to render the window title with
+      text_font = <string>
 
-	  # rounding of tab bar corners
-	  rounding = <int>
-	}
+      # height of the window title
+      text_height = <int>
+
+      # left padding of the window title
+      text_padding = <int>
+
+      # active tab bar segment color
+      col.active = <color>
+
+      # urgent tab bar segment color
+      col.urgent = <color>
+
+      # inactive tab bar segment color
+      col.inactive = <color>
+
+      # active tab bar text color
+      col.text.active = <color>
+
+      # urgent tab bar text color
+      col.text.urgent = <color>
+
+      # inactive tab bar text color
+      col.text.inactive = <color>
+    }
   }
 }
 ```
