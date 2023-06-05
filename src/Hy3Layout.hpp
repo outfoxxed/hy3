@@ -84,6 +84,8 @@ struct Hy3Node {
 	Hy3Node* getFocusedNode();
 	void updateDecos();
 	void setHidden(bool hidden);
+	void updateTabBar();
+	void updateTabBarRecursive();
 	bool isUrgent();
 	bool isIndirectlyFocused();
 	std::string getTitle();
@@ -100,9 +102,6 @@ struct Hy3Node {
 	Hy3Node* intoGroup(Hy3GroupLayout);
 
 	static void swapData(Hy3Node&, Hy3Node&);
-
-private:
-	void updateTabBar();
 };
 
 class Hy3Layout: public IHyprLayout {
@@ -141,6 +140,7 @@ public:
 	Hy3Node* getWorkspaceFocusedNode(const int&);
 
 	static void renderHook(void*, std::any);
+	static void windowTitleHook(void*, std::any);
 	static void tickHook(void*, std::any);
 
 	std::list<Hy3Node> nodes;

@@ -4,6 +4,7 @@
 
 #include <hyprland/src/Compositor.hpp>
 #include <cairo/cairo.h>
+#include <pango/pangocairo.h>
 #include <hyprland/src/helpers/Color.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
@@ -47,27 +48,63 @@ void Hy3TabBarEntry::setUrgent(bool urgent) {
 	}
 }
 
+void Hy3TabBarEntry::setWindowTitle(std::string title) {
+	if (this->window_title != title) {
+		this->window_title = title;
+		this->tab_bar.dirty = true;
+	}
+}
+
 void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
-	static const auto* rounding_setting = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
+	static const auto* s_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
+	static const auto* render_text = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:render_text")->intValue;
+	static const auto* text_font = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_font")->strValue;
+	static const auto* text_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_height")->intValue;
+	static const auto* text_padding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_padding")->intValue;
 	static const auto* col_active = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.active")->intValue;
 	static const auto* col_urgent = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.urgent")->intValue;
 	static const auto* col_inactive = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.inactive")->intValue;
+	static const auto* col_text_active = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.text.active")->intValue;
+	static const auto* col_text_urgent = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.text.urgent")->intValue;
+	static const auto* col_text_inactive = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.text.inactive")->intValue;
 
 	auto width = box.width;
 	auto height = box.height;
 
-	auto rounding = std::min((double) *rounding_setting, std::min(width * 0.5, height * 0.5));
+	auto rounding = std::min((double) *s_rounding, std::min(width * 0.5, height * 0.5));
 
 	if (this->texture.m_iTexID == 0
-			|| this->last_render_rounding != rounding
-			|| this->last_render_focused != focused
-			|| this->last_render_urgent != urgent
-			|| !wlr_box_equal(&this->last_render_box, &box)
+			|| this->last_render.x != box.x
+			|| this->last_render.y != box.y
+			|| this->last_render.focused != this->focused
+			|| this->last_render.urgent != this->urgent
+			|| this->last_render.window_title != this->window_title
+			|| this->last_render.rounding != rounding
+			|| this->last_render.text_font != *text_font
+			|| this->last_render.text_height != *text_height
+			|| this->last_render.text_padding != *text_padding
+			|| this->last_render.col_active != *col_active
+			|| this->last_render.col_urgent != *col_urgent
+			|| this->last_render.col_inactive != *col_inactive
+			|| this->last_render.col_text_active != *col_text_active
+			|| this->last_render.col_text_urgent != *col_text_urgent
+			|| this->last_render.col_text_inactive != *col_text_inactive
 	) {
-		this->last_render_rounding = rounding;
-		this->last_render_focused = this->focused;
-		this->last_render_urgent = this->urgent;
-		this->last_render_box = box;
+		this->last_render.x = box.x;
+		this->last_render.y = box.y;
+		this->last_render.focused = this->focused;
+		this->last_render.urgent = this->urgent;
+		this->last_render.window_title = this->window_title;
+		this->last_render.rounding = rounding;
+		this->last_render.text_font = *text_font;
+		this->last_render.text_height = *text_height;
+		this->last_render.text_padding = *text_padding;
+		this->last_render.col_active = *col_active;
+		this->last_render.col_urgent = *col_urgent;
+		this->last_render.col_inactive = *col_inactive;
+		this->last_render.col_text_active = *col_text_active;
+		this->last_render.col_text_urgent = *col_text_urgent;
+		this->last_render.col_text_inactive = *col_text_inactive;
 
 		auto cairo_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
 		auto cairo = cairo_create(cairo_surface);
@@ -103,6 +140,45 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 
 		// draw
 		cairo_fill(cairo);
+
+		// render window title
+		if (*render_text) {
+			PangoLayout* layout = pango_cairo_create_layout(cairo);
+			pango_layout_set_text(layout, this->window_title.c_str(), -1);
+
+			PangoFontDescription* font_desc = pango_font_description_from_string(text_font->c_str());
+			pango_font_description_set_size(font_desc, *text_height * scale * PANGO_SCALE);
+			pango_layout_set_font_description(layout, font_desc);
+			pango_font_description_free(font_desc);
+
+			int padding = *text_padding * scale;
+			int width = box.width - padding * 2;
+
+			pango_layout_set_width(layout, width * PANGO_SCALE);
+			pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
+
+			CColor c;
+			if (this->focused) {
+				c = CColor(*col_text_active);
+			} else if (this->urgent) {
+				c = CColor(*col_text_urgent);
+			} else {
+				c = CColor(*col_text_inactive);
+			}
+
+			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
+
+			int layout_width, layout_height;
+			pango_layout_get_size(layout, &layout_width, &layout_height);
+
+			auto y_offset = (height / 2.0) - (((double)layout_height / PANGO_SCALE) / 2.0);
+			cairo_move_to(cairo, padding, y_offset);
+			pango_cairo_show_layout(cairo, layout);
+			g_object_unref(layout);
+		}
+
+		// flush cairo
+		cairo_surface_flush(cairo_surface);
 
 		auto data = cairo_image_surface_get_data(cairo_surface);
 		this->texture.allocate();
@@ -205,6 +281,7 @@ void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 		auto& parent_group = parent->data.as_group;
 		entry->setFocused(parent_group.focused_child == *node || (parent_group.group_focused && parent->isIndirectlyFocused()));
 		entry->setUrgent((*node)->isUrgent());
+		entry->setWindowTitle((*node)->getTitle());
 
 		node = std::next(node);
 		if (entry != this->entries.end()) entry = std::next(entry);

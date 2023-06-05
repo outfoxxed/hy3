@@ -21,10 +21,25 @@ struct Hy3TabBarEntry {
 	CAnimatedVariable width; // 0.0-1.0 of total bar
 	Hy3TabBar& tab_bar;
 	Hy3Node& node; // only used for comparioson. do not deref.
-	wlr_box last_render_box;
-	float last_render_rounding = 0.0;
-	bool last_render_focused = false;
-	bool last_render_urgent = false;
+
+	struct {
+		int x, y;
+		float rounding = 0.0;
+		float scale = 0.0;
+		bool focused = false;
+		bool urgent = false;
+		std::string window_title;
+
+		std::string text_font;
+		int text_height = 0;
+		int text_padding = 0;
+		int col_active = 0;
+		int col_urgent = 0;
+		int col_inactive = 0;
+		int col_text_active = 0;
+		int col_text_urgent = 0;
+		int col_text_inactive = 0;
+	} last_render;
 
 	Hy3TabBarEntry(Hy3TabBar&, Hy3Node&);
 	bool operator==(const Hy3Node&) const;
@@ -32,6 +47,7 @@ struct Hy3TabBarEntry {
 
 	void setFocused(bool);
 	void setUrgent(bool);
+	void setWindowTitle(std::string);
 	void prepareTexture(float, wlr_box&);
 };
 

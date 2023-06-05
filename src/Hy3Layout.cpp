@@ -496,6 +496,7 @@ Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout) {
 	this->data.as_group.group_focused = false;
 	this->data.as_group.focused_child = node;
 	this->recalcSizePosRecursive();
+	this->updateTabBarRecursive();
 
 	return node;
 }
@@ -580,6 +581,15 @@ void Hy3Node::updateTabBar() {
 			group.tab_bar->bar.beginDestroy();
 			group.tab_bar = nullptr;
 		}
+	}
+}
+
+void Hy3Node::updateTabBarRecursive() {
+	auto* node = this;
+
+	while (node != nullptr) {
+		node->updateTabBar();
+		node = node->parent;
 	}
 }
 
@@ -1243,6 +1253,7 @@ void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
 }
 
 std::unique_ptr<HOOK_CALLBACK_FN> renderHookPtr = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::renderHook);
+std::unique_ptr<HOOK_CALLBACK_FN> windowTitleHookPtr = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::windowTitleHook);
 std::unique_ptr<HOOK_CALLBACK_FN> tickHookPtr = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::tickHook);
 
 void Hy3Layout::onEnable() {
@@ -1257,12 +1268,14 @@ void Hy3Layout::onEnable() {
 	}
 
 	HyprlandAPI::registerCallbackStatic(PHANDLE, "render", renderHookPtr.get());
+	HyprlandAPI::registerCallbackStatic(PHANDLE, "windowTitle", windowTitleHookPtr.get());
 	HyprlandAPI::registerCallbackStatic(PHANDLE, "tick", tickHookPtr.get());
 	selection_hook::enable();
 }
 
 void Hy3Layout::onDisable() {
 	HyprlandAPI::unregisterCallback(PHANDLE, renderHookPtr.get());
+	HyprlandAPI::unregisterCallback(PHANDLE, windowTitleHookPtr.get());
 	HyprlandAPI::unregisterCallback(PHANDLE, tickHookPtr.get());
 	selection_hook::disable();
 	this->nodes.clear();
@@ -1592,6 +1605,14 @@ void Hy3Layout::renderHook(void*, std::any data) {
 	default:
 		break;
 	}
+}
+
+void Hy3Layout::windowTitleHook(void*, std::any data) {
+	CWindow* window = std::any_cast<CWindow*>(data);
+	if (window == nullptr) return;
+	auto* node = g_Hy3Layout->getNodeFromWindow(window);
+
+	node->updateTabBarRecursive();
 }
 
 void Hy3Layout::tickHook(void*, std::any) {
