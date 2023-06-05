@@ -7,13 +7,7 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 - [x] Window movement
 - [x] Window resizing
 - [x] Selecting a group of windows at once (and related movement)
-- [ ] Tabbed groups
-  - [x] Usable
-  - [x] Tab bar
-    - [x] Animations
-    - [x] Colors
-    - [x] Window Titles
-  - [ ] No window shifitng bugs
+- [x] Tabbed groups
 - [ ] Some convenience dispatchers not found in i3 or sway
 
 ### Stability
