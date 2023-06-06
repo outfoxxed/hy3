@@ -1181,6 +1181,9 @@ void Hy3Layout::shiftFocusMonitor(ShiftDirection direction) {
 	if(target != nullptr) {
 		g_pCompositor->setActiveMonitor(target);
 
+		auto target_center = target->vecPosition + target->vecSize / 2;
+		g_pCompositor->warpCursorTo(target_center);
+
 		// Focus
 		auto* target_node = getWorkspaceFocusedNode(target->activeWorkspace);
 		if (target_node != nullptr) {
