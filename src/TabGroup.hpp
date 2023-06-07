@@ -1,7 +1,6 @@
 #pragma once
 
-#include <hyprland/src/helpers/AnimatedVariable.hpp>
-#include <hyprland/src/helpers/Vector2D.hpp>
+#include <hyprland/src/Compositor.hpp>
 #include <list>
 #include <memory>
 #include <vector>
@@ -10,7 +9,6 @@ class Hy3TabGroup;
 class Hy3TabBar;
 
 #include "Hy3Layout.hpp"
-#include <hyprland/src/render/Texture.hpp>
 
 struct Hy3TabBarEntry {
 	std::string window_title;
@@ -18,7 +16,7 @@ struct Hy3TabBarEntry {
 	bool urgent = false;
 	CTexture texture;
 	CAnimatedVariable offset; // offset 0, 0.0-1.0 of total bar
-	CAnimatedVariable width; // 0.0-1.0 of total bar
+	CAnimatedVariable width;  // 0.0-1.0 of total bar
 	Hy3TabBar& tab_bar;
 	Hy3Node& node; // only used for comparioson. do not deref.
 
@@ -68,6 +66,7 @@ public:
 	void setSize(Vector2D);
 
 	std::list<Hy3TabBarEntry> entries;
+
 private:
 	Hy3Node* focused_node = nullptr;
 	Vector2D size;

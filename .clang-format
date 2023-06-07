@@ -1,0 +1,72 @@
+---
+AlignArrayOfStructures: None
+AlignAfterOpenBracket: BlockIndent
+AllowShortBlocksOnASingleLine: Always
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
+BinPackArguments: false
+BinPackParameters: false
+Cpp11BracedListStyle: true
+LambdaBodyIndentation: Signature
+UseCRLF: false
+UseTab: ForIndentation
+SpacesInSquareBrackets: false
+SpacesInParentheses: false
+SpacesInCStyleCastParentheses: false
+SpacesInAngles: Never
+SpaceInEmptyParentheses: false
+SpaceInEmptyBlock: false
+SpaceBeforeSquareBrackets: false
+SpaceBeforeRangeBasedForLoopColon: false
+SpaceAfterCStyleCast: true
+SpaceAfterLogicalNot: false
+SpaceAfterTemplateKeyword: true
+SpaceBeforeCaseColon: false
+SpaceBeforeCpp11BracedList: true
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: false
+SpaceBeforeParens: ControlStatementsExceptControlMacros
+SortIncludes: CaseInsensitive
+PointerAlignment: Left
+PackConstructorInitializers: CurrentLine
+LineEnding: LF
+InsertBraces: false
+BreakConstructorInitializers: AfterColon
+BreakBeforeBraces: Custom
+BreakInheritanceList: AfterColon
+AllowAllParametersOfDeclarationOnNextLine: false
+AllowAllArgumentsOnNextLine: false
+AlwaysBreakTemplateDeclarations: Yes
+BraceWrapping:
+  AfterClass: false
+  AfterFunction: false
+  AfterCaseLabel: false
+  AfterEnum: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  AfterExternBlock: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+  AfterControlStatement: MultiLine
+BreakBeforeBinaryOperators: All
+BreakBeforeTernaryOperators: true
+AlignOperands: AlignAfterOperator
+InsertTrailingCommas: Wrapped
+MaxEmptyLinesToKeep: 1
+ExperimentalAutoDetectBinPacking: false
+ColumnLimit: 100
+IndentWidth: 2
+TabWidth: 2
+AllowAllConstructorInitializersOnNextLine: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true

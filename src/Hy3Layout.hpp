@@ -1,10 +1,10 @@
 #pragma once
 
+#include <hyprland/src/layout/IHyprLayout.hpp>
+#include <list>
+
 struct Hy3Node;
 #include "TabGroup.hpp"
-
-#include <list>
-#include <hyprland/src/layout/IHyprLayout.hpp>
 
 class Hy3Layout;
 struct Hy3Node;
@@ -58,7 +58,7 @@ public:
 	Hy3NodeData& operator=(CWindow*);
 	Hy3NodeData& operator=(Hy3GroupLayout);
 
-	//private: - I give up, C++ wins
+	// private: - I give up, C++ wins
 	Hy3NodeData(Hy3GroupData);
 	Hy3NodeData(Hy3NodeData&&);
 	Hy3NodeData& operator=(Hy3NodeData&&);
@@ -98,7 +98,8 @@ struct Hy3Node {
 	// Attempt to swallow a group. returns true if swallowed
 	static bool swallowGroups(Hy3Node*);
 	// Remove this node from its parent, deleting the parent if it was
-	// the only child and recursing if the parent was the only child of it's parent.
+	// the only child and recursing if the parent was the only child of it's
+	// parent.
 	Hy3Node* removeFromParentRecursive();
 
 	// Replace this node with a group, returning this node's new address.
@@ -149,6 +150,7 @@ public:
 
 	std::list<Hy3Node> nodes;
 	std::list<Hy3TabGroup> tab_groups;
+
 private:
 	struct {
 		bool started = false;
@@ -160,9 +162,9 @@ private:
 	Hy3Node* getNodeFromWindow(CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool force = false);
 
-	// if shift is true, shift the window in the given direction, returning nullptr,
-	// if shift is false, return the window in the given direction or nullptr.
-	// if once is true, only one group will be broken out of / into
+	// if shift is true, shift the window in the given direction, returning
+	// nullptr, if shift is false, return the window in the given direction or
+	// nullptr. if once is true, only one group will be broken out of / into
 	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool, bool);
 
 	friend struct Hy3Node;
