@@ -601,10 +601,10 @@ void Hy3Node::updateTabBar() {
 void Hy3Node::updateTabBarRecursive() {
 	auto* node = this;
 
-	while (node != nullptr) {
+	do {
 		node->updateTabBar();
 		node = node->parent;
-	}
+	} while (node != nullptr);
 }
 
 void Hy3Node::updateDecos() {
@@ -1675,6 +1675,8 @@ void Hy3Layout::windowTitleHook(void*, std::any data) {
 	if (window == nullptr) return;
 	auto* node = g_Hy3Layout->getNodeFromWindow(window);
 
+	// it is UB for `this` to be null
+	if (node == nullptr) return;
 	node->updateTabBarRecursive();
 }
 
