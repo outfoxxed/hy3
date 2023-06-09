@@ -14,9 +14,12 @@ struct Hy3TabBarEntry {
 	std::string window_title;
 	bool focused = false;
 	bool urgent = false;
+	bool destroying = false;
 	CTexture texture;
-	CAnimatedVariable offset; // offset 0, 0.0-1.0 of total bar
-	CAnimatedVariable width;  // 0.0-1.0 of total bar
+	CAnimatedVariable offset;       // 0.0-1.0 of total bar
+	CAnimatedVariable width;        // 0.0-1.0 of total bar
+	CAnimatedVariable vertical_pos; // 0.0-1.0, user specified direction
+	CAnimatedVariable fade_opacity; // 0.0-1.0
 	Hy3TabBar& tab_bar;
 	Hy3Node& node; // only used for comparioson. do not deref.
 
@@ -46,21 +49,23 @@ struct Hy3TabBarEntry {
 	void setFocused(bool);
 	void setUrgent(bool);
 	void setWindowTitle(std::string);
+	void beginDestroy();
+	void unDestroy();
+	bool shouldRemove();
 	void prepareTexture(float, wlr_box&);
 };
 
 class Hy3TabBar {
 public:
 	bool destroy = false;
-	bool destroying = false;
 	bool dirty = true;
 	bool damaged = true;
-	CAnimatedVariable vertical_pos;
 	CAnimatedVariable fade_opacity;
 
 	Hy3TabBar();
 	void beginDestroy();
 
+	void tick();
 	void updateNodeList(std::list<Hy3Node*>& nodes);
 	void updateAnimations(bool warp = false);
 	void setSize(Vector2D);

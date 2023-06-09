@@ -27,16 +27,39 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	    AVARDAMAGE_NONE
 	);
 
+	this->vertical_pos.create(
+	    AVARTYPE_FLOAT,
+	    1.0f,
+	    g_pConfigManager->getAnimationPropertyConfig("windowsIn"),
+	    nullptr,
+	    AVARDAMAGE_NONE
+	);
+
+	this->fade_opacity.create(
+	    AVARTYPE_FLOAT,
+	    0.0f,
+	    g_pConfigManager->getAnimationPropertyConfig("windowsIn"),
+	    nullptr,
+	    AVARDAMAGE_NONE
+	);
+
 	this->offset.registerVar();
 	this->width.registerVar();
+	this->vertical_pos.registerVar();
+	this->fade_opacity.registerVar();
 
 	auto update_callback = [this](void*) { this->tab_bar.dirty = true; };
 
 	this->offset.setUpdateCallback(update_callback);
 	this->width.setUpdateCallback(update_callback);
+	this->vertical_pos.setUpdateCallback(update_callback);
+	this->fade_opacity.setUpdateCallback(update_callback);
 
 	this->window_title = node.getTitle();
 	this->urgent = node.isUrgent();
+
+	this->vertical_pos = 0.0;
+	this->fade_opacity = 1.0;
 }
 
 bool Hy3TabBarEntry::operator==(const Hy3Node& node) const { return this->node == node; }
@@ -64,6 +87,22 @@ void Hy3TabBarEntry::setWindowTitle(std::string title) {
 		this->window_title = title;
 		this->tab_bar.dirty = true;
 	}
+}
+
+void Hy3TabBarEntry::beginDestroy() {
+	this->destroying = true;
+	this->vertical_pos = 1.0;
+	this->fade_opacity = 0.0;
+}
+
+void Hy3TabBarEntry::unDestroy() {
+	this->destroying = false;
+	this->vertical_pos = 0.0;
+	this->fade_opacity = 1.0;
+}
+
+bool Hy3TabBarEntry::shouldRemove() {
+	return this->destroying && (this->vertical_pos.fl() == 1.0 || this->width.fl() == 0.0);
 }
 
 void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
@@ -225,7 +264,7 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 }
 
 Hy3TabBar::Hy3TabBar() {
-	this->vertical_pos.create(
+	this->fade_opacity.create(
 	    AVARTYPE_FLOAT,
 	    1.0f,
 	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
@@ -233,31 +272,25 @@ Hy3TabBar::Hy3TabBar() {
 	    AVARDAMAGE_NONE
 	);
 
-	this->fade_opacity.create(
-	    AVARTYPE_FLOAT,
-	    0.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
-
-	this->vertical_pos.registerVar();
 	this->fade_opacity.registerVar();
-
-	auto update_callback = [this](void*) { this->dirty = true; };
-
-	this->vertical_pos.setUpdateCallback(update_callback);
-	this->fade_opacity.setUpdateCallback(update_callback);
-
-	this->vertical_pos = 0.0;
-	this->fade_opacity = 1.0;
+	this->fade_opacity.setUpdateCallback([this](void*) { this->dirty = true; });
 }
 
 void Hy3TabBar::beginDestroy() {
-	this->vertical_pos = 1.0;
-	this->fade_opacity = 0.0;
-	this->destroying = true;
-	this->fade_opacity.setCallbackOnEnd([this](void*) { this->destroy = true; });
+	for (auto& entry: this->entries) {
+		entry.beginDestroy();
+	}
+}
+
+void Hy3TabBar::tick() {
+	auto iter = this->entries.begin();
+
+	while (iter != this->entries.end()) {
+		if (iter->shouldRemove()) iter = this->entries.erase(iter);
+		else iter = std::next(iter);
+	}
+
+	if (this->entries.empty()) this->destroy = true;
 }
 
 void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
@@ -313,10 +346,7 @@ exitloop:
 			}
 		}
 
-		if (entry->width.goalf() == 0.0) {
-			entry->width.setCallbackOnEnd(nullptr);
-			entry->width = -1.0;
-		}
+		entry->unDestroy();
 
 		// set stats from node data
 		auto* parent = (*node)->parent;
@@ -336,20 +366,19 @@ exitloop:
 
 	// initiate remove animations for any removed entries
 	for (auto& entry: removed_entries) {
-		if (entry->width.goalf() != 0.0) entry->width = 0.0;
-		if (entry->width.fl() == 0.0) this->entries.erase(entry);
+		if (!entry->destroying) entry->beginDestroy();
+		if (entry->shouldRemove()) this->entries.erase(entry);
 	}
 }
 
 void Hy3TabBar::updateAnimations(bool warp) {
 	int active_entries = 0;
 	for (auto& entry: this->entries) {
-		if (entry.width.goalf() != 0.0) active_entries++;
+		if (!entry.destroying) active_entries++;
 	}
 
 	float entry_width = active_entries == 0 ? 0.0 : 1.0 / active_entries;
 	float offset = 0.0;
-	float real_offset = 0.0;
 
 	auto entry = this->entries.begin();
 	while (entry != this->entries.end()) {
@@ -365,17 +394,18 @@ void Hy3TabBar::updateAnimations(bool warp) {
 			auto warp_init = entry->offset.goalf() == -1.0;
 
 			if (warp_init) {
-				entry->offset.setValueAndWarp(real_offset);
-				entry->width.setValueAndWarp(0.0);
+				entry->offset.setValueAndWarp(offset);
+				entry->width.setValueAndWarp(entry->vertical_pos.fl() == 0.0 ? 0.0 : entry_width);
 			}
 
-			if (entry->offset.goalf() != offset) entry->offset = offset;
-			if ((warp_init || entry->width.goalf() != 0.0) && entry->width.goalf() != entry_width)
-				entry->width = entry_width;
+			if (!entry->destroying) {
+				if (entry->offset.goalf() != offset) entry->offset = offset;
+				if ((warp_init || entry->width.goalf() != 0.0) && entry->width.goalf() != entry_width)
+					entry->width = entry_width;
+			}
 		}
 
-		offset += entry->width.goalf();
-		real_offset += entry->width.fl();
+		if (!entry->destroying) offset += entry->width.goalf();
 		entry = std::next(entry);
 	}
 }
@@ -435,9 +465,13 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 void Hy3TabGroup::tick() {
 	static const auto* enter_from_top
 	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
+	static const auto* padding
+	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
 	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
 
-	if (!this->bar.destroying && workspace != nullptr) {
+	this->bar.tick();
+
+	if (workspace != nullptr) {
 		if (workspace->m_bHasFullscreenWindow) {
 			if (this->bar.fade_opacity.goalf() != 0.0) this->bar.fade_opacity = 0.0;
 		} else {
@@ -447,7 +481,6 @@ void Hy3TabGroup::tick() {
 
 	auto pos = this->pos.vec();
 	auto size = this->size.vec();
-	pos.y += (this->bar.vertical_pos.fl() * size.y) * (*enter_from_top ? -1 : 1);
 
 	if (this->last_pos != pos || this->last_size != size) {
 		wlr_box damage_box = {this->last_pos.x, this->last_pos.y, this->last_size.x, this->last_size.y};
@@ -459,6 +492,12 @@ void Hy3TabGroup::tick() {
 	}
 
 	if (this->bar.destroy || this->bar.dirty) {
+		// damage any area that could be covered by bar in/out animations
+		size.y = size.y * 2 + *padding;
+		if (*enter_from_top) {
+			pos.y -= *padding;
+		}
+
 		wlr_box damage_box = {pos.x, pos.y, size.x, size.y};
 		g_pHyprRenderer->damageBox(&damage_box);
 
@@ -472,7 +511,8 @@ void Hy3TabGroup::renderTabBar() {
 	    = &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
 	static const auto* enter_from_top
 	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
-	static const auto* padding = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+	static const auto* padding
+	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
 
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
 	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
@@ -481,7 +521,6 @@ void Hy3TabGroup::renderTabBar() {
 	auto monitor_size = monitor->vecSize;
 	auto pos = this->pos.vec() - monitor->vecPosition;
 	auto size = this->size.vec();
-	pos.y += (this->bar.vertical_pos.fl() * size.y) * (*enter_from_top ? -1 : 1);
 
 	if (workspace != nullptr) {
 		pos = pos + workspace->m_vRenderOffset.vec();
@@ -551,8 +590,12 @@ void Hy3TabGroup::renderTabBar() {
 	    = this->bar.fade_opacity.fl() * (workspace == nullptr ? 1.0 : workspace->m_fAlpha.fl());
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
-		Vector2D entry_pos
-		    = {(pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale, scaled_pos.y};
+		Vector2D entry_pos = {
+		    (pos.x + (entry.offset.fl() * size.x) + (*padding * 0.5)) * scale,
+		    scaled_pos.y
+		        + ((entry.vertical_pos.fl() * (size.y + *padding) * scale) * (*enter_from_top ? -1 : 1)
+		        ),
+		};
 		Vector2D entry_size = {((entry.width.fl() * size.x) - *padding) * scale, scaled_size.y};
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
 
@@ -564,7 +607,7 @@ void Hy3TabGroup::renderTabBar() {
 		};
 
 		entry.prepareTexture(scale, box);
-		g_pHyprOpenGL->renderTexture(entry.texture, &box, fade_opacity);
+		g_pHyprOpenGL->renderTexture(entry.texture, &box, fade_opacity * entry.fade_opacity.fl());
 	};
 
 	for (auto& entry: this->bar.entries) {
