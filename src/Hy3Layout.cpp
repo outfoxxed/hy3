@@ -1320,7 +1320,9 @@ void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
 std::unique_ptr<HOOK_CALLBACK_FN> renderHookPtr
     = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::renderHook);
 std::unique_ptr<HOOK_CALLBACK_FN> windowTitleHookPtr
-    = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::windowTitleHook);
+    = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::windowGroupUpdateRecursiveHook);
+std::unique_ptr<HOOK_CALLBACK_FN> urgentHookPtr
+    = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::windowGroupUrgentHook);
 std::unique_ptr<HOOK_CALLBACK_FN> tickHookPtr
     = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::tickHook);
 
@@ -1334,6 +1336,7 @@ void Hy3Layout::onEnable() {
 
 	HyprlandAPI::registerCallbackStatic(PHANDLE, "render", renderHookPtr.get());
 	HyprlandAPI::registerCallbackStatic(PHANDLE, "windowTitle", windowTitleHookPtr.get());
+	HyprlandAPI::registerCallbackStatic(PHANDLE, "urgent", urgentHookPtr.get());
 	HyprlandAPI::registerCallbackStatic(PHANDLE, "tick", tickHookPtr.get());
 	selection_hook::enable();
 }
@@ -1341,6 +1344,7 @@ void Hy3Layout::onEnable() {
 void Hy3Layout::onDisable() {
 	HyprlandAPI::unregisterCallback(PHANDLE, renderHookPtr.get());
 	HyprlandAPI::unregisterCallback(PHANDLE, windowTitleHookPtr.get());
+	HyprlandAPI::unregisterCallback(PHANDLE, urgentHookPtr.get());
 	HyprlandAPI::unregisterCallback(PHANDLE, tickHookPtr.get());
 	selection_hook::disable();
 	this->nodes.clear();
@@ -1744,7 +1748,14 @@ void Hy3Layout::renderHook(void*, std::any data) {
 	}
 }
 
-void Hy3Layout::windowTitleHook(void*, std::any data) {
+void Hy3Layout::windowGroupUrgentHook(void* p, std::any data) {
+	CWindow* window = std::any_cast<CWindow*>(data);
+	if (window == nullptr) return;
+	window->m_bIsUrgent = true;
+	Hy3Layout::windowGroupUpdateRecursiveHook(p, data);
+}
+
+void Hy3Layout::windowGroupUpdateRecursiveHook(void*, std::any data) {
 	CWindow* window = std::any_cast<CWindow*>(data);
 	if (window == nullptr) return;
 	auto* node = g_Hy3Layout->getNodeFromWindow(window);

@@ -189,16 +189,11 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 		cairo_restore(cairo);
 
 		// set brush
-		CColor c;
-		if (this->focused.fl() > 0.0) {
-			c = (CColor(*col_active) * this->focused.fl())
-			  + (CColor(*col_inactive) * (1.0 - this->focused.fl()));
-		} else if (this->urgent.fl() > 0.0) {
-			c = (CColor(*col_urgent) * this->urgent.fl())
-			  + (CColor(*col_inactive) * (1.0 - this->urgent.fl()));
-		} else {
-			c = CColor(*col_inactive);
-		}
+		auto focused = this->focused.fl();
+		auto urgent = this->urgent.fl();
+		auto inactive = 1.0 - (focused + urgent);
+		auto c = (CColor(*col_active) * focused) + (CColor(*col_urgent) * urgent)
+		       + (CColor(*col_inactive) * inactive);
 
 		cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
@@ -239,16 +234,8 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 			pango_layout_set_width(layout, width * PANGO_SCALE);
 			pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
 
-			CColor c;
-			if (this->focused.fl() > 0.0) {
-				c = (CColor(*col_text_active) * this->focused.fl())
-				  + (CColor(*col_text_inactive) * (1.0 - this->focused.fl()));
-			} else if (this->urgent.fl() > 0.0) {
-				c = (CColor(*col_text_urgent) * this->urgent.fl())
-				  + (CColor(*col_text_inactive) * (1.0 - this->urgent.fl()));
-			} else {
-				c = CColor(*col_text_inactive);
-			}
+			auto c = (CColor(*col_text_active) * focused) + (CColor(*col_text_urgent) * urgent)
+			       + (CColor(*col_text_inactive) * inactive);
 
 			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
