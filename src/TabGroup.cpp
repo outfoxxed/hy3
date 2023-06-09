@@ -11,6 +11,22 @@
 #include <pixman.h>
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
+	this->focused.create(
+	    AVARTYPE_FLOAT,
+	    0.0f,
+	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    nullptr,
+	    AVARDAMAGE_NONE
+	);
+
+	this->urgent.create(
+	    AVARTYPE_FLOAT,
+	    0.0f,
+	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    nullptr,
+	    AVARDAMAGE_NONE
+	);
+
 	this->offset.create(
 	    AVARTYPE_FLOAT,
 	    -1.0f,
@@ -43,6 +59,8 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	    AVARDAMAGE_NONE
 	);
 
+	this->focused.registerVar();
+	this->urgent.registerVar();
 	this->offset.registerVar();
 	this->width.registerVar();
 	this->vertical_pos.registerVar();
@@ -50,6 +68,8 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 
 	auto update_callback = [this](void*) { this->tab_bar.dirty = true; };
 
+	this->focused.setUpdateCallback(update_callback);
+	this->urgent.setUpdateCallback(update_callback);
 	this->offset.setUpdateCallback(update_callback);
 	this->width.setUpdateCallback(update_callback);
 	this->vertical_pos.setUpdateCallback(update_callback);
@@ -69,16 +89,14 @@ bool Hy3TabBarEntry::operator==(const Hy3TabBarEntry& entry) const {
 }
 
 void Hy3TabBarEntry::setFocused(bool focused) {
-	if (this->focused != focused) {
+	if (this->focused.goalf() != focused) {
 		this->focused = focused;
-		this->tab_bar.dirty = true;
 	}
 }
 
 void Hy3TabBarEntry::setUrgent(bool urgent) {
-	if (this->urgent != urgent) {
+	if (this->urgent.goalf() != urgent) {
 		this->urgent = urgent;
-		this->tab_bar.dirty = true;
 	}
 }
 
@@ -129,8 +147,8 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 	    // clang-format off
 			|| this->last_render.x != box.x
 			|| this->last_render.y != box.y
-	    || this->last_render.focused != this->focused
-			|| this->last_render.urgent != this->urgent
+	    || this->last_render.focused != this->focused.fl()
+			|| this->last_render.urgent != this->urgent.fl()
 	    || this->last_render.window_title != this->window_title
 	    || this->last_render.rounding != rounding
 			|| this->last_render.text_font != *text_font
@@ -147,8 +165,8 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 	{
 		this->last_render.x = box.x;
 		this->last_render.y = box.y;
-		this->last_render.focused = this->focused;
-		this->last_render.urgent = this->urgent;
+		this->last_render.focused = this->focused.fl();
+		this->last_render.urgent = this->urgent.fl();
 		this->last_render.window_title = this->window_title;
 		this->last_render.rounding = rounding;
 		this->last_render.text_font = *text_font;
@@ -172,10 +190,12 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 
 		// set brush
 		CColor c;
-		if (this->focused) {
-			c = CColor(*col_active);
-		} else if (this->urgent) {
-			c = CColor(*col_urgent);
+		if (this->focused.fl() > 0.0) {
+			c = (CColor(*col_active) * this->focused.fl())
+			  + (CColor(*col_inactive) * (1.0 - this->focused.fl()));
+		} else if (this->urgent.fl() > 0.0) {
+			c = (CColor(*col_urgent) * this->urgent.fl())
+			  + (CColor(*col_inactive) * (1.0 - this->urgent.fl()));
 		} else {
 			c = CColor(*col_inactive);
 		}
@@ -220,10 +240,12 @@ void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
 			pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
 
 			CColor c;
-			if (this->focused) {
-				c = CColor(*col_text_active);
-			} else if (this->urgent) {
-				c = CColor(*col_text_urgent);
+			if (this->focused.fl() > 0.0) {
+				c = (CColor(*col_text_active) * this->focused.fl())
+				  + (CColor(*col_text_inactive) * (1.0 - this->focused.fl()));
+			} else if (this->urgent.fl() > 0.0) {
+				c = (CColor(*col_text_urgent) * this->urgent.fl())
+				  + (CColor(*col_text_inactive) * (1.0 - this->urgent.fl()));
 			} else {
 				c = CColor(*col_text_inactive);
 			}
@@ -611,12 +633,12 @@ void Hy3TabGroup::renderTabBar() {
 	};
 
 	for (auto& entry: this->bar.entries) {
-		if (entry.focused) continue;
+		if (entry.focused.goalf() == 1.0) continue;
 		render_entry(entry);
 	}
 
 	for (auto& entry: this->bar.entries) {
-		if (!entry.focused) continue;
+		if (entry.focused.goalf() == 0.0) continue;
 		render_entry(entry);
 	}
 

@@ -12,10 +12,10 @@ class Hy3TabBar;
 
 struct Hy3TabBarEntry {
 	std::string window_title;
-	bool focused = false;
-	bool urgent = false;
 	bool destroying = false;
 	CTexture texture;
+	CAnimatedVariable focused;
+	CAnimatedVariable urgent;
 	CAnimatedVariable offset;       // 0.0-1.0 of total bar
 	CAnimatedVariable width;        // 0.0-1.0 of total bar
 	CAnimatedVariable vertical_pos; // 0.0-1.0, user specified direction
@@ -27,8 +27,8 @@ struct Hy3TabBarEntry {
 		int x, y;
 		float rounding = 0.0;
 		float scale = 0.0;
-		bool focused = false;
-		bool urgent = false;
+		float focused = 0.0;
+		float urgent = 0.0;
 		std::string window_title;
 
 		std::string text_font;
