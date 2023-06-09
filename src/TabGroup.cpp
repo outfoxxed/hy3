@@ -95,6 +95,7 @@ void Hy3TabBarEntry::setFocused(bool focused) {
 }
 
 void Hy3TabBarEntry::setUrgent(bool urgent) {
+	if (urgent && this->focused.goalf() == 1.0) urgent = false;
 	if (this->urgent.goalf() != urgent) {
 		this->urgent = urgent;
 	}
