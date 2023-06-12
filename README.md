@@ -94,7 +94,13 @@ plugin {
  - `hy3:movefocus, <l | u | d | r | left | down | up | right>` - move the focus left, up, down, or right
  - `hy3:movewindow, <l | u | d | r | left | down | up | right> [, once]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
- - `hy3:raisefocus` - raise the active focus one level
+ - `hy3:changefocus <top | bottom | raise | lower | tab | tabnode>`
+   - `top` - focus all nodes in the workspace
+   - `bottom` - focus the single root selection window
+   - `raise` - raise focus one level
+   - `lower` - lower focus one level
+   - `tab` - raise focus to the nearest tab
+   - `tabnode` - raise focus to the nearest node under the tab
  - `hy3:debugnodes` - print the node tree into the hyprland log
 
 ## Installing

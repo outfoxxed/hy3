@@ -79,11 +79,16 @@ void dispatch_movefocus(std::string arg) {
 	}
 }
 
-void dispatch_raisefocus(std::string arg) {
+void dispatch_changefocus(std::string arg) {
 	int workspace = workspace_for_action();
 	if (workspace == -1) return;
 
-	g_Hy3Layout->raiseFocus(workspace);
+	if (arg == "top") g_Hy3Layout->changeFocus(workspace, FocusShift::Top);
+	else if (arg == "bottom") g_Hy3Layout->changeFocus(workspace, FocusShift::Bottom);
+	else if (arg == "raise") g_Hy3Layout->changeFocus(workspace, FocusShift::Raise);
+	else if (arg == "lower") g_Hy3Layout->changeFocus(workspace, FocusShift::Lower);
+	else if (arg == "tab") g_Hy3Layout->changeFocus(workspace, FocusShift::Tab);
+	else if (arg == "tabnode") g_Hy3Layout->changeFocus(workspace, FocusShift::TabNode);
 }
 
 void dispatch_focustab(std::string arg) {
@@ -169,7 +174,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
-	HyprlandAPI::addDispatcher(PHANDLE, "hy3:raisefocus", dispatch_raisefocus);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changefocus", dispatch_changefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:focustab", dispatch_focustab);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:debugnodes", dispatch_debug);
 

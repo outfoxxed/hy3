@@ -264,7 +264,9 @@ bool Hy3Node::isIndirectlyFocused() {
 	Hy3Node* node = this;
 
 	while (node->parent != nullptr) {
-		if (node->parent->data.as_group.focused_child != node) return false;
+		if (!node->parent->data.as_group.group_focused
+		    && node->parent->data.as_group.focused_child != node)
+			return false;
 		node = node->parent;
 	}
 
@@ -295,17 +297,23 @@ std::string Hy3Node::getTitle() {
 	return "";
 }
 
+void markGroupFocusedRecursive(Hy3GroupData& group) {
+	group.group_focused = true;
+	for (auto& child: group.children) {
+		if (child->data.type == Hy3NodeData::Group) markGroupFocusedRecursive(child->data.as_group);
+	}
+}
+
 void Hy3Node::markFocused() {
 	Hy3Node* node = this;
 
 	// undo decos for root focus
 	auto* root = node;
 	while (root->parent != nullptr) root = root->parent;
-	auto* oldfocus = root->getFocusedNode();
 
 	// update focus
 	if (this->data.type == Hy3NodeData::Group) {
-		this->data.as_group.group_focused = true;
+		markGroupFocusedRecursive(this->data.as_group);
 	}
 
 	auto* node2 = node;
@@ -315,26 +323,7 @@ void Hy3Node::markFocused() {
 		node2 = node2->parent;
 	}
 
-	while (node->parent != nullptr) {
-		node->parent->updateTabBar();
-		node = node->parent;
-	}
-
-	while (node2->parent != nullptr) {
-		node2->parent->data.as_group.focused_child = node2;
-		node2->parent->data.as_group.group_focused = false;
-		node2->parent->updateTabBar();
-		node2 = node2->parent;
-	}
-
-	if (oldfocus != nullptr) {
-		oldfocus->updateDecos();
-
-		while (oldfocus != nullptr) {
-			oldfocus->updateTabBar();
-			oldfocus = oldfocus->parent;
-		}
-	}
+	root->updateDecos();
 }
 
 void Hy3Node::focus() {
@@ -615,6 +604,8 @@ void Hy3Node::updateDecos() {
 		for (auto* child: this->data.as_group.children) {
 			child->updateDecos();
 		}
+
+		this->updateTabBar();
 	}
 }
 
@@ -1616,21 +1607,62 @@ Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift, 
 	return nullptr;
 }
 
-void Hy3Layout::raiseFocus(int workspace) {
+void Hy3Layout::changeFocus(int workspace, FocusShift shift) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 
-	if (node->parent != nullptr) {
-		node->parent->focus();
-		node->parent->updateDecos();
-	} else {
-		// trace focus as far as possible
-		while (node->data.type == Hy3NodeData::Group && node->data.as_group.focused_child != nullptr) {
-			node = node->data.as_group.focused_child;
+	switch (shift) {
+	case FocusShift::Bottom: goto bottom;
+	case FocusShift::Top:
+		while (node->parent != nullptr) {
+			node = node->parent;
 		}
 
 		node->focus();
+		return;
+	case FocusShift::Raise:
+		if (node->parent == nullptr) goto bottom;
+		else {
+			node->parent->focus();
+		}
+		return;
+	case FocusShift::Lower:
+		if (node->data.type == Hy3NodeData::Group && node->data.as_group.focused_child != nullptr)
+			node->data.as_group.focused_child->focus();
+		return;
+	case FocusShift::Tab:
+		// make sure we go up at least one level
+		if (node->parent != nullptr) node = node->parent;
+		while (node->parent != nullptr) {
+			if (node->data.as_group.layout == Hy3GroupLayout::Tabbed) {
+				node->focus();
+				return;
+			}
+
+			node = node->parent;
+		}
+		return;
+	case FocusShift::TabNode:
+		// make sure we go up at least one level
+		if (node->parent != nullptr) node = node->parent;
+		while (node->parent != nullptr) {
+			if (node->parent->data.as_group.layout == Hy3GroupLayout::Tabbed) {
+				node->focus();
+				return;
+			}
+
+			node = node->parent;
+		}
+		return;
 	}
+
+bottom:
+	while (node->data.type == Hy3NodeData::Group && node->data.as_group.focused_child != nullptr) {
+		node = node->data.as_group.focused_child;
+	}
+
+	node->focus();
+	return;
 }
 
 Hy3Node* Hy3Node::findNodeForTabGroup(Hy3TabGroup& tab_group) {

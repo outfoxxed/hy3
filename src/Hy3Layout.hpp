@@ -22,6 +22,15 @@ enum class ShiftDirection {
 	Right,
 };
 
+enum class FocusShift {
+	Top,
+	Bottom,
+	Raise,
+	Lower,
+	Tab,
+	TabNode,
+};
+
 struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
@@ -136,7 +145,7 @@ public:
 	void makeOppositeGroupOn(Hy3Node*);
 	void shiftWindow(int, ShiftDirection, bool);
 	void shiftFocus(int, ShiftDirection);
-	void raiseFocus(int);
+	void changeFocus(int, FocusShift);
 	void focusTab(int);
 
 	bool shouldRenderSelected(CWindow*);
