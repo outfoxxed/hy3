@@ -1385,13 +1385,13 @@ void Hy3Layout::makeOppositeGroupOn(Hy3Node* node) {
 	}
 }
 
-void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction) {
+void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftFocus %p %d", node, direction);
 	if (node == nullptr) return;
 
 	Hy3Node* target;
-	if ((target = this->shiftOrGetFocus(*node, direction, false, false))) {
+	if ((target = this->shiftOrGetFocus(*node, direction, false, false, visible))) {
 		target->focus();
 		while (target->parent != nullptr) target = target->parent;
 		target->recalcSizePosRecursive();
@@ -1403,7 +1403,7 @@ void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) 
 	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
 
-	this->shiftOrGetFocus(*node, direction, true, once);
+	this->shiftOrGetFocus(*node, direction, true, once, false);
 }
 
 bool shiftIsForward(ShiftDirection direction) {
@@ -1419,8 +1419,13 @@ bool shiftMatchesLayout(Hy3GroupLayout layout, ShiftDirection direction) {
 	    || (layout != Hy3GroupLayout::SplitV && !shiftIsVertical(direction));
 }
 
-Hy3Node*
-Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift, bool once) {
+Hy3Node* Hy3Layout::shiftOrGetFocus(
+    Hy3Node& node,
+    ShiftDirection direction,
+    bool shift,
+    bool once,
+    bool visible
+) {
 	auto* break_origin = &node;
 	auto* break_parent = break_origin->parent;
 
@@ -1433,7 +1438,9 @@ Hy3Layout::shiftOrGetFocus(Hy3Node& node, ShiftDirection direction, bool shift, 
 
 		auto& group = break_parent->data.as_group; // must be a group in order to be a parent
 
-		if (shiftMatchesLayout(group.layout, direction)) {
+		if (shiftMatchesLayout(group.layout, direction)
+		    && (!visible || group.layout != Hy3GroupLayout::Tabbed))
+		{
 			// group has the correct orientation
 
 			if (once && shift && has_broken_once) break;

@@ -144,7 +144,7 @@ public:
 	void makeGroupOn(Hy3Node*, Hy3GroupLayout);
 	void makeOppositeGroupOn(Hy3Node*);
 	void shiftWindow(int, ShiftDirection, bool);
-	void shiftFocus(int, ShiftDirection);
+	void shiftFocus(int, ShiftDirection, bool);
 	void changeFocus(int, FocusShift);
 	void focusTab(int);
 
@@ -175,7 +175,7 @@ private:
 	// if shift is true, shift the window in the given direction, returning
 	// nullptr, if shift is false, return the window in the given direction or
 	// nullptr. if once is true, only one group will be broken out of / into
-	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool, bool);
+	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool, bool, bool);
 
 	friend struct Hy3Node;
 };

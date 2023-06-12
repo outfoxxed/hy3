@@ -70,12 +70,14 @@ void dispatch_movewindow(std::string value) {
 	}
 }
 
-void dispatch_movefocus(std::string arg) {
+void dispatch_movefocus(std::string value) {
 	int workspace = workspace_for_action();
 	if (workspace == -1) return;
 
-	if (auto shift = parseShiftArg(arg)) {
-		g_Hy3Layout->shiftFocus(workspace, shift.value());
+	auto args = CVarList(value);
+
+	if (auto shift = parseShiftArg(args[0])) {
+		g_Hy3Layout->shiftFocus(workspace, shift.value(), args[1] == "visible");
 	}
 }
 

@@ -91,10 +91,11 @@ plugin {
 
 ### Dispatcher list
  - `hy3:makegroup, <h | v | opposite | tab>` - make a vertical / horizontal split or tab group
- - `hy3:movefocus, <l | u | d | r | left | down | up | right>` - move the focus left, up, down, or right
+ - `hy3:movefocus, <l | u | d | r | left | down | up | right> [, visible]` - move the focus left, up, down, or right
+   - `visible` - only move between visible nodes, not hidden tabs
  - `hy3:movewindow, <l | u | d | r | left | down | up | right> [, once]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
- - `hy3:changefocus <top | bottom | raise | lower | tab | tabnode>`
+ - `hy3:changefocus, <top | bottom | raise | lower | tab | tabnode>`
    - `top` - focus all nodes in the workspace
    - `bottom` - focus the single root selection window
    - `raise` - raise focus one level
