@@ -1620,9 +1620,16 @@ void Hy3Layout::raiseFocus(int workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 
-	if (node->parent != nullptr && node->parent->parent != nullptr) {
+	if (node->parent != nullptr) {
 		node->parent->focus();
 		node->parent->updateDecos();
+	} else {
+		// trace focus as far as possible
+		while (node->data.type == Hy3NodeData::Group && node->data.as_group.focused_child != nullptr) {
+			node = node->data.as_group.focused_child;
+		}
+
+		node->focus();
 	}
 }
 
@@ -1697,7 +1704,7 @@ bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 	if (focused == nullptr) return false;
 
 	switch (focused->data.type) {
-	case Hy3NodeData::Window: return false;
+	case Hy3NodeData::Window: return focused->data.as_window == window;
 	case Hy3NodeData::Group:
 		auto* node = this->getNodeFromWindow(window);
 		if (node == nullptr) return false;
