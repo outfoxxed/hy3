@@ -1338,6 +1338,13 @@ void Hy3Layout::onDisable() {
 	HyprlandAPI::unregisterCallback(PHANDLE, urgentHookPtr.get());
 	HyprlandAPI::unregisterCallback(PHANDLE, tickHookPtr.get());
 	selection_hook::disable();
+
+	for (auto& node: this->nodes) {
+		if (node.data.type == Hy3NodeData::Window) {
+			node.data.as_window->setHidden(false);
+		}
+	}
+
 	this->nodes.clear();
 }
 
