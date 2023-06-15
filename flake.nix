@@ -41,7 +41,7 @@
         name = "hy3";
 
         nativeBuildInputs = with pkgs; [
-          clang-tools
+          clang-tools_16
           bear
         ];
 

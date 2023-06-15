@@ -93,11 +93,37 @@ void dispatch_changefocus(std::string arg) {
 	else if (arg == "tabnode") g_Hy3Layout->changeFocus(workspace, FocusShift::TabNode);
 }
 
-void dispatch_focustab(std::string arg) {
+void dispatch_focustab(std::string value) {
 	int workspace = workspace_for_action();
 	if (workspace == -1) return;
 
-	g_Hy3Layout->focusTab(workspace);
+	auto i = 0;
+	auto args = CVarList(value);
+
+	TabFocus focus;
+	auto mouse = TabFocusMousePriority::Ignore;
+	bool wrap_scroll = false;
+
+	if (args[i] == "l" || args[i] == "left") focus = TabFocus::Left;
+	else if (args[i] == "r" || args[i] == "right") focus = TabFocus::Right;
+	else if (args[i] == "mouse") {
+		g_Hy3Layout->focusTab(workspace, TabFocus::MouseLocation, mouse, false);
+		return;
+	} else return;
+
+	i++;
+
+	if (args[i] == "prioritize_hovered") {
+		mouse = TabFocusMousePriority::Prioritize;
+		i++;
+	} else if (args[i] == "require_hovered") {
+		mouse = TabFocusMousePriority::Require;
+		i++;
+	}
+
+	if (args[i++] == "wrap") wrap_scroll = true;
+
+	g_Hy3Layout->focusTab(workspace, focus, mouse, wrap_scroll);
 }
 
 void dispatch_debug(std::string arg) {

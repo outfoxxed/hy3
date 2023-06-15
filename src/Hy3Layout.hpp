@@ -31,6 +31,18 @@ enum class FocusShift {
 	TabNode,
 };
 
+enum class TabFocus {
+	MouseLocation,
+	Left,
+	Right,
+};
+
+enum class TabFocusMousePriority {
+	Ignore,
+	Prioritize,
+	Require,
+};
+
 struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
@@ -146,7 +158,7 @@ public:
 	void shiftWindow(int, ShiftDirection, bool);
 	void shiftFocus(int, ShiftDirection, bool);
 	void changeFocus(int, FocusShift);
-	void focusTab(int);
+	void focusTab(int, TabFocus, TabFocusMousePriority, bool);
 
 	bool shouldRenderSelected(CWindow*);
 

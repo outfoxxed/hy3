@@ -91,9 +91,9 @@ plugin {
 
 ### Dispatcher list
  - `hy3:makegroup, <h | v | opposite | tab>` - make a vertical / horizontal split or tab group
- - `hy3:movefocus, <l | u | d | r | left | down | up | right> [, visible]` - move the focus left, up, down, or right
+ - `hy3:movefocus, <l | u | d | r | left | down | up | right>, [visible]` - move the focus left, up, down, or right
    - `visible` - only move between visible nodes, not hidden tabs
- - `hy3:movewindow, <l | u | d | r | left | down | up | right> [, once]` - move a window left, up, down, or right
+ - `hy3:movewindow, <l | u | d | r | left | down | up | right>, [once]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
  - `hy3:changefocus, <top | bottom | raise | lower | tab | tabnode>`
    - `top` - focus all nodes in the workspace
@@ -102,6 +102,16 @@ plugin {
    - `lower` - lower focus one level
    - `tab` - raise focus to the nearest tab
    - `tabnode` - raise focus to the nearest node under the tab
+ - `hy3:focustab <mouse | [l | r | left | right], [prioritize_hovered | require_hovered], [wrap]>`
+   - `mouse` - focus the tab under the mouse, works well with a non consuming bind, e.g.
+     ```conf
+     # binds hy3:focustab to lmb and still allows windows to receive clicks
+     bindn = , mouse:272, hy3:focustab, mouse
+     ```
+   - `l | r | left | right` - direction to change tabs in
+   - `prioritize_hovered` - prioritize the tab group under the mouse when multiple are stacked. use the lowest group if none is under the mouse.
+   - `require_hovered` - affect the tab group under the mouse. do nothing if none are hovered.
+   - `wrap` - wrap to the opposite size of the tab bar if moving off the end
  - `hy3:debugnodes` - print the node tree into the hyprland log
 
 ## Installing
