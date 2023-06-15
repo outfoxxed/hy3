@@ -1,7 +1,6 @@
 {
   inputs = {
-    #hyprland.url = "github:hyprwm/Hyprland";
-    hyprland.url = "github:outfoxxed/Hyprland?rev=51441d5b9de13335e5723cdbb78e372ebe36490e";
+    hyprland.url = "github:hyprwm/Hyprland";
   };
 
   outputs = { self, hyprland, ... }: let
@@ -42,7 +41,7 @@
         name = "hy3";
 
         nativeBuildInputs = with pkgs; [
-          clang-tools_16
+          clang-tools
           bear
         ];
 

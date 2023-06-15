@@ -196,8 +196,11 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 	double offset = 0;
 
-	if (group->layout == Hy3GroupLayout::Tabbed && group->focused_child != nullptr) {
+	if (group->layout == Hy3GroupLayout::Tabbed && group->focused_child != nullptr && !group->focused_child->hidden) {
 		group->focused_child->setHidden(false);
+
+		auto box = wlr_box { tpos.x, tpos.y, tsize.x, tsize.y };
+		g_pHyprRenderer->damageBox(&box);
 	}
 
 	for (auto* child: group->children) {
