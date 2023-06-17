@@ -117,7 +117,7 @@ plugin {
 ## Installing
 
 ### Nix
-#### Using the home-manager module
+#### Hyprland home manager module
 Assuming you use hyprland's home manager module, you can easily integrate hy3 by adding it to the plugins array.
 
 ```nix
@@ -159,7 +159,7 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3 by
 }
 ```
 
-#### Manually (Nix)
+#### Manual (Nix)
 hy3's binary is availible as `${hy3.packages.<system>.hy3}/lib/libhy3.so`, so you can also
 directly use it in your hyprland config like so:
 
@@ -173,19 +173,16 @@ wayland.windowManager.hyprland = {
 };
 ```
 
-### [Hyprload](https://github.com/Duckonaut/hyprload)
-Add an entry to your hyprload.toml like so:
+### Arch (AUR)
+There is an unofficial [hy3-git](https://aur.archlinux.org/packages/hy3-git) package.
 
-```toml
-plugins = [
-  # ...
-  "outfoxxed/hy3",
-  # ...
-]
-```
+As of writing, the `hyprland-git` AUR package does not properly handle hyprland headers,
+which are required for hy3 to build. I have been informed that there is a
+[fixed version](https://gist.githubusercontent.com/eclairevoyant/0007c44a52c715f243452d17362104b3/raw/9b834290ac75bef2f3bb1364d1380832c65ed6bf/PKGBUILD)
+that places the headers in the correct location.
 
 ### Manual
-Install hyprland, then run the following commands:
+Install hyprland, including its headers and pkg-config file, then run the following commands:
 
 ```sh
 cmake -DCMAKE_BUILD_TYPE=Debug -B build
@@ -194,3 +191,5 @@ cmake --build build
 
 The plugin will be located at `build/libhy3.so`, and you can load it normally
 (See [the hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#installing--using-plugins) for details.)
+
+Note that the hyprland headers and pkg-config file **MUST be installed correctly, for the target version of hyprland**.
