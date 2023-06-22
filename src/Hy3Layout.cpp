@@ -1816,7 +1816,10 @@ bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 	auto* root = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
 	if (root == nullptr || root->data.as_group.focused_child == nullptr) return false;
 	auto* focused = root->getFocusedNode();
-	if (focused == nullptr) return false;
+	if (focused == nullptr
+	    || (focused->data.type == Hy3NodeData::Window
+	        && focused->data.as_window != g_pCompositor->m_pLastWindow))
+		return false;
 
 	switch (focused->data.type) {
 	case Hy3NodeData::Window: return focused->data.as_window == window;
