@@ -1415,7 +1415,14 @@ void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) 
 	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
 
-	this->shiftOrGetFocus(*node, direction, true, once, false);
+	if (once && node->parent != nullptr && node->parent->data.as_group.children.size() == 1) {
+		auto* node2 = node->parent;
+		Hy3Node::swapData(*node, *node2);
+		node2->layout->nodes.remove(*node);
+		node2->recalcSizePosRecursive();
+	} else {
+		this->shiftOrGetFocus(*node, direction, true, once, false);
+	}
 }
 
 bool shiftIsForward(ShiftDirection direction) {
