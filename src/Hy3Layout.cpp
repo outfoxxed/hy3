@@ -1710,15 +1710,71 @@ Hy3Node* Hy3Node::findNodeForTabGroup(Hy3TabGroup& tab_group) {
 	return nullptr;
 }
 
+Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
+	// clang-format off
+	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+	static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
+	static const auto* tab_bar_padding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
+	// clang-format on
+
+	auto inset = *tab_bar_height + *tab_bar_padding;
+
+	if (node.parent == nullptr) {
+		inset += *gaps_out;
+	} else {
+		inset += *gaps_in;
+	}
+
+	if (node.data.type == Hy3NodeData::Group) {
+		if (node.hidden) return nullptr;
+		// note: tab bar clicks ignore animations
+		if (node.position.x > pos.x || node.position.y > pos.y || node.position.x + node.size.x < pos.x
+		    || node.position.y + node.size.y < pos.y)
+			return nullptr;
+
+		if (node.data.as_group.layout == Hy3GroupLayout::Tabbed
+		    && node.data.as_group.tab_bar != nullptr)
+		{
+			if (pos.y < node.position.y + inset) {
+				auto& children = node.data.as_group.children;
+				auto& tab_bar = *node.data.as_group.tab_bar;
+
+				auto size = tab_bar.size.vec();
+				auto x = pos.x - tab_bar.pos.vec().x;
+				auto child_iter = children.begin();
+
+				for (auto& tab: tab_bar.bar.entries) {
+					if (child_iter == children.end()) break;
+
+					if (x > tab.offset.fl() * size.x && x < (tab.offset.fl() + tab.width.fl()) * size.x) {
+						*focused_node = *child_iter;
+						return &node;
+					}
+
+					child_iter = std::next(child_iter);
+				}
+			}
+
+			if (node.data.as_group.focused_child != nullptr) {
+				return findTabBarAt(*node.data.as_group.focused_child, pos, focused_node);
+			}
+		} else {
+			for (auto child: node.data.as_group.children) {
+				if (findTabBarAt(*child, pos, focused_node)) return child;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 void Hy3Layout::focusTab(
     int workspace,
     TabFocus target,
     TabFocusMousePriority mouse,
     bool wrap_scroll
 ) {
-	static const auto* tab_bar_padding
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
-
 	auto* node = this->getWorkspaceRootGroup(workspace);
 	if (node == nullptr) return;
 
@@ -1726,37 +1782,10 @@ void Hy3Layout::focusTab(
 	Hy3Node* tab_focused_node;
 
 	if (target == TabFocus::MouseLocation || mouse != TabFocusMousePriority::Ignore) {
-		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
-
-		for (auto& tab_group: this->tab_groups) {
-			auto pos = tab_group.pos.vec();
-			if (pos.x > mouse_pos.x || pos.y > mouse_pos.y) continue;
-			auto size = tab_group.size.vec();
-			if (pos.x + size.x < mouse_pos.x || pos.y + size.y + *tab_bar_padding < mouse_pos.y) continue;
-
-			tab_node = node->findNodeForTabGroup(tab_group);
-			if (tab_node == nullptr) continue;
-			if (target != TabFocus::MouseLocation) goto hastab;
-
-			auto delta = mouse_pos - pos;
-
-			auto& node_list = tab_node->data.as_group.children;
-			auto node_iter = node_list.begin();
-
-			for (auto& tab: tab_group.bar.entries) {
-				if (node_iter == node_list.end()) break;
-
-				if (delta.x > tab.offset.fl() * size.x
-				    && delta.x < (tab.offset.fl() + tab.width.fl()) * size.x)
-				{
-					tab_focused_node = *node_iter;
-					goto hastab;
-				}
-
-				node_iter = std::next(node_iter);
-			}
-
-			node->recalcSizePosRecursive();
+		if (g_pCompositor->windowFloatingFromCursor() == nullptr) {
+			auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
+			tab_node = findTabBarAt(*node, mouse_pos, &tab_focused_node);
+			if (tab_node != nullptr) goto hastab;
 		}
 
 		if (target == TabFocus::MouseLocation || mouse == TabFocusMousePriority::Require) return;
