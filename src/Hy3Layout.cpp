@@ -764,18 +764,33 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	auto* monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
 
 	Hy3Node* opening_into;
-	Hy3Node* opening_after;
+	Hy3Node* opening_after = nullptr;
 
-	if (g_pCompositor->m_pLastWindow != nullptr && !g_pCompositor->m_pLastWindow->m_bIsFloating
-	    && g_pCompositor->m_pLastWindow != window
-	    && g_pCompositor->m_pLastWindow->m_iWorkspaceID == window->m_iWorkspaceID
-	    && g_pCompositor->m_pLastWindow->m_bIsMapped)
-	{
-		opening_after = this->getNodeFromWindow(g_pCompositor->m_pLastWindow);
-	} else {
-		opening_after = this->getNodeFromWindow(
-		    g_pCompositor->vectorToWindowTiled(g_pInputManager->getMouseCoordsInternal())
-		);
+	if (monitor->activeWorkspace != -1) {
+		auto* root = this->getWorkspaceRootGroup(monitor->activeWorkspace);
+
+		if (root != nullptr) {
+			opening_after = root->getFocusedNode();
+
+			// opening_after->parent cannot be nullptr
+			if (opening_after == root) {
+				opening_after = root->data.as_group.focused_child;
+			}
+		}
+	}
+
+	if (opening_after == nullptr) {
+		if (g_pCompositor->m_pLastWindow != nullptr && !g_pCompositor->m_pLastWindow->m_bIsFloating
+		    && g_pCompositor->m_pLastWindow != window
+		    && g_pCompositor->m_pLastWindow->m_iWorkspaceID == window->m_iWorkspaceID
+		    && g_pCompositor->m_pLastWindow->m_bIsMapped)
+		{
+			opening_after = this->getNodeFromWindow(g_pCompositor->m_pLastWindow);
+		} else {
+			opening_after = this->getNodeFromWindow(
+			    g_pCompositor->vectorToWindowTiled(g_pInputManager->getMouseCoordsInternal())
+			);
+		}
 	}
 
 	if (opening_after != nullptr && opening_after->workspace_id != window->m_iWorkspaceID) {
