@@ -113,6 +113,7 @@ struct Hy3Node {
 	bool isIndirectlyFocused();
 	Hy3Node* findNodeForTabGroup(Hy3TabGroup&);
 	std::string getTitle();
+	void appendAllWindows(std::vector<CWindow*>&);
 
 	bool operator==(const Hy3Node&) const;
 
@@ -159,6 +160,7 @@ public:
 	void shiftFocus(int, ShiftDirection, bool);
 	void changeFocus(int, FocusShift);
 	void focusTab(int, TabFocus, TabFocusMousePriority, bool);
+	void killFocusedNode(int);
 
 	bool shouldRenderSelected(CWindow*);
 

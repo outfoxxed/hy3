@@ -302,6 +302,17 @@ std::string Hy3Node::getTitle() {
 	return "";
 }
 
+void Hy3Node::appendAllWindows(std::vector<CWindow*>& list) {
+	switch (this->data.type) {
+	case Hy3NodeData::Window: list.push_back(this->data.as_window); break;
+	case Hy3NodeData::Group:
+		for (auto* child: this->data.as_group.children) {
+			child->appendAllWindows(list);
+		}
+		break;
+	}
+}
+
 void markGroupFocusedRecursive(Hy3GroupData& group) {
 	group.group_focused = true;
 	for (auto& child: group.children) {
@@ -1853,6 +1864,19 @@ hastab:
 
 	focus->focus();
 	tab_node->recalcSizePosRecursive();
+}
+
+void Hy3Layout::killFocusedNode(int workspace) {
+	auto* node = this->getWorkspaceFocusedNode(workspace);
+	if (node == nullptr) return;
+
+	std::vector<CWindow*> windows;
+	node->appendAllWindows(windows);
+
+	for (auto* window: windows) {
+		window->setHidden(false);
+		g_pCompositor->closeWindow(window);
+	}
 }
 
 bool Hy3Layout::shouldRenderSelected(CWindow* window) {
