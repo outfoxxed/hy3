@@ -1867,15 +1867,19 @@ hastab:
 }
 
 void Hy3Layout::killFocusedNode(int workspace) {
-	auto* node = this->getWorkspaceFocusedNode(workspace);
-	if (node == nullptr) return;
+	if (g_pCompositor->m_pLastWindow != nullptr && g_pCompositor->m_pLastWindow->m_bIsFloating) {
+		g_pCompositor->closeWindow(g_pCompositor->m_pLastWindow);
+	} else {
+		auto* node = this->getWorkspaceFocusedNode(workspace);
+		if (node == nullptr) return;
 
-	std::vector<CWindow*> windows;
-	node->appendAllWindows(windows);
+		std::vector<CWindow*> windows;
+		node->appendAllWindows(windows);
 
-	for (auto* window: windows) {
-		window->setHidden(false);
-		g_pCompositor->closeWindow(window);
+		for (auto* window: windows) {
+			window->setHidden(false);
+			g_pCompositor->closeWindow(window);
+		}
 	}
 }
 
