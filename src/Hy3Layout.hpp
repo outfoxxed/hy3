@@ -75,8 +75,8 @@ public:
 
 	Hy3NodeData();
 	~Hy3NodeData();
-	Hy3NodeData(CWindow*);
-	Hy3NodeData(Hy3GroupLayout);
+	Hy3NodeData(CWindow* window);
+	Hy3NodeData(Hy3GroupLayout layout);
 	Hy3NodeData& operator=(CWindow*);
 	Hy3NodeData& operator=(Hy3GroupLayout);
 
@@ -99,7 +99,7 @@ struct Hy3Node {
 	bool valid = true;
 	Hy3Layout* layout = nullptr;
 
-	void recalcSizePosRecursive(bool force = false);
+	void recalcSizePosRecursive(bool no_animation = false);
 	std::string debugNode();
 	void markFocused();
 	void focus();
@@ -107,7 +107,7 @@ struct Hy3Node {
 	void raiseToTop();
 	Hy3Node* getFocusedNode();
 	void updateDecos();
-	void setHidden(bool hidden);
+	void setHidden(bool);
 	void updateTabBar();
 	void updateTabBarRecursive();
 	bool isUrgent();
@@ -119,7 +119,7 @@ struct Hy3Node {
 	bool operator==(const Hy3Node&) const;
 
 	// Attempt to swallow a group. returns true if swallowed
-	static bool swallowGroups(Hy3Node*);
+	static bool swallowGroups(Hy3Node* into);
 	// Remove this node from its parent, deleting the parent if it was
 	// the only child and recursing if the parent was the only child of it's
 	// parent.
@@ -137,36 +137,36 @@ public:
 	virtual void onWindowRemovedTiling(CWindow*);
 	virtual void onWindowFocusChange(CWindow*);
 	virtual bool isWindowTiled(CWindow*);
-	virtual void recalculateMonitor(const int&);
+	virtual void recalculateMonitor(const int& monitor_id);
 	virtual void recalculateWindow(CWindow*);
 	virtual void onBeginDragWindow();
-	virtual void resizeActiveWindow(const Vector2D&, CWindow* pWindow = nullptr);
-	virtual void fullscreenRequestForWindow(CWindow*, eFullscreenMode, bool);
-	virtual std::any layoutMessage(SLayoutMessageHeader, std::string);
+	virtual void resizeActiveWindow(const Vector2D& delta, CWindow* pWindow = nullptr);
+	virtual void fullscreenRequestForWindow(CWindow*, eFullscreenMode, bool enable_fullscreen);
+	virtual std::any layoutMessage(SLayoutMessageHeader header, std::string content);
 	virtual SWindowRenderLayoutHints requestRenderHints(CWindow*);
 	virtual void switchWindows(CWindow*, CWindow*);
 	virtual void alterSplitRatio(CWindow*, float, bool);
 	virtual std::string getLayoutName();
 	virtual CWindow* getNextWindowCandidate(CWindow*);
-	virtual void replaceWindowDataWith(CWindow*, CWindow*);
+	virtual void replaceWindowDataWith(CWindow* from, CWindow* to);
 
 	virtual void onEnable();
 	virtual void onDisable();
 
-	void makeGroupOnWorkspace(int, Hy3GroupLayout);
-	void makeOppositeGroupOnWorkspace(int);
+	void makeGroupOnWorkspace(int workspace, Hy3GroupLayout);
+	void makeOppositeGroupOnWorkspace(int workspace);
 	void makeGroupOn(Hy3Node*, Hy3GroupLayout);
 	void makeOppositeGroupOn(Hy3Node*);
-	void shiftWindow(int, ShiftDirection, bool);
-	void shiftFocus(int, ShiftDirection, bool);
-	void changeFocus(int, FocusShift);
-	void focusTab(int, TabFocus, TabFocusMousePriority, bool, int);
-	void killFocusedNode(int);
+	void shiftWindow(int workspace, ShiftDirection, bool once);
+	void shiftFocus(int workspace, ShiftDirection, bool visible);
+	void changeFocus(int workspace, FocusShift);
+	void focusTab(int workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
+	void killFocusedNode(int workspace);
 
 	bool shouldRenderSelected(CWindow*);
 
-	Hy3Node* getWorkspaceRootGroup(const int&);
-	Hy3Node* getWorkspaceFocusedNode(const int&);
+	Hy3Node* getWorkspaceRootGroup(const int& workspace);
+	Hy3Node* getWorkspaceFocusedNode(const int& workspace);
 
 	static void renderHook(void*, std::any);
 	static void windowGroupUrgentHook(void*, std::any);
@@ -183,14 +183,14 @@ private:
 		bool yExtent = false;
 	} drag_flags;
 
-	int getWorkspaceNodeCount(const int&);
+	int getWorkspaceNodeCount(const int& workspace);
 	Hy3Node* getNodeFromWindow(CWindow*);
-	void applyNodeDataToWindow(Hy3Node*, bool force = false);
+	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
 
 	// if shift is true, shift the window in the given direction, returning
 	// nullptr, if shift is false, return the window in the given direction or
 	// nullptr. if once is true, only one group will be broken out of / into
-	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool, bool, bool);
+	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool shift, bool once, bool visible);
 
 	friend struct Hy3Node;
 };

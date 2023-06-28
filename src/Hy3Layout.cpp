@@ -109,7 +109,7 @@ bool Hy3NodeData::operator==(const Hy3NodeData& rhs) const { return this == &rhs
 
 bool Hy3Node::operator==(const Hy3Node& rhs) const { return this->data == rhs.data; }
 
-void Hy3Node::recalcSizePosRecursive(bool force) {
+void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	// clang-format off
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
@@ -138,7 +138,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 	if (this->data.type != Hy3NodeData::Group) {
 		this->data.as_window->setHidden(this->hidden);
-		this->layout->applyNodeDataToWindow(this, force);
+		this->layout->applyNodeDataToWindow(this, no_animation);
 		return;
 	}
 
@@ -178,7 +178,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 
 		child->setHidden(this->hidden);
 
-		child->recalcSizePosRecursive(force);
+		child->recalcSizePosRecursive(no_animation);
 		this->updateTabBar();
 		return;
 	}
@@ -214,7 +214,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			child->position.y = tpos.y;
 			child->size.y = tsize.y;
 			child->setHidden(this->hidden);
-			child->recalcSizePosRecursive(force);
+			child->recalcSizePosRecursive(no_animation);
 			break;
 		case Hy3GroupLayout::SplitV:
 			child->position.y = tpos.y + offset;
@@ -223,7 +223,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			child->position.x = tpos.x;
 			child->size.x = tsize.x;
 			child->setHidden(this->hidden);
-			child->recalcSizePosRecursive(force);
+			child->recalcSizePosRecursive(no_animation);
 			break;
 		case Hy3GroupLayout::Tabbed:
 			child->position.y = tpos.y + tab_height_offset;
@@ -232,7 +232,7 @@ void Hy3Node::recalcSizePosRecursive(bool force) {
 			child->size.x = tsize.x;
 			bool hidden = this->hidden || group->focused_child != child;
 			child->setHidden(hidden);
-			child->recalcSizePosRecursive(force);
+			child->recalcSizePosRecursive(no_animation);
 			break;
 		}
 
@@ -645,9 +645,11 @@ Hy3Node* Hy3Layout::getNodeFromWindow(CWindow* window) {
 	return nullptr;
 }
 
-Hy3Node* Hy3Layout::getWorkspaceRootGroup(const int& id) {
+Hy3Node* Hy3Layout::getWorkspaceRootGroup(const int& workspace) {
 	for (auto& node: this->nodes) {
-		if (node.workspace_id == id && node.parent == nullptr && node.data.type == Hy3NodeData::Group) {
+		if (node.workspace_id == workspace && node.parent == nullptr
+		    && node.data.type == Hy3NodeData::Group)
+		{
 			return &node;
 		}
 	}
@@ -655,13 +657,13 @@ Hy3Node* Hy3Layout::getWorkspaceRootGroup(const int& id) {
 	return nullptr;
 }
 
-Hy3Node* Hy3Layout::getWorkspaceFocusedNode(const int& id) {
-	auto* rootNode = this->getWorkspaceRootGroup(id);
+Hy3Node* Hy3Layout::getWorkspaceFocusedNode(const int& workspace) {
+	auto* rootNode = this->getWorkspaceRootGroup(workspace);
 	if (rootNode == nullptr) return nullptr;
 	return rootNode->getFocusedNode();
 }
 
-void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
+void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	if (node->data.type != Hy3NodeData::Window) return;
 	CWindow* window = node->data.as_window;
 
@@ -744,7 +746,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool force) {
 
 		g_pXWaylandManager->setWindowSize(window, calcSize);
 
-		if (force) {
+		if (no_animation) {
 			g_pHyprRenderer->damageWindow(window);
 
 			window->m_vRealPosition.warp();
