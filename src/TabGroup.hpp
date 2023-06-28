@@ -94,7 +94,7 @@ public:
 	Hy3TabGroup(Hy3Node&);
 
 	// update tab bar with node position and data. UB if node is not a group.
-	void updateWithGroup(Hy3Node&);
+	void updateWithGroup(Hy3Node&, bool warp);
 	void tick();
 	// render the scaled tab bar on the current monitor.
 	void renderTabBar();

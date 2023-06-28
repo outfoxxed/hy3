@@ -108,7 +108,7 @@ struct Hy3Node {
 	Hy3Node* getFocusedNode();
 	void updateDecos();
 	void setHidden(bool);
-	void updateTabBar();
+	void updateTabBar(bool no_animation = false);
 	void updateTabBarRecursive();
 	bool isUrgent();
 	bool isIndirectlyFocused();

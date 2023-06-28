@@ -443,13 +443,12 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	this->pos.registerVar();
 	this->size.registerVar();
 
-	this->updateWithGroup(node);
-	this->bar.updateAnimations(true);
+	this->updateWithGroup(node, true);
 	this->pos.warp();
 	this->size.warp();
 }
 
-void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
+void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	Debug::log(LOG, "updated tab bar for %p", &node);
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
@@ -461,11 +460,18 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node) {
 	auto tsize = Vector2D(node.size.x - node.gap_size_offset.x - gaps * 2, *bar_height);
 
 	this->hidden = node.hidden;
-	if (this->pos.goalv() != tpos) this->pos = tpos;
-	if (this->size.goalv() != tsize) this->size = tsize;
+	if (this->pos.goalv() != tpos) {
+		this->pos = tpos;
+		if (warp) this->pos.warp();
+	}
+
+	if (this->size.goalv() != tsize) {
+		this->size = tsize;
+		if (warp) this->size.warp();
+	}
 
 	this->bar.updateNodeList(node.data.as_group.children);
-	this->bar.updateAnimations();
+	this->bar.updateAnimations(warp);
 
 	if (node.data.as_group.focused_child != nullptr) {
 		this->updateStencilWindows(*node.data.as_group.focused_child);

@@ -179,7 +179,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		child->setHidden(this->hidden);
 
 		child->recalcSizePosRecursive(no_animation);
-		this->updateTabBar();
+		this->updateTabBar(no_animation);
 		return;
 	}
 
@@ -582,13 +582,13 @@ void findTopWindowInNode(Hy3Node& node, FindTopWindowInNodeResult& result) {
 	}
 }
 
-void Hy3Node::updateTabBar() {
+void Hy3Node::updateTabBar(bool no_animation) {
 	if (this->data.type == Hy3NodeData::Group) {
 		auto& group = this->data.as_group;
 
 		if (group.layout == Hy3GroupLayout::Tabbed) {
 			if (group.tab_bar == nullptr) group.tab_bar = &this->layout->tab_groups.emplace_back(*this);
-			group.tab_bar->updateWithGroup(*this);
+			group.tab_bar->updateWithGroup(*this, no_animation);
 
 			FindTopWindowInNodeResult result;
 			findTopWindowInNode(*this, result);
