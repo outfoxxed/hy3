@@ -1804,7 +1804,8 @@ void Hy3Layout::focusTab(
     int workspace,
     TabFocus target,
     TabFocusMousePriority mouse,
-    bool wrap_scroll
+    bool wrap_scroll,
+    int index
 ) {
 	auto* node = this->getWorkspaceRootGroup(workspace);
 	if (node == nullptr) return;
@@ -1842,23 +1843,39 @@ hastab:
 			return;
 
 		auto& children = tab_node->data.as_group.children;
-		auto node_iter
-		    = std::find(children.begin(), children.end(), tab_node->data.as_group.focused_child);
-		if (node_iter == children.end()) return;
-		if (target == TabFocus::Left) {
-			if (node_iter == children.begin()) {
-				if (wrap_scroll) node_iter = std::prev(children.end());
-				else return;
-			} else node_iter = std::prev(node_iter);
+		if (target == TabFocus::Index) {
+			int i = 1;
 
-			tab_focused_node = *node_iter;
+			for (auto* node: children) {
+				if (i == index) {
+					tab_focused_node = node;
+					goto cont;
+				}
+
+				i++;
+			}
+
+			return;
+		cont:;
 		} else {
-			if (node_iter == std::prev(children.end())) {
-				if (wrap_scroll) node_iter = children.begin();
-				else return;
-			} else node_iter = std::next(node_iter);
+			auto node_iter
+			    = std::find(children.begin(), children.end(), tab_node->data.as_group.focused_child);
+			if (node_iter == children.end()) return;
+			if (target == TabFocus::Left) {
+				if (node_iter == children.begin()) {
+					if (wrap_scroll) node_iter = std::prev(children.end());
+					else return;
+				} else node_iter = std::prev(node_iter);
 
-			tab_focused_node = *node_iter;
+				tab_focused_node = *node_iter;
+			} else {
+				if (node_iter == std::prev(children.end())) {
+					if (wrap_scroll) node_iter = children.begin();
+					else return;
+				} else node_iter = std::next(node_iter);
+
+				tab_focused_node = *node_iter;
+			}
 		}
 	}
 

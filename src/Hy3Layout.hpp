@@ -35,6 +35,7 @@ enum class TabFocus {
 	MouseLocation,
 	Left,
 	Right,
+	Index,
 };
 
 enum class TabFocusMousePriority {
@@ -159,7 +160,7 @@ public:
 	void shiftWindow(int, ShiftDirection, bool);
 	void shiftFocus(int, ShiftDirection, bool);
 	void changeFocus(int, FocusShift);
-	void focusTab(int, TabFocus, TabFocusMousePriority, bool);
+	void focusTab(int, TabFocus, TabFocusMousePriority, bool, int);
 	void killFocusedNode(int);
 
 	bool shouldRenderSelected(CWindow*);

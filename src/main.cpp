@@ -103,11 +103,18 @@ void dispatch_focustab(std::string value) {
 	TabFocus focus;
 	auto mouse = TabFocusMousePriority::Ignore;
 	bool wrap_scroll = false;
+	int index = 0;
 
 	if (args[i] == "l" || args[i] == "left") focus = TabFocus::Left;
 	else if (args[i] == "r" || args[i] == "right") focus = TabFocus::Right;
-	else if (args[i] == "mouse") {
-		g_Hy3Layout->focusTab(workspace, TabFocus::MouseLocation, mouse, false);
+	else if (args[i] == "index") {
+		i++;
+		focus = TabFocus::Index;
+		if (!isNumber(args[i])) return;
+		index = std::stoi(args[i]);
+		Debug::log(LOG, "Focus index '%s' -> %d, errno: %d", args[i].c_str(), index, errno);
+	} else if (args[i] == "mouse") {
+		g_Hy3Layout->focusTab(workspace, TabFocus::MouseLocation, mouse, false, 0);
 		return;
 	} else return;
 
@@ -123,7 +130,7 @@ void dispatch_focustab(std::string value) {
 
 	if (args[i++] == "wrap") wrap_scroll = true;
 
-	g_Hy3Layout->focusTab(workspace, focus, mouse, wrap_scroll);
+	g_Hy3Layout->focusTab(workspace, focus, mouse, wrap_scroll, index);
 }
 
 void dispatch_killactive(std::string value) {
