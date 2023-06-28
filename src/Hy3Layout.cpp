@@ -1442,10 +1442,15 @@ void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) 
 	if (node == nullptr) return;
 
 	if (once && node->parent != nullptr && node->parent->data.as_group.children.size() == 1) {
-		auto* node2 = node->parent;
-		Hy3Node::swapData(*node, *node2);
-		node2->layout->nodes.remove(*node);
-		node2->recalcSizePosRecursive();
+		if (node->parent->parent == nullptr) {
+			node->parent->data.as_group.layout = Hy3GroupLayout::SplitH;
+			node->parent->recalcSizePosRecursive();
+		} else {
+			auto* node2 = node->parent;
+			Hy3Node::swapData(*node, *node2);
+			node2->layout->nodes.remove(*node);
+			node2->recalcSizePosRecursive();
+		}
 	} else {
 		this->shiftOrGetFocus(*node, direction, true, once, false);
 	}
