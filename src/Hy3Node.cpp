@@ -346,7 +346,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		child->gap_size_offset = gap_pos_offset;
 	}
 
-	this->updateTabBar();
+	this->updateTabBar(no_animation);
 }
 
 struct FindTopWindowInNodeResult {
