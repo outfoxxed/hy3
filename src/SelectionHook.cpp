@@ -1,6 +1,7 @@
-#include "globals.hpp"
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+
+#include "globals.hpp"
 
 namespace selection_hook {
 inline CFunctionHook* g_LastSelectionHook = nullptr;

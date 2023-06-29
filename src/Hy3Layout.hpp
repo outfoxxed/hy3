@@ -1,24 +1,13 @@
 #pragma once
 
-#include <hyprland/src/layout/IHyprLayout.hpp>
+class Hy3Layout;
+
 #include <list>
 
-struct Hy3Node;
+#include <hyprland/src/layout/IHyprLayout.hpp>
+
+#include "Hy3Node.hpp"
 #include "TabGroup.hpp"
-
-class Hy3Layout;
-struct Hy3Node;
-
-enum class Hy3GroupLayout {
-	SplitH,
-	SplitV,
-	Tabbed,
-};
-
-enum class Hy3NodeType {
-  Window,
-	Group,
-};
 
 enum class ShiftDirection {
 	Left,
@@ -47,93 +36,6 @@ enum class TabFocusMousePriority {
 	Ignore,
 	Prioritize,
 	Require,
-};
-
-struct Hy3GroupData {
-	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
-	std::list<Hy3Node*> children;
-	bool group_focused = true;
-	Hy3Node* focused_child = nullptr;
-	Hy3TabGroup* tab_bar = nullptr;
-
-	bool hasChild(Hy3Node* child);
-
-	Hy3GroupData(Hy3GroupLayout layout);
-	~Hy3GroupData();
-
-private:
-	Hy3GroupData(Hy3GroupData&&);
-	Hy3GroupData(const Hy3GroupData&) = delete;
-
-	friend class Hy3NodeData;
-};
-
-class Hy3NodeData {
-public:
-	Hy3NodeType type;
-	union {
-		Hy3GroupData as_group;
-		CWindow* as_window;
-	};
-
-	bool operator==(const Hy3NodeData&) const;
-
-	Hy3NodeData();
-	~Hy3NodeData();
-	Hy3NodeData(CWindow* window);
-	Hy3NodeData(Hy3GroupLayout layout);
-	Hy3NodeData& operator=(CWindow*);
-	Hy3NodeData& operator=(Hy3GroupLayout);
-
-	// private: - I give up, C++ wins
-	Hy3NodeData(Hy3GroupData);
-	Hy3NodeData(Hy3NodeData&&);
-	Hy3NodeData& operator=(Hy3NodeData&&);
-};
-
-struct Hy3Node {
-	Hy3Node* parent = nullptr;
-	Hy3NodeData data;
-	Vector2D position;
-	Vector2D size;
-	Vector2D gap_pos_offset;
-	Vector2D gap_size_offset;
-	float size_ratio = 1.0;
-	int workspace_id = -1;
-	bool hidden = false;
-	bool valid = true;
-	Hy3Layout* layout = nullptr;
-
-	void recalcSizePosRecursive(bool no_animation = false);
-	std::string debugNode();
-	void markFocused();
-	void focus();
-	bool focusWindow();
-	void raiseToTop();
-	Hy3Node* getFocusedNode();
-	void updateDecos();
-	void setHidden(bool);
-	void updateTabBar(bool no_animation = false);
-	void updateTabBarRecursive();
-	bool isUrgent();
-	bool isIndirectlyFocused();
-	Hy3Node* findNodeForTabGroup(Hy3TabGroup&);
-	std::string getTitle();
-	void appendAllWindows(std::vector<CWindow*>&);
-
-	bool operator==(const Hy3Node&) const;
-
-	// Attempt to swallow a group. returns true if swallowed
-	static bool swallowGroups(Hy3Node* into);
-	// Remove this node from its parent, deleting the parent if it was
-	// the only child and recursing if the parent was the only child of it's
-	// parent.
-	Hy3Node* removeFromParentRecursive();
-
-	// Replace this node with a group, returning this node's new address.
-	Hy3Node* intoGroup(Hy3GroupLayout);
-
-	static void swapData(Hy3Node&, Hy3Node&);
 };
 
 class Hy3Layout: public IHyprLayout {
@@ -188,7 +90,6 @@ private:
 		bool yExtent = false;
 	} drag_flags;
 
-	int getWorkspaceNodeCount(const int& workspace);
 	Hy3Node* getNodeFromWindow(CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
 

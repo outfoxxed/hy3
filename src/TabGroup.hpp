@@ -1,14 +1,15 @@
 #pragma once
 
-#include <hyprland/src/Compositor.hpp>
+class Hy3TabGroup;
+class Hy3TabBar;
+
 #include <list>
 #include <memory>
 #include <vector>
 
-class Hy3TabGroup;
-class Hy3TabBar;
+#include <hyprland/src/render/Texture.hpp>
 
-#include "Hy3Layout.hpp"
+#include "Hy3Node.hpp"
 
 struct Hy3TabBarEntry {
 	std::string window_title;

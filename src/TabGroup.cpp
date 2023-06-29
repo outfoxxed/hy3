@@ -1,7 +1,3 @@
-#include "TabGroup.hpp"
-#include "globals.hpp"
-#include "Hy3Layout.hpp"
-
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/helpers/Color.hpp>
@@ -9,6 +5,10 @@
 #include <hyprland/src/render/OpenGL.hpp>
 #include <pango/pangocairo.h>
 #include <pixman.h>
+
+#include "globals.hpp"
+#include "Hy3Layout.hpp"
+#include "TabGroup.hpp"
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->focused.create(
