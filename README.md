@@ -103,13 +103,14 @@ plugin {
    - `lower` - lower focus one level
    - `tab` - raise focus to the nearest tab
    - `tabnode` - raise focus to the nearest node under the tab
- - `hy3:focustab <mouse | [l | r | left | right], [prioritize_hovered | require_hovered], [wrap]>`
+ - `hy3:focustab <mouse | [l | r | left | right | index, <index>], [prioritize_hovered | require_hovered], [wrap]>`
    - `mouse` - focus the tab under the mouse, works well with a non consuming bind, e.g.
      ```conf
      # binds hy3:focustab to lmb and still allows windows to receive clicks
      bindn = , mouse:272, hy3:focustab, mouse
      ```
-   - `l | r | left | right` - direction to change tabs in
+   - `l | r | left | right` - direction to change focus towards
+   - `index, <index>` - select the `index`th tab
    - `prioritize_hovered` - prioritize the tab group under the mouse when multiple are stacked. use the lowest group if none is under the mouse.
    - `require_hovered` - affect the tab group under the mouse. do nothing if none are hovered.
    - `wrap` - wrap to the opposite size of the tab bar if moving off the end
