@@ -15,6 +15,11 @@ enum class Hy3GroupLayout {
 	Tabbed,
 };
 
+enum class Hy3NodeType {
+  Window,
+	Group,
+};
+
 enum class ShiftDirection {
 	Left,
 	Up,
@@ -65,7 +70,7 @@ private:
 
 class Hy3NodeData {
 public:
-	enum { Group, Window } type;
+	Hy3NodeType type;
 	union {
 		Hy3GroupData as_group;
 		CWindow* as_window;

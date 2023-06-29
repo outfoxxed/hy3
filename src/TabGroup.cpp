@@ -647,8 +647,8 @@ void Hy3TabGroup::renderTabBar() {
 
 void findOverlappingWindows(Hy3Node& node, float height, std::vector<CWindow*>& windows) {
 	switch (node.data.type) {
-	case Hy3NodeData::Window: windows.push_back(node.data.as_window); break;
-	case Hy3NodeData::Group:
+	case Hy3NodeType::Window: windows.push_back(node.data.as_window); break;
+	case Hy3NodeType::Group:
 		auto& group = node.data.as_group;
 
 		switch (group.layout) {
