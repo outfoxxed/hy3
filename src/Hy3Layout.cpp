@@ -219,10 +219,22 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 		} else {
 			// Vaxry's hack from below, but again
 
+			// clang-format off
+			static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+			static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+			// clang-format on
+
+			int outer_gaps = -(*gaps_in - *gaps_out);
+			auto gap_pos_offset = Vector2D(outer_gaps, outer_gaps);
+			auto gap_size_offset = Vector2D(outer_gaps * 2, outer_gaps * 2);
+			Debug::log(LOG, "FS gaps: %d", outer_gaps);
+
 			Hy3Node fakeNode = {
 			    .data = window,
 			    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
 			    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
+			    .gap_pos_offset = gap_pos_offset,
+			    .gap_size_offset = gap_size_offset,
 			    .workspace_id = window->m_iWorkspaceID,
 			};
 
@@ -528,10 +540,22 @@ void Hy3Layout::fullscreenRequestForWindow(
 			Debug::log(LOG, "vaxry hack");
 			// Copy of vaxry's massive hack
 
+			// clang-format off
+			static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
+			static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+			// clang-format on
+
+			int outer_gaps = -(*gaps_in - *gaps_out);
+			auto gap_pos_offset = Vector2D(outer_gaps, outer_gaps);
+			auto gap_size_offset = Vector2D(outer_gaps * 2, outer_gaps * 2);
+			Debug::log(LOG, "FS gaps: %d", outer_gaps);
+
 			Hy3Node fakeNode = {
 			    .data = window,
 			    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
 			    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
+			    .gap_pos_offset = gap_pos_offset,
+			    .gap_size_offset = gap_size_offset,
 			    .workspace_id = window->m_iWorkspaceID,
 			};
 
@@ -790,7 +814,7 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 		if (node.data.as_group.layout == Hy3GroupLayout::Tabbed
 		    && node.data.as_group.tab_bar != nullptr)
 		{
-			if (pos.y < node.position.y + inset) {
+			if (pos.y < node.position.y + node.gap_pos_offset.y + inset) {
 				auto& children = node.data.as_group.children;
 				auto& tab_bar = *node.data.as_group.tab_bar;
 
