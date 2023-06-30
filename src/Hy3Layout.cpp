@@ -44,7 +44,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 
 			// opening_after->parent cannot be nullptr
 			if (opening_after == root) {
-				opening_after = root->data.as_group.focused_child;
+				opening_after = opening_after->intoGroup(Hy3GroupLayout::SplitH);
 			}
 		}
 	}
