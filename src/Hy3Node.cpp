@@ -250,16 +250,10 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 	auto* group = &this->data.as_group;
 
-	int constraint;
+	double constraint;
 	switch (group->layout) {
-	case Hy3GroupLayout::SplitH: constraint = tsize.x; break;
-	case Hy3GroupLayout::SplitV: constraint = tsize.y; break;
-	case Hy3GroupLayout::Tabbed: break;
-	}
-
-	switch (group->layout) {
-	case Hy3GroupLayout::SplitH: constraint -= gap_size_offset.x; break;
-	case Hy3GroupLayout::SplitV: constraint -= gap_size_offset.y; break;
+	case Hy3GroupLayout::SplitH: constraint = tsize.x - gap_size_offset.x; break;
+	case Hy3GroupLayout::SplitV: constraint = tsize.y - gap_size_offset.y; break;
 	case Hy3GroupLayout::Tabbed: break;
 	}
 
