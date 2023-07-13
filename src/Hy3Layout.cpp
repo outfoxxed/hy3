@@ -258,42 +258,22 @@ void Hy3Layout::recalculateWindow(CWindow* window) {
 	node->recalcSizePosRecursive();
 }
 
-void Hy3Layout::onBeginDragWindow() {
-	this->drag_flags.started = false;
-	IHyprLayout::onBeginDragWindow();
-}
-
-void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
+void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow) {
 	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow;
 	if (!g_pCompositor->windowValidMapped(window)) return;
 
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
 
-	if (!this->drag_flags.started) {
-		if (g_pInputManager->currentlyDraggedWindow == window) {
-			auto mouse = g_pInputManager->getMouseCoordsInternal();
-			auto mouse_offset = mouse - window->m_vPosition;
+	bool drag_x;
+	bool drag_y;
 
-			this->drag_flags = {
-			    .started = true,
-			    .xExtent = mouse_offset.x > window->m_vSize.x / 2,
-			    .yExtent = mouse_offset.y > window->m_vSize.y / 2,
-			};
-
-			Debug::log(
-			    LOG,
-			    "Positive offsets - x: %d, y: %d",
-			    this->drag_flags.xExtent,
-			    this->drag_flags.yExtent
-			);
-		} else {
-			this->drag_flags = {
-			    .started = false,
-			    .xExtent = delta.x > 0,
-			    .yExtent = delta.y > 0,
-			};
-		}
+	if (corner == CORNER_NONE) {
+		drag_x = delta.x > 0;
+		drag_y = delta.y > 0;
+	} else {
+		drag_x = corner == CORNER_TOPRIGHT || corner == CORNER_BOTTOMRIGHT;
+		drag_y = corner == CORNER_BOTTOMLEFT || corner == CORNER_BOTTOMRIGHT;
 	}
 
 	const auto animate
@@ -330,15 +310,15 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 			// treat tabbed layouts as if they dont exist during resizing
 			goto cont;
 		case Hy3GroupLayout::SplitH:
-			if ((this->drag_flags.xExtent && group.children.back() == inner_node)
-			    || (!this->drag_flags.xExtent && group.children.front() == inner_node))
+			if ((drag_x && group.children.back() == inner_node)
+			    || (!drag_x && group.children.front() == inner_node))
 			{
 				goto cont;
 			}
 			break;
 		case Hy3GroupLayout::SplitV:
-			if ((this->drag_flags.yExtent && group.children.back() == inner_node)
-			    || (!this->drag_flags.yExtent && group.children.front() == inner_node))
+			if ((drag_y && group.children.back() == inner_node)
+			    || (!drag_y && group.children.front() == inner_node))
 			{
 				goto cont;
 			}
@@ -368,15 +348,15 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 			// treat tabbed layouts as if they dont exist during resizing
 			goto cont2;
 		case Hy3GroupLayout::SplitH:
-			if ((this->drag_flags.xExtent && group.children.back() == outer_node)
-			    || (!this->drag_flags.xExtent && group.children.front() == outer_node))
+			if ((drag_x && group.children.back() == outer_node)
+			    || (!drag_x && group.children.front() == outer_node))
 			{
 				goto cont2;
 			}
 			break;
 		case Hy3GroupLayout::SplitV:
-			if ((this->drag_flags.yExtent && group.children.back() == outer_node)
-			    || (!this->drag_flags.yExtent && group.children.front() == outer_node))
+			if ((drag_y && group.children.back() == outer_node)
+			    || (!drag_y && group.children.front() == outer_node))
 			{
 				goto cont2;
 			}
@@ -399,7 +379,7 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 
 		auto iter = std::find(inner_group.children.begin(), inner_group.children.end(), inner_node);
 
-		if (this->drag_flags.xExtent) {
+		if (drag_x) {
 			if (inner_node == inner_group.children.back()) break;
 			iter = std::next(iter);
 		} else {
@@ -419,7 +399,7 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 
 		auto iter = std::find(inner_group.children.begin(), inner_group.children.end(), inner_node);
 
-		if (this->drag_flags.yExtent) {
+		if (drag_y) {
 			if (inner_node == inner_group.children.back()) break;
 			iter = std::next(iter);
 		} else {
@@ -449,7 +429,7 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 
 			auto iter = std::find(outer_group.children.begin(), outer_group.children.end(), outer_node);
 
-			if (this->drag_flags.xExtent) {
+			if (drag_x) {
 				if (outer_node == inner_group.children.back()) break;
 				iter = std::next(iter);
 			} else {
@@ -469,7 +449,7 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, CWindow* pWindow) {
 
 			auto iter = std::find(outer_group.children.begin(), outer_group.children.end(), outer_node);
 
-			if (this->drag_flags.yExtent) {
+			if (drag_y) {
 				if (outer_node == outer_group.children.back()) break;
 				iter = std::next(iter);
 			} else {

@@ -46,8 +46,8 @@ public:
 	virtual bool isWindowTiled(CWindow*);
 	virtual void recalculateMonitor(const int& monitor_id);
 	virtual void recalculateWindow(CWindow*);
-	virtual void onBeginDragWindow();
-	virtual void resizeActiveWindow(const Vector2D& delta, CWindow* pWindow = nullptr);
+	virtual void
+	resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow = nullptr);
 	virtual void fullscreenRequestForWindow(CWindow*, eFullscreenMode, bool enable_fullscreen);
 	virtual std::any layoutMessage(SLayoutMessageHeader header, std::string content);
 	virtual SWindowRenderLayoutHints requestRenderHints(CWindow*);
@@ -84,12 +84,6 @@ public:
 	std::list<Hy3TabGroup> tab_groups;
 
 private:
-	struct {
-		bool started = false;
-		bool xExtent = false;
-		bool yExtent = false;
-	} drag_flags;
-
 	Hy3Node* getNodeFromWindow(CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
 
