@@ -620,7 +620,7 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 	return parent;
 }
 
-Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout) {
+Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout, GroupEphemeralityOption ephemeral) {
 	this->layout->nodes.push_back({
 	    .parent = this,
 	    .data = layout,
@@ -635,6 +635,8 @@ Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout) {
 	this->data.as_group.children.push_back(node);
 	this->data.as_group.group_focused = false;
 	this->data.as_group.focused_child = node;
+	this->data.as_group.ephemeral = ephemeral == GroupEphemeralityOption::Ephemeral
+	                             || ephemeral == GroupEphemeralityOption::ForceEphemeral;
 	this->recalcSizePosRecursive();
 	this->updateTabBarRecursive();
 

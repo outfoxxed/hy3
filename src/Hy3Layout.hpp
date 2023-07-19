@@ -2,6 +2,12 @@
 
 class Hy3Layout;
 
+enum class GroupEphemeralityOption {
+	Ephemeral,
+	Standard,
+	ForceEphemeral,
+};
+
 #include <list>
 
 #include <hyprland/src/layout/IHyprLayout.hpp>
@@ -60,10 +66,10 @@ public:
 	virtual void onEnable();
 	virtual void onDisable();
 
-	void makeGroupOnWorkspace(int workspace, Hy3GroupLayout);
-	void makeOppositeGroupOnWorkspace(int workspace);
-	void makeGroupOn(Hy3Node*, Hy3GroupLayout);
-	void makeOppositeGroupOn(Hy3Node*);
+	void makeGroupOnWorkspace(int workspace, Hy3GroupLayout, GroupEphemeralityOption);
+	void makeOppositeGroupOnWorkspace(int workspace, GroupEphemeralityOption);
+	void makeGroupOn(Hy3Node*, Hy3GroupLayout, GroupEphemeralityOption);
+	void makeOppositeGroupOn(Hy3Node*, GroupEphemeralityOption);
 	void shiftWindow(int workspace, ShiftDirection, bool once);
 	void shiftFocus(int workspace, ShiftDirection, bool visible);
 	void changeFocus(int workspace, FocusShift);

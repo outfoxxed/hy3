@@ -26,6 +26,7 @@ struct Hy3GroupData {
 	std::list<Hy3Node*> children;
 	bool group_focused = true;
 	Hy3Node* focused_child = nullptr;
+	bool ephemeral = false;
 	Hy3TabGroup* tab_bar = nullptr;
 
 	Hy3GroupData(Hy3GroupLayout layout);
@@ -104,7 +105,7 @@ struct Hy3Node {
 	Hy3Node* removeFromParentRecursive();
 
 	// Replace this node with a group, returning this node's new address.
-	Hy3Node* intoGroup(Hy3GroupLayout);
+	Hy3Node* intoGroup(Hy3GroupLayout, GroupEphemeralityOption);
 
 	// Attempt to swallow a group. returns true if swallowed
 	static bool swallowGroups(Hy3Node* into);
