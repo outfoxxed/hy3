@@ -605,6 +605,12 @@ void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
 	this->applyNodeDataToWindow(node);
 }
 
+void Hy3Layout::requestFocusForWindow(CWindow* window) {
+	auto node = this->getNodeFromWindow(window);
+	if (node == nullptr) return;
+	node->focusWindow();
+}
+
 void Hy3Layout::onEnable() {
 	for (auto& window: g_pCompositor->m_vWindows) {
 		if (window->isHidden() || !window->m_bIsMapped || window->m_bFadingOut || window->m_bIsFloating)

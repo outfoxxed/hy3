@@ -62,6 +62,7 @@ public:
 	virtual std::string getLayoutName();
 	virtual CWindow* getNextWindowCandidate(CWindow*);
 	virtual void replaceWindowDataWith(CWindow* from, CWindow* to);
+	virtual void requestFocusForWindow(CWindow*);
 
 	virtual void onEnable();
 	virtual void onDisable();

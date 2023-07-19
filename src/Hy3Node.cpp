@@ -132,6 +132,7 @@ bool Hy3Node::focusWindow() {
 	switch (this->data.type) {
 	case Hy3NodeType::Window:
 		this->markFocused();
+		this->data.as_window->setHidden(false);
 		g_pCompositor->focusWindow(this->data.as_window);
 
 		return true;
