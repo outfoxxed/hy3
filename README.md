@@ -178,12 +178,8 @@ wayland.windowManager.hyprland = {
 ```
 
 ### Arch (AUR)
-There is an unofficial [hy3-git](https://aur.archlinux.org/packages/hy3-git) package.
-
-As of writing, the `hyprland-git` AUR package does not properly handle hyprland headers,
-which are required for hy3 to build. I have been informed that there is a
-[fixed version](https://gist.githubusercontent.com/eclairevoyant/0007c44a52c715f243452d17362104b3/raw/9b834290ac75bef2f3bb1364d1380832c65ed6bf/PKGBUILD)
-that places the headers in the correct location.
+There is an unofficial [hy3-git](https://aur.archlinux.org/packages/hy3-git) package,
+usable with the `hyprland-git` package.
 
 ### Manual
 Install hyprland, including its headers and pkg-config file, then run the following commands:
