@@ -126,6 +126,22 @@ void dispatch_focustab(std::string value) {
 	g_Hy3Layout->focusTab(workspace, focus, mouse, wrap_scroll, index);
 }
 
+void dispatch_setswallow(std::string arg) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	SetSwallowOption option;
+	if (arg == "true") {
+		option = SetSwallowOption::Swallow;
+	} else if (arg == "false") {
+		option = SetSwallowOption::NoSwallow;
+	} else if (arg == "toggle") {
+		option = SetSwallowOption::Toggle;
+	} else return;
+
+	g_Hy3Layout->setNodeSwallow(workspace, option);
+}
+
 void dispatch_killactive(std::string value) {
 	int workspace = workspace_for_action();
 	if (workspace == -1) return;
@@ -151,6 +167,7 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changefocus", dispatch_changefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:focustab", dispatch_focustab);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:setswallow", dispatch_setswallow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:killactive", dispatch_killactive);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:debugnodes", dispatch_debug);
 }

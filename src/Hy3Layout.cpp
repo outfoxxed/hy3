@@ -16,6 +16,59 @@ std::unique_ptr<HOOK_CALLBACK_FN> urgentHookPtr
 std::unique_ptr<HOOK_CALLBACK_FN> tickHookPtr
     = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::tickHook);
 
+bool performContainment(Hy3Node& node, bool contained, CWindow* window) {
+	if (node.data.type == Hy3NodeType::Group) {
+		auto& group = node.data.as_group;
+		contained |= group.containment;
+
+		auto iter = node.data.as_group.children.begin();
+		while (iter != node.data.as_group.children.end()) {
+			switch ((*iter)->data.type) {
+			case Hy3NodeType::Group: return performContainment(**iter, contained, window);
+			case Hy3NodeType::Window:
+				if (contained) {
+					auto wpid = (*iter)->data.as_window->getPID();
+					auto ppid = getPPIDof(window->getPID());
+					while (ppid > 10) { // `> 10` yoinked from HL swallow
+						if (ppid == wpid) {
+							node.layout->nodes.push_back({
+							    .parent = &node,
+							    .data = window,
+							    .workspace_id = node.workspace_id,
+							    .layout = node.layout,
+							});
+
+							auto& child_node = node.layout->nodes.back();
+
+							group.children.insert(std::next(iter), &child_node);
+							child_node.markFocused();
+							node.recalcSizePosRecursive();
+
+							return true;
+						}
+
+						ppid = getPPIDof(ppid);
+					}
+				}
+			}
+
+			iter = std::next(iter);
+		}
+	}
+
+	return false;
+}
+
+void Hy3Layout::onWindowCreated(CWindow* window) {
+	for (auto& node: this->nodes) {
+		if (node.parent == nullptr && performContainment(node, false, window)) {
+			return;
+		}
+	}
+
+	IHyprLayout::onWindowCreated(window);
+}
+
 void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	if (window->m_bIsFloating) return;
 
@@ -936,6 +989,18 @@ hastab:
 
 	focus->focus();
 	tab_node->recalcSizePosRecursive();
+}
+
+void Hy3Layout::setNodeSwallow(int workspace, SetSwallowOption option) {
+	auto* node = this->getWorkspaceFocusedNode(workspace);
+	if (node == nullptr || node->parent == nullptr) return;
+
+	auto* containment = &node->parent->data.as_group.containment;
+	switch (option) {
+	case SetSwallowOption::NoSwallow: *containment = false;
+	case SetSwallowOption::Swallow: *containment = true;
+	case SetSwallowOption::Toggle: *containment = !*containment;
+	}
 }
 
 void Hy3Layout::killFocusedNode(int workspace) {

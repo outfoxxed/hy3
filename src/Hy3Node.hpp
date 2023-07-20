@@ -27,6 +27,7 @@ struct Hy3GroupData {
 	bool group_focused = true;
 	Hy3Node* focused_child = nullptr;
 	bool ephemeral = false;
+	bool containment = false;
 	Hy3TabGroup* tab_bar = nullptr;
 
 	Hy3GroupData(Hy3GroupLayout layout);

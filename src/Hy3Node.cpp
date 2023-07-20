@@ -525,6 +525,15 @@ std::string Hy3Node::debugNode() {
 
 		buf << "] size ratio: ";
 		buf << this->size_ratio;
+
+		if (this->data.as_group.ephemeral) {
+			buf << ", ephemeral";
+		}
+
+		if (this->data.as_group.containment) {
+			buf << ", containment";
+		}
+
 		for (auto* child: this->data.as_group.children) {
 			buf << "\n|-";
 			if (child == nullptr) {

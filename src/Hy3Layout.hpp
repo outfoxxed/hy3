@@ -44,8 +44,15 @@ enum class TabFocusMousePriority {
 	Require,
 };
 
+enum class SetSwallowOption {
+	NoSwallow,
+	Swallow,
+	Toggle,
+};
+
 class Hy3Layout: public IHyprLayout {
 public:
+	virtual void onWindowCreated(CWindow*);
 	virtual void onWindowCreatedTiling(CWindow*);
 	virtual void onWindowRemovedTiling(CWindow*);
 	virtual void onWindowFocusChange(CWindow*);
@@ -75,6 +82,7 @@ public:
 	void shiftFocus(int workspace, ShiftDirection, bool visible);
 	void changeFocus(int workspace, FocusShift);
 	void focusTab(int workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
+	void setNodeSwallow(int workspace, SetSwallowOption);
 	void killFocusedNode(int workspace);
 
 	bool shouldRenderSelected(CWindow*);
