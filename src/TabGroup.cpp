@@ -556,7 +556,7 @@ void Hy3TabGroup::renderTabBar() {
 
 		pixman_region32_intersect_rect(
 		    &damage,
-		    g_pHyprOpenGL->m_RenderData.pDamage,
+		    g_pHyprOpenGL->m_RenderData.damage.pixman(),
 		    box.x,
 		    box.y,
 		    box.width,
