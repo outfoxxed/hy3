@@ -1,4 +1,7 @@
 # hy3
+<img align="right" style="width: 256px" src="assets/logo.svg">
+<a href="https://matrix.to/#/#hy3:outfoxxed.me"><img src="https://img.shields.io/badge/matrix-%23hy3:outfoxxed.me-0dbd8b?logo=matrix&style=flat-square"></a>
+
 i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 
 ### Features
@@ -9,6 +12,9 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 - [x] Selecting a group of windows at once (and related movement)
 - [x] Tabbed groups
 - [ ] Some convenience dispatchers not found in i3 or sway
+
+### Demo
+<video width="640" height="360" controls="controls" src="https://user-images.githubusercontent.com/83010835/255322916-85ae8196-8b12-4e15-b060-9872db10839f.mp4"></video>
 
 ### Stability
 As of now hy3 is stable enough to use normally.
