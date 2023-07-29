@@ -1426,7 +1426,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 
 		if (old_parent != nullptr) {
 			auto& group = old_parent->data.as_group;
-			if (old_parent->parent != nullptr && group.ephemeral && group.children.size() == 1) {
+			if (old_parent->parent != nullptr && group.ephemeral && group.children.size() == 1
+			    && !group.hasChild(&node))
+			{
 				Hy3Node::swallowGroups(old_parent);
 			}
 
