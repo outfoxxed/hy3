@@ -88,7 +88,7 @@ public:
 	bool shouldRenderSelected(CWindow*);
 
 	Hy3Node* getWorkspaceRootGroup(const int& workspace);
-	Hy3Node* getWorkspaceFocusedNode(const int& workspace);
+	Hy3Node* getWorkspaceFocusedNode(const int& workspace, bool ignore_group_focus = false);
 
 	static void renderHook(void*, std::any);
 	static void windowGroupUrgentHook(void*, std::any);

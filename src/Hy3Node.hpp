@@ -84,7 +84,7 @@ struct Hy3Node {
 	bool focusWindow();
 	void markFocused();
 	void raiseToTop();
-	Hy3Node* getFocusedNode();
+	Hy3Node* getFocusedNode(bool ignore_group_focus = false);
 	bool isIndirectlyFocused();
 
 	void recalcSizePosRecursive(bool no_animation = false);

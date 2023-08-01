@@ -641,7 +641,7 @@ void Hy3Layout::alterSplitRatio(CWindow* pWindow, float delta, bool exact) {
 std::string Hy3Layout::getLayoutName() { return "hy3"; }
 
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
-	auto* node = this->getWorkspaceFocusedNode(window->m_iWorkspaceID);
+	auto* node = this->getWorkspaceFocusedNode(window->m_iWorkspaceID, true);
 	if (node == nullptr) return nullptr;
 
 	switch (node->data.type) {
@@ -1051,10 +1051,10 @@ Hy3Node* Hy3Layout::getWorkspaceRootGroup(const int& workspace) {
 	return nullptr;
 }
 
-Hy3Node* Hy3Layout::getWorkspaceFocusedNode(const int& workspace) {
+Hy3Node* Hy3Layout::getWorkspaceFocusedNode(const int& workspace, bool ignore_group_focus) {
 	auto* rootNode = this->getWorkspaceRootGroup(workspace);
 	if (rootNode == nullptr) return nullptr;
-	return rootNode->getFocusedNode();
+	return rootNode->getFocusedNode(ignore_group_focus);
 }
 
 void Hy3Layout::renderHook(void*, std::any data) {

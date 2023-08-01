@@ -191,14 +191,16 @@ void Hy3Node::raiseToTop() {
 	}
 }
 
-Hy3Node* Hy3Node::getFocusedNode() {
+Hy3Node* Hy3Node::getFocusedNode(bool ignore_group_focus) {
 	switch (this->data.type) {
 	case Hy3NodeType::Window: return this;
 	case Hy3NodeType::Group:
-		if (this->data.as_group.focused_child == nullptr || this->data.as_group.group_focused) {
+		if (this->data.as_group.focused_child == nullptr
+		    || (!ignore_group_focus && this->data.as_group.group_focused))
+		{
 			return this;
 		} else {
-			return this->data.as_group.focused_child->getFocusedNode();
+			return this->data.as_group.focused_child->getFocusedNode(ignore_group_focus);
 		}
 	}
 }
