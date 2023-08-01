@@ -154,6 +154,34 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		);
 	}
 
+	{
+		// clang-format off
+		static const auto* at_enable = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:enable")->intValue;
+		static const auto* at_ephemeral = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:ephemeral_groups")->intValue;
+		static const auto* at_trigger_width = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_width")->intValue;
+		static const auto* at_trigger_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_height")->intValue;
+		// clang-format on
+
+		auto& target_group = opening_into->data.as_group;
+		if (*at_enable && opening_after != nullptr && target_group.children.size() > 1
+		    && target_group.layout != Hy3GroupLayout::Tabbed)
+		{
+			auto is_horizontal = target_group.layout == Hy3GroupLayout::SplitH;
+			auto trigger = is_horizontal ? *at_trigger_width : *at_trigger_height;
+			auto target_size = is_horizontal ? opening_into->size.x : opening_into->size.y;
+			auto size_after_addition = target_size / (target_group.children.size() + 1);
+
+			if (trigger >= 0 && (trigger == 0 || size_after_addition < trigger)) {
+				auto opening_after1 = opening_after->intoGroup(
+				    is_horizontal ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
+				    *at_ephemeral ? GroupEphemeralityOption::Ephemeral : GroupEphemeralityOption::Standard
+				);
+				opening_into = opening_after;
+				opening_after = opening_after1;
+			}
+		}
+	}
+
 	this->nodes.push_back({
 	    .parent = opening_into,
 	    .data = window,

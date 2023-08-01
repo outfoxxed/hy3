@@ -38,6 +38,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("tabs:col.text.urgent", int, 0xff000000);
 	CONF("tabs:col.text.inactive", int, 0xff000000);
 
+	// autotiling
+	CONF("autotile:enable", int, 0);
+	CONF("autotile:ephemeral_groups", int, 1);
+	CONF("autotile:trigger_height", int, 0);
+	CONF("autotile:trigger_width", int, 0);
+
 #undef CONF
 
 	g_Hy3Layout = std::make_unique<Hy3Layout>();

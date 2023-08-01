@@ -11,6 +11,7 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 - [x] i3 like tiling
 - [x] Node based window manipulation (you can interact with multiple windows at once)
 - [x] Greatly improved tabbed node groups over base hyprland
+- [x] Optional autotiling
 
 Additional features may be suggested in the repo issues or the [matrix room](https://matrix.to/#/#hy3:outfoxxed.me).
 
@@ -183,6 +184,27 @@ plugin {
 
       # inactive tab bar text color
       col.text.inactive = <color>
+    }
+
+    # autotiling settings
+    autotile {
+      # enable autotile
+      enable = <bool>
+
+      # make autotile-created groups ephemeral
+      ephemeral_groups = <bool>
+
+      # if a window would be squished smaller than this width, a vertical split will be created
+      # -1 = never automatically split vertically
+      # 0 = always automatically split vertically
+      # <number> = pixel height to split at
+      trigger_width = <int>
+
+      # if a window would be squished smaller than this height, a horizontal split will be created
+      # -1 = never automatically split horizontally
+      # 0 = always automatically split horizontally
+      # <number> = pixel height to split at
+      trigger_height = <int>
     }
   }
 }
