@@ -123,88 +123,89 @@ You can use `hy3:makegroup` to create a new split.
 
 The [dispatcher list](#dispatcher-list) and [config fields](#config-fields) sections have all the
 configuration options, and some explanation as to what they do.
+[The hyprland config in my dots](https://git.outfoxxed.me/outfoxxed/nixnew/src/branch/master/modules/hyprland/hyprland.conf) can also be used as a reference.
 
 ### Config fields
 ```conf
 plugin {
   hy3 {
     # disable gaps when only one window is onscreen
-    no_gaps_when_only = <bool>
+    no_gaps_when_only = <bool> # default: false
 
     # policy controlling what happens when a node is removed from a group,
     # leaving only a group
     # 0 = remove the nested group
     # 1 = keep the nested group
-    # 2 = keep the nested group only if its parent is a tab group (default)
-    node_collapse_policy = <int>
+    # 2 = keep the nested group only if its parent is a tab group
+    node_collapse_policy = <int> # default: 2
 
     # offset from group split direction when only one window is in a group
-    group_inset = <int>
+    group_inset = <int> # default: 10
 
     # tab group settings
     tabs {
       # height of the tab bar
-      height = <int>
+      height = <int> # default: 15
 
       # padding between the tab bar and its focused node
-      padding = <int>
+      padding = <int> # default: 5
 
       # the tab bar should animate in/out from the top instead of below the window
-      from_top = <bool>
-
-      # render the window title on the bar
-      render_text = <bool>
+      from_top = <bool> # default: false
 
       # rounding of tab bar corners
-      rounding = <int>
+      rounding = <int> # default: 3
+
+      # render the window title on the bar
+      render_text = <bool> # default: true
 
       # font to render the window title with
-      text_font = <string>
+      text_font = <string> # default: Sans
 
       # height of the window title
-      text_height = <int>
+      text_height = <int> # default: 8
 
       # left padding of the window title
-      text_padding = <int>
+      text_padding = <int> # default: 3
 
       # active tab bar segment color
-      col.active = <color>
+      col.active = <color> # default: 0xff32b4ff
 
       # urgent tab bar segment color
-      col.urgent = <color>
+      col.urgent = <color> # default: 0xffff4f4f
 
       # inactive tab bar segment color
-      col.inactive = <color>
+      col.inactive = <color> # default: 0x80808080
 
       # active tab bar text color
-      col.text.active = <color>
+      col.text.active = <color> # default: 0xff000000
 
       # urgent tab bar text color
-      col.text.urgent = <color>
+      col.text.urgent = <color> # default: 0xff000000
 
       # inactive tab bar text color
-      col.text.inactive = <color>
+      col.text.inactive = <color> # default: 0xff000000
     }
 
     # autotiling settings
     autotile {
       # enable autotile
-      enable = <bool>
+      enable = <bool> # default: false
 
       # make autotile-created groups ephemeral
-      ephemeral_groups = <bool>
+      ephemeral_groups = <bool> # default: true
 
       # if a window would be squished smaller than this width, a vertical split will be created
       # -1 = never automatically split vertically
       # 0 = always automatically split vertically
       # <number> = pixel height to split at
-      trigger_width = <int>
+      trigger_width = <int> # default: 0
 
       # if a window would be squished smaller than this height, a horizontal split will be created
       # -1 = never automatically split horizontally
       # 0 = always automatically split horizontally
       # <number> = pixel height to split at
-      trigger_height = <int>
+      trigger_height = <int> # default: 0
     }
   }
 }
