@@ -1,31 +1,114 @@
-# hy3
 <img align="right" style="width: 256px" src="assets/logo.svg">
-<a href="https://matrix.to/#/#hy3:outfoxxed.me"><img src="https://img.shields.io/badge/matrix-%23hy3:outfoxxed.me-0dbd8b?logo=matrix&style=flat-square"></a>
+
+# hy3
+<a href="https://matrix.to/#/#hy3:outfoxxed.me"><img src="https://img.shields.io/badge/Join%20the%20matrix%20room-%23hy3:outfoxxed.me-0dbd8b?logo=matrix&style=flat-square"></a>
 
 i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 
+[Installation](#installation), [Configuration](#configuration)
+
 ### Features
 - [x] i3 like tiling
-- [x] Window splits
-- [x] Window movement
-- [x] Window resizing
-- [x] Selecting a group of windows at once (and related movement)
-- [x] Tabbed groups
-- [ ] Some convenience dispatchers not found in i3 or sway
+- [x] Node based window manipulation (you can interact with multiple windows at once)
+- [x] Greatly improved tabbed node groups over base hyprland
+
+Additional features may be suggested in the repo issues or the [matrix room](https://matrix.to/#/#hy3:outfoxxed.me).
 
 ### Demo
 <video width="640" height="360" controls="controls" src="https://user-images.githubusercontent.com/83010835/255322916-85ae8196-8b12-4e15-b060-9872db10839f.mp4"></video>
 
 ### Stability
-As of now hy3 is stable enough to use normally.
-If you encounter any crashes or bugs please report them in the issue tracker.
+hy3 always tracks the latest (git) version of hyprland. It likely will not work when built against a given stable
+hyprland release, however it will probably work within a few commits of the latest hyprland version. Please ping
+`@outfoxxed:outfoxxed.me` in the [matrix room](https://matrix.to/#/#hy3-general:outfoxxed.me) or make an issue
+if hy3 does not build or function against the latest hyprland commit.
+
+Commits are tested for obvious crashes before pushing and usually fine, however you may occasionally find a bug.
+
+If you encounter any bugs, please report them in the issue tracker.
 
 When reporting bugs, please include:
 - Commit hash of the version you are running.
-- Steps to reproduce (if you can figure them out)
-- backtrace of the crash
+- Steps to reproduce the bug (if you can figure them out)
+- backtrace of the crash (if applicable)
 
-If you don't know how to reproduce it or can't, or you can't take a backtrace please still report the issue.
+If you are too lazy to use the issue tracker, please at least ping `@outfoxxed:outfoxxed.me`
+in the [matrix room](https://matrix.to/#/#hy3-support:outfoxxed.me) with your bug information.
+
+## Installation
+### Nix
+#### Hyprland home manager module
+Assuming you use hyprland's home manager module, you can easily integrate hy3 by adding it to the plugins array.
+
+```nix
+# flake.nix
+
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    hyprland.url = "github:hyprwm/Hyprland";
+
+    hy3 = {
+      url = "github:outfoxxed/hy3";
+      inputs.hyprland.follows = "hyprland";
+    };
+  };
+
+  outputs = { nixpkgs, home-manager, hyprland, hy3, ... }: {
+    homeConfigurations."user@hostname" = home-manager.lib.homeManagerConfiguration {
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+
+      modules = [
+        hyprland.homeManagerModules.default
+
+        {
+          wayland.windowManager.hyprland = {
+            enable = true;
+            plugins = [ hy3.packages.x86_64-linux.hy3 ];
+          };
+        }
+      ];
+    };
+  };
+}
+```
+
+#### Manual (Nix)
+hy3's binary is availible as `${hy3.packages.<system>.hy3}/lib/libhy3.so`, so you can also
+directly use it in your hyprland config like so:
+
+```nix
+# ...
+wayland.windowManager.hyprland = {
+  # ...
+  extraConfig = ''
+    plugin = ${hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
+  '';
+};
+```
+
+### Arch (AUR)
+There is an unofficial [hy3-git](https://aur.archlinux.org/packages/hy3-git) package,
+usable with the `hyprland-git` package.
+
+### Manual
+Install hyprland, including its headers and pkg-config file, then run the following commands:
+
+```sh
+cmake -DCMAKE_BUILD_TYPE=Debug -B build
+cmake --build build
+```
+
+The plugin will be located at `build/libhy3.so`, and you can load it normally
+(See [the hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#installing--using-plugins) for details.)
+
+Note that the hyprland headers and pkg-config file **MUST be installed correctly, for the target version of hyprland**.
 
 ## Configuration
 Set your `general:layout` to `hy3` in hyprland.conf.
@@ -36,6 +119,9 @@ In your hyprland config replace the following dispatchers:
  - `movewindow` -> `hy3:movewindow`
 
 You can use `hy3:makegroup` to create a new split.
+
+The [dispatcher list](#dispatcher-list) and [config fields](#config-fields) sections have all the
+configuration options, and some explanation as to what they do.
 
 ### Config fields
 ```conf
@@ -131,79 +217,3 @@ plugin {
    - `wrap` - wrap to the opposite size of the tab bar if moving off the end
  - `hy3:setswallow, <true | false | toggle>` - set the containing node's window swallow state
  - `hy3:debugnodes` - print the node tree into the hyprland log
-
-## Installing
-
-### Nix
-#### Hyprland home manager module
-Assuming you use hyprland's home manager module, you can easily integrate hy3 by adding it to the plugins array.
-
-```nix
-# flake.nix
-
-{
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    hyprland.url = "github:hyprwm/Hyprland";
-
-    hy3 = {
-      url = "github:outfoxxed/hy3";
-      inputs.hyprland.follows = "hyprland";
-    };
-  };
-
-  outputs = { nixpkgs, home-manager, hyprland, hy3, ... }: {
-    homeConfigurations."user@hostname" = home-manager.lib.homeManagerConfiguration {
-      pkgs = nixpkgs.legacyPackages.x86_64-linux;
-
-      modules = [
-        hyprland.homeManagerModules.default
-
-        {
-          wayland.windowManager.hyprland = {
-            enable = true;
-            plugins = [ hy3.packages.x86_64-linux.hy3 ];
-          };
-        }
-      ];
-    };
-  };
-}
-```
-
-#### Manual (Nix)
-hy3's binary is availible as `${hy3.packages.<system>.hy3}/lib/libhy3.so`, so you can also
-directly use it in your hyprland config like so:
-
-```nix
-# ...
-wayland.windowManager.hyprland = {
-  # ...
-  extraConfig = ''
-    plugin = ${hy3.packages.x86_64-linux.hy3}/lib/libhy3.so
-  '';
-};
-```
-
-### Arch (AUR)
-There is an unofficial [hy3-git](https://aur.archlinux.org/packages/hy3-git) package,
-usable with the `hyprland-git` package.
-
-### Manual
-Install hyprland, including its headers and pkg-config file, then run the following commands:
-
-```sh
-cmake -DCMAKE_BUILD_TYPE=Debug -B build
-cmake --build build
-```
-
-The plugin will be located at `build/libhy3.so`, and you can load it normally
-(See [the hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#installing--using-plugins) for details.)
-
-Note that the hyprland headers and pkg-config file **MUST be installed correctly, for the target version of hyprland**.
