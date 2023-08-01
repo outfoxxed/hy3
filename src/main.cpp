@@ -19,6 +19,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	    "plugin:hy3:no_gaps_when_only",
 	    SConfigValue {.intValue = 0}
 	);
+	HyprlandAPI::addConfigValue(
+	    PHANDLE,
+	    "plugin:hy3:node_collapse_policy",
+	    SConfigValue {.intValue = 2}
+	);
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:group_inset", SConfigValue {.intValue = 10});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:height", SConfigValue {.intValue = 15});
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:tabs:padding", SConfigValue {.intValue = 5});

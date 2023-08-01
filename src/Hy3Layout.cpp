@@ -193,6 +193,9 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 }
 
 void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
+	static const auto* node_collapse_policy
+	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:node_collapse_policy")->intValue;
+
 	auto* node = this->getNodeFromWindow(window);
 	Debug::log(LOG, "remove tiling %p (window %p)", node, window);
 
@@ -217,8 +220,16 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	if (parent != nullptr) {
 		parent->recalcSizePosRecursive();
 
+		// returns if a given node is a group that can be collapsed given the current config
+		auto node_is_collapsible = [](Hy3Node* node) {
+			if (node->data.type != Hy3NodeType::Group) return false;
+			if (*node_collapse_policy == 0) return true;
+			else if (*node_collapse_policy == 1) return false;
+			return node->parent->data.as_group.layout != Hy3GroupLayout::Tabbed;
+		};
+
 		if (group.children.size() == 1
-		    && (group.ephemeral || group.children.front()->data.type == Hy3NodeType::Group))
+		    && (group.ephemeral || node_is_collapsible(group.children.front())))
 		{
 			auto* target_parent = parent;
 			while (target_parent != nullptr && Hy3Node::swallowGroups(target_parent)) {

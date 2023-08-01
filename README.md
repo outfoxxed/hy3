@@ -44,6 +44,13 @@ plugin {
     # disable gaps when only one window is onscreen
     no_gaps_when_only = <bool>
 
+    # policy controlling what happens when a node is removed from a group,
+    # leaving only a group
+    # 0 = remove the nested group
+    # 1 = keep the nested group
+    # 2 = keep the nested group only if its parent is a tab group (default)
+    node_collapse_policy = <int>
+
     # offset from group split direction when only one window is in a group
     group_inset = <int>
 
