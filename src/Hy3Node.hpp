@@ -21,11 +21,18 @@ enum class Hy3NodeType {
 	Group,
 };
 
+enum class ExpandFocusType {
+	NotExpanded,
+	Latch,
+	Stack,
+};
+
 struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
 	bool group_focused = true;
 	Hy3Node* focused_child = nullptr;
+	ExpandFocusType expand_focused = ExpandFocusType::NotExpanded;
 	bool ephemeral = false;
 	bool containment = false;
 	Hy3TabGroup* tab_bar = nullptr;
@@ -34,6 +41,7 @@ struct Hy3GroupData {
 	~Hy3GroupData();
 
 	bool hasChild(Hy3Node* child);
+	void collapseExpansions();
 
 private:
 	Hy3GroupData(Hy3GroupData&&);
@@ -84,8 +92,9 @@ struct Hy3Node {
 	bool focusWindow();
 	void markFocused();
 	void raiseToTop();
-	Hy3Node* getFocusedNode(bool ignore_group_focus = false);
+	Hy3Node* getFocusedNode(bool ignore_group_focus = false, bool stop_at_expanded = false);
 	bool isIndirectlyFocused();
+	Hy3Node& getExpandActor();
 
 	void recalcSizePosRecursive(bool no_animation = false);
 	void updateTabBar(bool no_animation = false);

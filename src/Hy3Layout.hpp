@@ -50,6 +50,20 @@ enum class SetSwallowOption {
 	Toggle,
 };
 
+enum class ExpandOption {
+	Expand,
+	Shrink,
+	Base,
+	Maximize,
+	Fullscreen,
+};
+
+enum class ExpandFullscreenOption {
+	MaximizeOnly,
+	MaximizeIntermediate,
+	MaximizeAsFullscreen,
+};
+
 class Hy3Layout: public IHyprLayout {
 public:
 	virtual void onWindowCreated(CWindow*);
@@ -84,11 +98,16 @@ public:
 	void focusTab(int workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
 	void setNodeSwallow(int workspace, SetSwallowOption);
 	void killFocusedNode(int workspace);
+	void expand(int workspace, ExpandOption, ExpandFullscreenOption);
 
 	bool shouldRenderSelected(CWindow*);
 
 	Hy3Node* getWorkspaceRootGroup(const int& workspace);
-	Hy3Node* getWorkspaceFocusedNode(const int& workspace, bool ignore_group_focus = false);
+	Hy3Node* getWorkspaceFocusedNode(
+	    const int& workspace,
+	    bool ignore_group_focus = false,
+	    bool stop_at_expanded = false
+	);
 
 	static void renderHook(void*, std::any);
 	static void windowGroupUrgentHook(void*, std::any);

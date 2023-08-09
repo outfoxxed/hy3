@@ -1059,6 +1059,91 @@ void Hy3Layout::killFocusedNode(int workspace) {
 	}
 }
 
+void Hy3Layout::expand(int workspace_id, ExpandOption option, ExpandFullscreenOption fs_option) {
+	auto* node = this->getWorkspaceFocusedNode(workspace_id, false, true);
+	if (node == nullptr) return;
+
+	const auto workspace = g_pCompositor->getWorkspaceByID(workspace_id);
+	const auto monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
+
+	switch (option) {
+	case ExpandOption::Expand: {
+		if (node->parent == nullptr) {
+			switch (fs_option) {
+			case ExpandFullscreenOption::MaximizeAsFullscreen:
+			case ExpandFullscreenOption::MaximizeIntermediate: goto fullscreen;
+			case ExpandFullscreenOption::MaximizeOnly: return;
+			}
+		}
+
+		if (node->data.type == Hy3NodeType::Group)
+			node->data.as_group.expand_focused = ExpandFocusType::Stack;
+
+		auto& group = node->parent->data.as_group;
+		group.focused_child = node;
+		group.expand_focused = ExpandFocusType::Latch;
+
+		node->parent->recalcSizePosRecursive();
+
+		if (node->parent->parent == nullptr) {
+			switch (fs_option) {
+			case ExpandFullscreenOption::MaximizeAsFullscreen: goto fullscreen;
+			case ExpandFullscreenOption::MaximizeIntermediate:
+			case ExpandFullscreenOption::MaximizeOnly: return;
+			}
+		}
+	} break;
+	case ExpandOption::Shrink:
+		if (node->data.type == Hy3NodeType::Group) {
+			auto& group = node->data.as_group;
+
+			group.expand_focused = ExpandFocusType::NotExpanded;
+			if (group.focused_child->data.type == Hy3NodeType::Group)
+				group.focused_child->data.as_group.expand_focused = ExpandFocusType::Latch;
+
+			node->recalcSizePosRecursive();
+		}
+		break;
+	case ExpandOption::Base: {
+		if (node->data.type == Hy3NodeType::Group) {
+			node->data.as_group.collapseExpansions();
+			node->recalcSizePosRecursive();
+		}
+		break;
+	}
+	case ExpandOption::Maximize: break;
+	case ExpandOption::Fullscreen: break;
+	}
+
+	return;
+
+	CWindow* window;
+fullscreen:
+	if (node->data.type != Hy3NodeType::Window) return;
+	window = node->data.as_window;
+	if (!window->m_bIsFullscreen || g_pCompositor->isWorkspaceSpecial(window->m_iWorkspaceID)) return;
+
+	if (workspace->m_bHasFullscreenWindow) return;
+
+	window->m_bIsFullscreen = true;
+	workspace->m_bHasFullscreenWindow = true;
+	workspace->m_efFullscreenMode = FULLSCREEN_FULL;
+	window->m_vRealPosition = monitor->vecPosition;
+	window->m_vRealSize = monitor->vecSize;
+	goto fsupdate;
+unfullscreen:
+	if (node->data.type != Hy3NodeType::Window) return;
+	window = node->data.as_window;
+	window->m_bIsFullscreen = false;
+	workspace->m_bHasFullscreenWindow = false;
+	goto fsupdate;
+fsupdate:
+	g_pCompositor->updateWindowAnimatedDecorationValues(window);
+	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
+	g_pCompositor->moveWindowToTop(window);
+	this->recalculateMonitor(monitor->ID);
+}
+
 bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 	if (window == nullptr) return false;
 	auto* root = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
@@ -1090,10 +1175,14 @@ Hy3Node* Hy3Layout::getWorkspaceRootGroup(const int& workspace) {
 	return nullptr;
 }
 
-Hy3Node* Hy3Layout::getWorkspaceFocusedNode(const int& workspace, bool ignore_group_focus) {
+Hy3Node* Hy3Layout::getWorkspaceFocusedNode(
+    const int& workspace,
+    bool ignore_group_focus,
+    bool stop_at_expanded
+) {
 	auto* rootNode = this->getWorkspaceRootGroup(workspace);
 	if (rootNode == nullptr) return nullptr;
-	return rootNode->getFocusedNode(ignore_group_focus);
+	return rootNode->getFocusedNode(ignore_group_focus, stop_at_expanded);
 }
 
 void Hy3Layout::renderHook(void*, std::any data) {
@@ -1292,7 +1381,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
     bool once,
     bool visible
 ) {
-	auto* break_origin = &node;
+	auto* break_origin = &node.getExpandActor();
 	auto* break_parent = break_origin->parent;
 
 	auto has_broken_once = false;
@@ -1377,7 +1466,11 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		if (shiftIsForward(direction)) iter = std::next(iter);
 		else iter = std::prev(iter);
 
-		if ((*iter)->data.type == Hy3NodeType::Window || (shift && once && has_broken_once)) {
+		if ((*iter)->data.type == Hy3NodeType::Window
+		    || ((*iter)->data.type == Hy3NodeType::Group
+		        && (*iter)->data.as_group.expand_focused != ExpandFocusType::NotExpanded)
+		    || (shift && once && has_broken_once))
+		{
 			if (shift) {
 				if (target_group == node.parent) {
 					if (shiftIsForward(direction)) insert = std::next(iter);
@@ -1386,7 +1479,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 					if (shiftIsForward(direction)) insert = iter;
 					else insert = std::next(iter);
 				}
-			} else return *iter;
+			} else return (*iter)->getFocusedNode();
 		} else {
 			// break into neighboring groups until we hit a window
 			while (true) {
@@ -1432,13 +1525,16 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 					break;
 				}
 
-				if ((*iter)->data.type == Hy3NodeType::Window) {
+				if ((*iter)->data.type == Hy3NodeType::Window
+				    || ((*iter)->data.type == Hy3NodeType::Group
+				        && (*iter)->data.as_group.expand_focused != ExpandFocusType::NotExpanded))
+				{
 					if (shift) {
 						if (shift_after) insert = std::next(iter);
 						else insert = iter;
 						break;
 					} else {
-						return *iter;
+						return (*iter)->getFocusedNode();
 					}
 				}
 			}

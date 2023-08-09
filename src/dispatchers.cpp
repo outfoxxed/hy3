@@ -149,6 +149,31 @@ void dispatch_killactive(std::string value) {
 	g_Hy3Layout->killFocusedNode(workspace);
 }
 
+void dispatch_expand(std::string value) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	auto args = CVarList(value);
+
+	ExpandOption expand;
+	ExpandFullscreenOption fs_expand = ExpandFullscreenOption::MaximizeIntermediate;
+
+	if (args[0] == "expand") expand = ExpandOption::Expand;
+	else if (args[0] == "shrink") expand = ExpandOption::Shrink;
+	else if (args[0] == "base") expand = ExpandOption::Base;
+	else if (args[0] == "maximize") expand = ExpandOption::Maximize;
+	else if (args[0] == "fullscreen") expand = ExpandOption::Fullscreen;
+	else return;
+
+	if (args[1] == "intermediate_maximize") fs_expand = ExpandFullscreenOption::MaximizeIntermediate;
+	else if (args[1] == "fullscreen_maximize")
+		fs_expand = ExpandFullscreenOption::MaximizeAsFullscreen;
+	else if (args[1] == "maximize_only") fs_expand = ExpandFullscreenOption::MaximizeOnly;
+	else if (args[1] != "") return;
+
+	g_Hy3Layout->expand(workspace, expand, fs_expand);
+}
+
 void dispatch_debug(std::string arg) {
 	int workspace = workspace_for_action();
 	if (workspace == -1) return;
@@ -169,5 +194,6 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:focustab", dispatch_focustab);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:setswallow", dispatch_setswallow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:killactive", dispatch_killactive);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:expand", dispatch_expand);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:debugnodes", dispatch_debug);
 }

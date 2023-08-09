@@ -12,6 +12,7 @@ Hy3GroupData::Hy3GroupData(Hy3GroupData&& from) {
 	this->layout = from.layout;
 	this->children = std::move(from.children);
 	this->group_focused = from.group_focused;
+	this->expand_focused = from.expand_focused;
 	this->focused_child = from.focused_child;
 	from.focused_child = nullptr;
 	this->tab_bar = from.tab_bar;
@@ -33,6 +34,20 @@ bool Hy3GroupData::hasChild(Hy3Node* node) {
 	}
 
 	return false;
+}
+
+void Hy3GroupData::collapseExpansions() {
+	if (this->expand_focused == ExpandFocusType::NotExpanded) return;
+	this->expand_focused = ExpandFocusType::NotExpanded;
+
+	Hy3Node* node = this->focused_child;
+
+	while (node->data.type == Hy3NodeType::Group
+	       && node->data.as_group.expand_focused == ExpandFocusType::Stack)
+	{
+		node->data.as_group.expand_focused = ExpandFocusType::NotExpanded;
+		node = node->data.as_group.focused_child;
+	}
 }
 
 // Hy3NodeData //
@@ -191,16 +206,29 @@ void Hy3Node::raiseToTop() {
 	}
 }
 
-Hy3Node* Hy3Node::getFocusedNode(bool ignore_group_focus) {
+Hy3Node* Hy3Node::getFocusedNode(bool ignore_group_focus, bool stop_at_expanded) {
 	switch (this->data.type) {
 	case Hy3NodeType::Window: return this;
 	case Hy3NodeType::Group:
+		Debug::log(
+		    LOG,
+		    "focusing %p, gf: %d, ef: %d (stop: %d)",
+		    this,
+		    this->data.as_group.group_focused,
+		    this->data.as_group.expand_focused,
+		    stop_at_expanded
+		);
+
 		if (this->data.as_group.focused_child == nullptr
-		    || (!ignore_group_focus && this->data.as_group.group_focused))
+		    || (!ignore_group_focus && this->data.as_group.group_focused)
+		    || (stop_at_expanded && this->data.as_group.expand_focused != ExpandFocusType::NotExpanded))
 		{
 			return this;
 		} else {
-			return this->data.as_group.focused_child->getFocusedNode(ignore_group_focus);
+			return this->data.as_group.focused_child->getFocusedNode(
+			    ignore_group_focus,
+			    stop_at_expanded
+			);
 		}
 	}
 }
@@ -216,6 +244,17 @@ bool Hy3Node::isIndirectlyFocused() {
 	}
 
 	return true;
+}
+
+// note: assumes this node is the expanded one without checking
+Hy3Node& Hy3Node::getExpandActor() {
+	Hy3Node* node = this;
+
+	while (node->parent != nullptr
+	       && node->parent->data.as_group.expand_focused != ExpandFocusType::NotExpanded)
+		node = node->parent;
+
+	return *node;
 }
 
 void Hy3Node::recalcSizePosRecursive(bool no_animation) {
@@ -260,8 +299,15 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	case Hy3GroupLayout::Tabbed: break;
 	}
 
+	auto expand_focused = group->expand_focused != ExpandFocusType::NotExpanded;
+	bool directly_contains_expanded
+	    = expand_focused
+	   && (group->focused_child->data.type == Hy3NodeType::Window
+	       || group->focused_child->data.as_group.expand_focused == ExpandFocusType::NotExpanded);
+
+	auto child_count = group->children.size() - (directly_contains_expanded ? 1 : 0);
 	double ratio_mul = group->layout != Hy3GroupLayout::Tabbed
-	                     ? group->children.empty() ? 0 : constraint / group->children.size()
+	                     ? child_count <= 0 ? 0 : constraint / child_count
 	                     : 0;
 
 	double offset = 0;
@@ -275,7 +321,27 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		g_pHyprRenderer->damageBox(&box);
 	}
 
+	// TODO: fix broken start positions when using hy3:expand, base
+	if (expand_focused) {
+		for (auto* child: group->children) {
+			if (child == group->focused_child) {
+				child->position = tpos;
+				child->size = tsize;
+				child->setHidden(hidden);
+
+				child->gap_pos_offset = gap_pos_offset;
+				child->gap_size_offset = gap_size_offset;
+			} else {
+				child->setHidden(true);
+			}
+
+			child->recalcSizePosRecursive(no_animation);
+		}
+	}
+
 	for (auto* child: group->children) {
+		if (expand_focused && child == group->focused_child) continue;
+
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
 			child->position.x = tpos.x + offset;
@@ -283,7 +349,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			offset += child->size.x;
 			child->position.y = tpos.y;
 			child->size.y = tsize.y;
-			child->setHidden(this->hidden);
+			child->setHidden(this->hidden || expand_focused);
 
 			if (group->children.size() == 1) {
 				child->gap_pos_offset = gap_pos_offset;
@@ -311,7 +377,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			offset += child->size.y;
 			child->position.x = tpos.x;
 			child->size.x = tsize.x;
-			child->setHidden(this->hidden);
+			child->setHidden(this->hidden || expand_focused);
 
 			if (group->children.size() == 1) {
 				child->gap_pos_offset = gap_pos_offset;
@@ -336,8 +402,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		case Hy3GroupLayout::Tabbed:
 			child->position = tpos;
 			child->size = tsize;
-			bool hidden = this->hidden || group->focused_child != child;
-			child->setHidden(hidden);
+			child->setHidden(this->hidden || expand_focused || group->focused_child != child);
 
 			child->gap_pos_offset = Vector2D(gap_pos_offset.x, gap_pos_offset.y + tab_height_offset);
 			child->gap_size_offset = Vector2D(gap_size_offset.x, gap_size_offset.y + tab_height_offset);
@@ -528,6 +593,10 @@ std::string Hy3Node::debugNode() {
 		buf << "] size ratio: ";
 		buf << this->size_ratio;
 
+		if (this->data.as_group.expand_focused != ExpandFocusType::NotExpanded) {
+			buf << ", has-expanded";
+		}
+
 		if (this->data.as_group.ephemeral) {
 			buf << ", ephemeral";
 		}
@@ -559,6 +628,14 @@ Hy3Node* Hy3Node::removeFromParentRecursive() {
 	Hy3Node* parent = this;
 
 	Debug::log(LOG, "Recursively removing parent nodes of %p", parent);
+
+	if (this->parent != nullptr) {
+		// note: may have missing recalcs causing weird animations.
+		auto& actor = this->getExpandActor();
+		if (actor.data.type == Hy3NodeType::Group) {
+			actor.data.as_group.collapseExpansions();
+		}
+	}
 
 	while (parent != nullptr) {
 		if (parent->parent == nullptr) {
