@@ -1267,7 +1267,9 @@ Hy3Node* Hy3Layout::getNodeFromWindow(CWindow* window) {
 
 void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	if (node->data.type != Hy3NodeType::Window) return;
-	CWindow* window = node->data.as_window;
+	auto* window = node->data.as_window;
+	auto root_node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
+	if (root_node == nullptr) return;
 
 	CMonitor* monitor = nullptr;
 
@@ -1309,7 +1311,6 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	auto calcPos = window->m_vPosition + Vector2D(*border_size, *border_size);
 	auto calcSize = window->m_vSize - Vector2D(2 * *border_size, 2 * *border_size);
 
-	auto root_node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
 	auto only_node = root_node->data.as_group.children.size() == 1
 	              && root_node->data.as_group.children.front()->data.type == Hy3NodeType::Window;
 
