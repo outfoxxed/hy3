@@ -1,5 +1,3 @@
-#include <sstream>
-
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
