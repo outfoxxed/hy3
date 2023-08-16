@@ -29,6 +29,7 @@ enum class ExpandFocusType {
 
 struct Hy3GroupData {
 	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
+	Hy3GroupLayout previous_nontab_layout = Hy3GroupLayout::SplitH;
 	std::list<Hy3Node*> children;
 	bool group_focused = true;
 	Hy3Node* focused_child = nullptr;
@@ -42,6 +43,7 @@ struct Hy3GroupData {
 
 	bool hasChild(Hy3Node* child);
 	void collapseExpansions();
+	void updateLayout(Hy3GroupLayout layout, GroupEphemeralityOption ephemeral);
 
 private:
 	Hy3GroupData(Hy3GroupData&&);

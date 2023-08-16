@@ -43,6 +43,35 @@ void dispatch_makegroup(std::string value) {
 	}
 }
 
+void dispatch_changegroup(std::string value) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	auto args = CVarList(value);
+
+	GroupEphemeralityOption ephemeral = GroupEphemeralityOption::Standard;
+	if (args[1] == "ephemeral") {
+		ephemeral = GroupEphemeralityOption::Ephemeral;
+	} else if (args[1] == "force_ephemeral") {
+		ephemeral = GroupEphemeralityOption::ForceEphemeral;
+	}
+
+	if (args[0] == "h") {
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitH, ephemeral);
+	} else if (args[0] == "v") {
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitV, ephemeral);
+	} else if (args[0] == "tab") {
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::Tabbed, ephemeral);
+	} else if (args[0] == "untab") {
+		g_Hy3Layout->untabGroupOnWorkspace(workspace, ephemeral);
+	}
+	// TODO
+	//else if (args[0] == "opposite") {
+	//	g_Hy3Layout->makeOppositeGroupOnWorkspace(workspace, ephemeral);
+	//}
+}
+
+
 std::optional<ShiftDirection> parseShiftArg(std::string arg) {
 	if (arg == "l" || arg == "left") return ShiftDirection::Left;
 	else if (arg == "r" || arg == "right") return ShiftDirection::Right;
@@ -188,6 +217,7 @@ void dispatch_debug(std::string arg) {
 
 void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changegroup", dispatch_changegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changefocus", dispatch_changefocus);
