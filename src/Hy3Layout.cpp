@@ -765,6 +765,14 @@ void Hy3Layout::untabGroupOnWorkspace(int workspace) {
 	this->untabGroupOn(*node);
 }
 
+void Hy3Layout::changeGroupEphemeralityOnWorkspace(int workspace, bool ephemeral) {
+	auto* node = this->getWorkspaceFocusedNode(workspace);
+
+	if (node == nullptr) return;
+
+	this->changeGroupEphemeralityOn(*node, ephemeral);
+}
+
 void Hy3Layout::makeGroupOn(
     Hy3Node* node,
     Hy3GroupLayout layout,
@@ -831,8 +839,13 @@ void Hy3Layout::untabGroupOn(Hy3Node& node) {
 	if (group.layout != Hy3GroupLayout::Tabbed) return;
 
 	changeGroupOn(node, group.previous_nontab_layout);
+}
 
+void Hy3Layout::changeGroupEphemeralityOn(Hy3Node& node, bool ephemeral) {
+	if (node.parent == nullptr) return;
 
+	auto& group = node.parent->data.as_group;
+	group.setEphemeral(ephemeral ? GroupEphemeralityOption::ForceEphemeral : GroupEphemeralityOption::Standard);
 }
 
 void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) {

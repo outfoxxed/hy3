@@ -64,6 +64,17 @@ void dispatch_changegroup(std::string value) {
 	//}
 }
 
+void dispatch_changeephemerality(std::string value) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	auto args = CVarList(value);
+
+	bool ephemeral = args[0] == "true";
+
+	g_Hy3Layout->changeGroupEphemeralityOnWorkspace(workspace, ephemeral);
+}
+
 
 std::optional<ShiftDirection> parseShiftArg(std::string arg) {
 	if (arg == "l" || arg == "left") return ShiftDirection::Left;
@@ -211,6 +222,7 @@ void dispatch_debug(std::string arg) {
 void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changegroup", dispatch_changegroup);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changeephemerality", dispatch_changeephemerality);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changefocus", dispatch_changefocus);
