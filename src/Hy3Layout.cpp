@@ -1074,7 +1074,7 @@ void Hy3Layout::expand(int workspace_id, ExpandOption option, ExpandFullscreenOp
 			}
 		}
 
-		if (node->data.type == Hy3NodeType::Group)
+		if (node->data.type == Hy3NodeType::Group && !node->data.as_group.group_focused)
 			node->data.as_group.expand_focused = ExpandFocusType::Stack;
 
 		auto& group = node->parent->data.as_group;
