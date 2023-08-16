@@ -43,7 +43,8 @@ struct Hy3GroupData {
 
 	bool hasChild(Hy3Node* child);
 	void collapseExpansions();
-	void updateLayout(Hy3GroupLayout layout, GroupEphemeralityOption ephemeral);
+	void setLayout(Hy3GroupLayout layout);
+	void setEphemeral(GroupEphemeralityOption ephemeral);
 
 private:
 	Hy3GroupData(Hy3GroupData&&);

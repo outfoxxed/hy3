@@ -57,25 +57,26 @@ void Hy3GroupData::collapseExpansions() {
 	}
 }
 
-void Hy3GroupData::updateLayout(
-	Hy3GroupLayout layout,
-	GroupEphemeralityOption ephemeral
+void Hy3GroupData::setLayout(
+	Hy3GroupLayout layout
 ) {
 	this->layout = layout;
 
 	if (layout != Hy3GroupLayout::Tabbed) {
 		this->previous_nontab_layout = layout;
 	}
+}
 
+void Hy3GroupData::setEphemeral(GroupEphemeralityOption ephemeral) {
 	switch (ephemeral) {
-		case GroupEphemeralityOption::ForceEphemeral:
-			this->ephemeral = true;
-			break;
 		case GroupEphemeralityOption::Standard:
 			this->ephemeral = false;
 			break;
+		case GroupEphemeralityOption::ForceEphemeral:
+			this->ephemeral = true;
+			break;
 		case GroupEphemeralityOption::Ephemeral:
-			// this->ephemeral stays the same
+			// no change
 			break;
 	}
 }

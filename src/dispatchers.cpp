@@ -49,21 +49,14 @@ void dispatch_changegroup(std::string value) {
 
 	auto args = CVarList(value);
 
-	GroupEphemeralityOption ephemeral = GroupEphemeralityOption::Standard;
-	if (args[1] == "ephemeral") {
-		ephemeral = GroupEphemeralityOption::Ephemeral;
-	} else if (args[1] == "force_ephemeral") {
-		ephemeral = GroupEphemeralityOption::ForceEphemeral;
-	}
-
 	if (args[0] == "h") {
-		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitH, ephemeral);
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitH);
 	} else if (args[0] == "v") {
-		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitV, ephemeral);
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitV);
 	} else if (args[0] == "tab") {
-		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::Tabbed, ephemeral);
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::Tabbed);
 	} else if (args[0] == "untab") {
-		g_Hy3Layout->untabGroupOnWorkspace(workspace, ephemeral);
+		g_Hy3Layout->untabGroupOnWorkspace(workspace);
 	}
 	// TODO
 	//else if (args[0] == "opposite") {

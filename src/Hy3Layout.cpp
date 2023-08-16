@@ -748,19 +748,21 @@ void Hy3Layout::makeOppositeGroupOnWorkspace(int workspace, GroupEphemeralityOpt
 
 void Hy3Layout::changeGroupOnWorkspace(
 	int workspace,
-	Hy3GroupLayout layout,
-	GroupEphemeralityOption ephemeral
+	Hy3GroupLayout layout
 ) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-	this->changeGroupOn(node, layout, ephemeral);
+
+	if (node == nullptr) return;
+
+	this->changeGroupOn(*node, layout);
 }
 
-void Hy3Layout::untabGroupOnWorkspace(
-	int workspace,
-	GroupEphemeralityOption ephemeral
-) {
+void Hy3Layout::untabGroupOnWorkspace(int workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-	this->untabGroupOn(node, ephemeral);
+
+	if (node == nullptr) return;
+
+	this->untabGroupOn(*node);
 }
 
 void Hy3Layout::makeGroupOn(
@@ -773,7 +775,8 @@ void Hy3Layout::makeGroupOn(
 	if (node->parent != nullptr) {
 		auto& group = node->parent->data.as_group;
 		if (group.children.size() == 1) {
-			group.updateLayout(layout, ephemeral);
+			group.setLayout(layout);
+			group.setEphemeral(ephemeral);
 			node->parent->recalcSizePosRecursive();
 			return;
 		}
@@ -798,7 +801,8 @@ void Hy3Layout::makeOppositeGroupOn(
 		= group.layout == Hy3GroupLayout::SplitH ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
 
 	if (group.children.size() == 1) {
-		group.updateLayout(layout, ephemeral);
+		group.setLayout(layout);
+		group.setEphemeral(ephemeral);
 		node->parent->recalcSizePosRecursive();
 		return;
 	}
@@ -807,32 +811,28 @@ void Hy3Layout::makeOppositeGroupOn(
 }
 
 void Hy3Layout::changeGroupOn(
-	Hy3Node* node,
-	Hy3GroupLayout layout,
-	GroupEphemeralityOption ephemeral
+	Hy3Node& node,
+	Hy3GroupLayout layout
 ) {
-	if (node == nullptr) return;
-
-	if (node->parent == nullptr) {
-		makeGroupOn(node, layout, ephemeral);
+	if (node.parent == nullptr) {
+		makeGroupOn(&node, layout, GroupEphemeralityOption::Ephemeral);
 		return;
 	}
 
-	auto& group = node->parent->data.as_group;
-	group.updateLayout(layout, ephemeral);
-	node->parent->recalcSizePosRecursive();
+	auto& group = node.parent->data.as_group;
+	group.setLayout(layout);
+	node.parent->recalcSizePosRecursive();
 }
 
-void Hy3Layout::untabGroupOn(Hy3Node* node, GroupEphemeralityOption ephemeral) {
-	if (node == nullptr) return;
+void Hy3Layout::untabGroupOn(Hy3Node& node) {
+	if (node.parent == nullptr) return;
 
-	if (node->parent == nullptr) return;
-
-	auto& group = node->parent->data.as_group;
-
+	auto& group = node.parent->data.as_group;
 	if (group.layout != Hy3GroupLayout::Tabbed) return;
 
-	changeGroupOn(node, group.previous_nontab_layout, ephemeral);
+	changeGroupOn(node, group.previous_nontab_layout);
+
+
 }
 
 void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) {
@@ -842,7 +842,7 @@ void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) 
 
 	if (once && node->parent != nullptr && node->parent->data.as_group.children.size() == 1) {
 		if (node->parent->parent == nullptr) {
-			node->parent->data.as_group.layout = Hy3GroupLayout::SplitH;
+			node->parent->data.as_group.setLayout(Hy3GroupLayout::SplitH);
 			node->parent->recalcSizePosRecursive();
 		} else {
 			auto* node2 = node->parent;
@@ -1466,7 +1466,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			if (group.layout != Hy3GroupLayout::Tabbed && group.children.size() == 2
 			    && std::find(group.children.begin(), group.children.end(), &node) != group.children.end())
 			{
-				group.layout = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
+				group.setLayout(shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH);
 			} else {
 				// wrap the root group in another group
 				this->nodes.push_back({
