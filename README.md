@@ -215,7 +215,7 @@ plugin {
  - `hy3:makegroup, <h | v | opposite | tab>, [ephemeral | force_ephemeral]` - make a vertical / horizontal split or tab group
    - `ephemeral` - the group will be removed once it contains only one node. does not affect existing groups.
    - `force_ephemeral` - same as ephemeral, but converts existing single windows groups.
- - `hy3:changegroup, <h | v | tab | untab | opposite> - change the group the node belongs to, to a different layout
+ - `hy3:changegroup, <h | v | tab | untab | opposite>` - change the group the node belongs to, to a different layout
    - `untab` will untab the group if it was previously tabbed
    - `opposite` will toggle between horizontal and vertical layouts if the group is not tabbed.
  - `hy3:changeephemerality, <true | false>` - change the ephemerality of the group the node belongs to
