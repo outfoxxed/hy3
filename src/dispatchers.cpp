@@ -57,11 +57,9 @@ void dispatch_changegroup(std::string value) {
 		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::Tabbed);
 	} else if (args[0] == "untab") {
 		g_Hy3Layout->untabGroupOnWorkspace(workspace);
+	} else if (args[0] == "opposite") {
+		g_Hy3Layout->changeGroupToOppositeOnWorkspace(workspace);
 	}
-	// TODO
-	//else if (args[0] == "opposite") {
-	//	g_Hy3Layout->makeOppositeGroupOnWorkspace(workspace, ephemeral);
-	//}
 }
 
 void dispatch_changeephemerality(std::string value) {
