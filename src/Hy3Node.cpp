@@ -57,9 +57,7 @@ void Hy3GroupData::collapseExpansions() {
 	}
 }
 
-void Hy3GroupData::setLayout(
-	Hy3GroupLayout layout
-) {
+void Hy3GroupData::setLayout(Hy3GroupLayout layout) {
 	this->layout = layout;
 
 	if (layout != Hy3GroupLayout::Tabbed) {
@@ -69,15 +67,11 @@ void Hy3GroupData::setLayout(
 
 void Hy3GroupData::setEphemeral(GroupEphemeralityOption ephemeral) {
 	switch (ephemeral) {
-		case GroupEphemeralityOption::Standard:
-			this->ephemeral = false;
-			break;
-		case GroupEphemeralityOption::ForceEphemeral:
-			this->ephemeral = true;
-			break;
-		case GroupEphemeralityOption::Ephemeral:
-			// no change
-			break;
+	case GroupEphemeralityOption::Standard: this->ephemeral = false; break;
+	case GroupEphemeralityOption::ForceEphemeral: this->ephemeral = true; break;
+	case GroupEphemeralityOption::Ephemeral:
+		// no change
+		break;
 	}
 }
 

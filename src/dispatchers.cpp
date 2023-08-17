@@ -73,7 +73,6 @@ void dispatch_changeephemerality(std::string value) {
 	g_Hy3Layout->changeGroupEphemeralityOnWorkspace(workspace, ephemeral);
 }
 
-
 std::optional<ShiftDirection> parseShiftArg(std::string arg) {
 	if (arg == "l" || arg == "left") return ShiftDirection::Left;
 	else if (arg == "r" || arg == "right") return ShiftDirection::Right;
