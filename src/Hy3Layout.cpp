@@ -748,7 +748,6 @@ void Hy3Layout::makeOppositeGroupOnWorkspace(int workspace, GroupEphemeralityOpt
 
 void Hy3Layout::changeGroupOnWorkspace(int workspace, Hy3GroupLayout layout) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-
 	if (node == nullptr) return;
 
 	this->changeGroupOn(*node, layout);
@@ -756,7 +755,6 @@ void Hy3Layout::changeGroupOnWorkspace(int workspace, Hy3GroupLayout layout) {
 
 void Hy3Layout::untabGroupOnWorkspace(int workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-
 	if (node == nullptr) return;
 
 	this->untabGroupOn(*node);
@@ -764,7 +762,6 @@ void Hy3Layout::untabGroupOnWorkspace(int workspace) {
 
 void Hy3Layout::changeGroupToOppositeOnWorkspace(int workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-
 	if (node == nullptr) return;
 
 	this->changeGroupToOppositeOn(*node);
@@ -772,7 +769,6 @@ void Hy3Layout::changeGroupToOppositeOnWorkspace(int workspace) {
 
 void Hy3Layout::changeGroupEphemeralityOnWorkspace(int workspace, bool ephemeral) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-
 	if (node == nullptr) return;
 
 	this->changeGroupEphemeralityOn(*node, ephemeral);
