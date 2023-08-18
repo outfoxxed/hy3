@@ -238,8 +238,10 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 		g_pCompositor->setWindowFullscreen(window, false, FULLSCREEN_FULL);
 	}
 
-	auto* parent = node->removeFromParentRecursive();
+	Hy3Node* expand_actor = nullptr;
+	auto* parent = node->removeFromParentRecursive(&expand_actor);
 	this->nodes.remove(*node);
+	if (expand_actor != nullptr) expand_actor->recalcSizePosRecursive();
 
 	auto& group = parent->data.as_group;
 
@@ -1554,7 +1556,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		target_group->data.as_group.children.insert(insert, &node);
 
 		// must happen AFTER `insert` is used
-		auto* old_parent = node.removeFromParentRecursive();
+		auto* old_parent = node.removeFromParentRecursive(nullptr);
 		node.parent = target_group;
 		node.size_ratio = 1.0;
 

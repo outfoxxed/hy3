@@ -112,7 +112,8 @@ struct Hy3Node {
 	// Remove this node from its parent, deleting the parent if it was
 	// the only child and recursing if the parent was the only child of it's
 	// parent.
-	Hy3Node* removeFromParentRecursive();
+	// expand actor should be recalc'd if set
+	Hy3Node* removeFromParentRecursive(Hy3Node** expand_actor);
 
 	// Replace this node with a group, returning this node's new address.
 	Hy3Node* intoGroup(Hy3GroupLayout, GroupEphemeralityOption);

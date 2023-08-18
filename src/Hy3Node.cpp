@@ -307,7 +307,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	   && (group->focused_child->data.type == Hy3NodeType::Window
 	       || group->focused_child->data.as_group.expand_focused == ExpandFocusType::NotExpanded);
 
-	auto child_count = group->children.size() - (directly_contains_expanded ? 1 : 0);
+	auto child_count = group->children.size();
 	double ratio_mul = group->layout != Hy3GroupLayout::Tabbed
 	                     ? child_count <= 0 ? 0 : constraint / child_count
 	                     : 0;
@@ -323,28 +323,40 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		g_pHyprRenderer->damageBox(&box);
 	}
 
+	if (group->expand_focused == ExpandFocusType::Latch) {
+		auto* expanded_node = group->focused_child;
+
+		while (expanded_node != nullptr && expanded_node->data.type == Hy3NodeType::Group
+		       && expanded_node->data.as_group.expand_focused != ExpandFocusType::NotExpanded)
+		{
+			expanded_node = expanded_node->data.as_group.focused_child;
+		}
+
+		if (expanded_node == nullptr) {
+			Debug::log(ERR, "indiect expand target is missing");
+			return;
+		}
+
+		expanded_node->position = tpos;
+		expanded_node->size = tsize;
+		expanded_node->setHidden(this->hidden);
+
+		expanded_node->gap_pos_offset = gap_pos_offset;
+		expanded_node->gap_size_offset = gap_size_offset;
+
+		expanded_node->recalcSizePosRecursive(no_animation);
+	}
+
 	for (auto* child: group->children) {
-		if (expand_focused && child == group->focused_child) {
-			child->position = tpos;
-			child->size = tsize;
-			child->setHidden(hidden);
-
-			child->gap_pos_offset = gap_pos_offset;
-			child->gap_size_offset = gap_size_offset;
-
-			child->recalcSizePosRecursive(no_animation);
-
+		if (directly_contains_expanded && child == group->focused_child) {
 			switch (group->layout) {
-			case Hy3GroupLayout::SplitH: offset += child->size.x; break;
-			case Hy3GroupLayout::SplitV: offset += child->size.y; break;
+			case Hy3GroupLayout::SplitH: offset += child->size_ratio * ratio_mul; break;
+			case Hy3GroupLayout::SplitV: offset += child->size_ratio * ratio_mul; break;
 			case Hy3GroupLayout::Tabbed: break;
 			}
 
 			continue;
 		}
-
-		if (expand_focused && child == group->focused_child) continue;
-		auto was_hidden = child->hidden;
 
 		switch (group->layout) {
 		case Hy3GroupLayout::SplitH:
@@ -354,7 +366,6 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			child->position.y = tpos.y;
 			child->size.y = tsize.y;
 			child->hidden = this->hidden || expand_focused;
-			// child->setHidden(this->hidden || expand_focused);
 
 			if (group->children.size() == 1) {
 				child->gap_pos_offset = gap_pos_offset;
@@ -374,7 +385,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 				child->gap_size_offset = Vector2D(0, gap_size_offset.y);
 			}
 
-			child->recalcSizePosRecursive(no_animation || was_hidden);
+			child->recalcSizePosRecursive(no_animation);
 			break;
 		case Hy3GroupLayout::SplitV:
 			child->position.y = tpos.y + offset;
@@ -383,7 +394,6 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			child->position.x = tpos.x;
 			child->size.x = tsize.x;
 			child->hidden = this->hidden || expand_focused;
-			// child->setHidden(this->hidden || expand_focused);
 
 			if (group->children.size() == 1) {
 				child->gap_pos_offset = gap_pos_offset;
@@ -403,18 +413,17 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 				child->gap_size_offset = Vector2D(gap_size_offset.x, 0);
 			}
 
-			child->recalcSizePosRecursive(no_animation || was_hidden);
+			child->recalcSizePosRecursive(no_animation);
 			break;
 		case Hy3GroupLayout::Tabbed:
 			child->position = tpos;
 			child->size = tsize;
 			child->hidden = this->hidden || expand_focused || group->focused_child != child;
-			// child->setHidden(this->hidden || expand_focused || group->focused_child != child);
 
 			child->gap_pos_offset = Vector2D(gap_pos_offset.x, gap_pos_offset.y + tab_height_offset);
 			child->gap_size_offset = Vector2D(gap_size_offset.x, gap_size_offset.y + tab_height_offset);
 
-			child->recalcSizePosRecursive(no_animation || was_hidden);
+			child->recalcSizePosRecursive(no_animation);
 			break;
 		}
 	}
@@ -631,16 +640,16 @@ std::string Hy3Node::debugNode() {
 	return buf.str();
 }
 
-Hy3Node* Hy3Node::removeFromParentRecursive() {
+Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 	Hy3Node* parent = this;
 
 	Debug::log(LOG, "Recursively removing parent nodes of %p", parent);
 
 	if (this->parent != nullptr) {
-		// note: may have missing recalcs causing weird animations.
 		auto& actor = this->getExpandActor();
 		if (actor.data.type == Hy3NodeType::Group) {
 			actor.data.as_group.collapseExpansions();
+			if (expand_actor != nullptr) *expand_actor = &actor;
 		}
 	}
 
