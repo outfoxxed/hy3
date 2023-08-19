@@ -320,16 +320,16 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 			// clang-format on
 
 			int outer_gaps = -(*gaps_in - *gaps_out);
-			auto gap_pos_offset = Vector2D(outer_gaps, outer_gaps);
-			auto gap_size_offset = Vector2D(outer_gaps * 2, outer_gaps * 2);
+			auto gap_topleft_offset = Vector2D(outer_gaps, outer_gaps);
+			auto gap_bottomright_offset = Vector2D(outer_gaps, outer_gaps);
 			Debug::log(LOG, "FS gaps: %d", outer_gaps);
 
 			Hy3Node fakeNode = {
 			    .data = window,
 			    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
 			    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
-			    .gap_pos_offset = gap_pos_offset,
-			    .gap_size_offset = gap_size_offset,
+			    .gap_topleft_offset = gap_topleft_offset,
+			    .gap_bottomright_offset = gap_bottomright_offset,
 			    .workspace_id = window->m_iWorkspaceID,
 			};
 
@@ -629,8 +629,8 @@ void Hy3Layout::fullscreenRequestForWindow(
 			    .data = window,
 			    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
 			    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
-			    .gap_pos_offset = gap_pos_offset,
-			    .gap_size_offset = gap_size_offset,
+			    .gap_topleft_offset = gap_pos_offset,
+			    .gap_bottomright_offset = gap_size_offset,
 			    .workspace_id = window->m_iWorkspaceID,
 			};
 
@@ -909,7 +909,7 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 		if (node.data.as_group.layout == Hy3GroupLayout::Tabbed
 		    && node.data.as_group.tab_bar != nullptr)
 		{
-			if (pos.y < node.position.y + node.gap_pos_offset.y + inset) {
+			if (pos.y < node.position.y + node.gap_topleft_offset.y + inset) {
 				auto& children = node.data.as_group.children;
 				auto& tab_bar = *node.data.as_group.tab_bar;
 
@@ -1333,8 +1333,9 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		window->m_sSpecialRenderData.border = true;
 		window->m_sSpecialRenderData.decorate = true;
 
-		auto gaps_offset_topleft = Vector2D(*gaps_in, *gaps_in) + node->gap_pos_offset;
-		auto gaps_offset_bottomright = Vector2D(*gaps_in * 2, *gaps_in * 2) + node->gap_size_offset;
+		auto gaps_offset_topleft = Vector2D(*gaps_in, *gaps_in) + node->gap_topleft_offset;
+		auto gaps_offset_bottomright = Vector2D(*gaps_in * 2, *gaps_in * 2)
+		                             + node->gap_bottomright_offset + node->gap_topleft_offset;
 
 		calcPos = calcPos + gaps_offset_topleft;
 		calcSize = calcSize - gaps_offset_bottomright;

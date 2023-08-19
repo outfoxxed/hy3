@@ -456,8 +456,8 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
 
 	auto gaps = node.parent == nullptr ? *gaps_out : *gaps_in;
-	auto tpos = node.position + Vector2D(gaps, gaps) + node.gap_pos_offset;
-	auto tsize = Vector2D(node.size.x - node.gap_size_offset.x - gaps * 2, *bar_height);
+	auto tpos = node.position + Vector2D(gaps, gaps) + node.gap_topleft_offset;
+	auto tsize = Vector2D(node.size.x - node.gap_bottomright_offset.x - gaps * 2, *bar_height);
 
 	this->hidden = node.hidden;
 	if (this->pos.goalv() != tpos) {

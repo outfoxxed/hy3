@@ -79,8 +79,8 @@ struct Hy3Node {
 	Hy3NodeData data;
 	Vector2D position;
 	Vector2D size;
-	Vector2D gap_pos_offset;
-	Vector2D gap_size_offset;
+	Vector2D gap_topleft_offset;
+	Vector2D gap_bottomright_offset;
 	float size_ratio = 1.0;
 	int workspace_id = -1;
 	bool hidden = false;

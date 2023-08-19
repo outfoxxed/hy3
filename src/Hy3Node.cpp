@@ -269,16 +269,16 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	// clang-format on
 
 	int outer_gaps = 0;
-	Vector2D gap_pos_offset;
-	Vector2D gap_size_offset;
+	Vector2D gap_topleft_offset;
+	Vector2D gap_bottomright_offset;
 	if (this->parent == nullptr) {
 		outer_gaps = -(*gaps_in - *gaps_out);
 
-		gap_pos_offset = Vector2D(outer_gaps, outer_gaps);
-		gap_size_offset = Vector2D(outer_gaps * 2, outer_gaps * 2);
+		gap_topleft_offset = Vector2D(outer_gaps, outer_gaps);
+		gap_bottomright_offset = Vector2D(outer_gaps, outer_gaps);
 	} else {
-		gap_pos_offset = this->gap_pos_offset;
-		gap_size_offset = this->gap_size_offset;
+		gap_topleft_offset = this->gap_topleft_offset;
+		gap_bottomright_offset = this->gap_bottomright_offset;
 	}
 
 	auto tpos = this->position;
@@ -296,8 +296,12 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 	double constraint;
 	switch (group->layout) {
-	case Hy3GroupLayout::SplitH: constraint = tsize.x - gap_size_offset.x; break;
-	case Hy3GroupLayout::SplitV: constraint = tsize.y - gap_size_offset.y; break;
+	case Hy3GroupLayout::SplitH:
+		constraint = tsize.x - gap_topleft_offset.x - gap_bottomright_offset.x;
+		break;
+	case Hy3GroupLayout::SplitV:
+		constraint = tsize.y - gap_topleft_offset.y - gap_bottomright_offset.y;
+		break;
 	case Hy3GroupLayout::Tabbed: break;
 	}
 
@@ -341,8 +345,8 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		expanded_node->size = tsize;
 		expanded_node->setHidden(this->hidden);
 
-		expanded_node->gap_pos_offset = gap_pos_offset;
-		expanded_node->gap_size_offset = gap_size_offset;
+		expanded_node->gap_topleft_offset = gap_topleft_offset;
+		expanded_node->gap_bottomright_offset = gap_bottomright_offset;
 
 		expanded_node->recalcSizePosRecursive(no_animation);
 	}
@@ -368,21 +372,22 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			child->hidden = this->hidden || expand_focused;
 
 			if (group->children.size() == 1) {
-				child->gap_pos_offset = gap_pos_offset;
-				child->gap_size_offset = gap_size_offset;
-				if (this->parent != nullptr) child->gap_size_offset.x += *group_inset;
-				child->size.x += gap_size_offset.x;
+				child->gap_topleft_offset = gap_topleft_offset;
+				child->gap_bottomright_offset = gap_bottomright_offset;
+				child->size.x = tsize.x;
+				if (this->parent != nullptr) child->gap_bottomright_offset.x += *group_inset;
 			} else if (child == group->children.front()) {
-				child->gap_pos_offset = gap_pos_offset;
-				child->gap_size_offset = Vector2D(0, gap_size_offset.y);
-				offset += gap_pos_offset.x;
+				child->gap_topleft_offset = gap_topleft_offset;
+				child->gap_bottomright_offset = Vector2D(0, gap_bottomright_offset.y);
+				child->size.x += gap_topleft_offset.x;
+				offset += gap_topleft_offset.x;
 			} else if (child == group->children.back()) {
-				child->gap_pos_offset = Vector2D(0, gap_pos_offset.y);
-				child->gap_size_offset = gap_size_offset;
-				child->size.x += gap_size_offset.x;
+				child->gap_topleft_offset = Vector2D(0, gap_topleft_offset.y);
+				child->gap_bottomright_offset = gap_bottomright_offset;
+				child->size.x += gap_bottomright_offset.x;
 			} else {
-				child->gap_pos_offset = Vector2D(0, gap_pos_offset.y);
-				child->gap_size_offset = Vector2D(0, gap_size_offset.y);
+				child->gap_topleft_offset = Vector2D(0, gap_topleft_offset.y);
+				child->gap_bottomright_offset = Vector2D(0, gap_bottomright_offset.y);
 			}
 
 			child->recalcSizePosRecursive(no_animation);
@@ -396,21 +401,22 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			child->hidden = this->hidden || expand_focused;
 
 			if (group->children.size() == 1) {
-				child->gap_pos_offset = gap_pos_offset;
-				child->gap_size_offset = gap_size_offset;
-				if (this->parent != nullptr) child->gap_size_offset.y += *group_inset;
-				child->size.y += gap_size_offset.y;
+				child->gap_topleft_offset = gap_topleft_offset;
+				child->gap_bottomright_offset = gap_bottomright_offset;
+				child->size.y = tsize.y;
+				if (this->parent != nullptr) child->gap_bottomright_offset.y += *group_inset;
 			} else if (child == group->children.front()) {
-				child->gap_pos_offset = gap_pos_offset;
-				child->gap_size_offset = Vector2D(gap_size_offset.x, 0);
-				offset += gap_pos_offset.y;
+				child->gap_topleft_offset = gap_topleft_offset;
+				child->gap_bottomright_offset = Vector2D(gap_bottomright_offset.x, 0);
+				child->size.y += gap_topleft_offset.y;
+				offset += gap_topleft_offset.y;
 			} else if (child == group->children.back()) {
-				child->gap_pos_offset = Vector2D(gap_pos_offset.x, 0);
-				child->gap_size_offset = gap_size_offset;
-				child->size.y += gap_size_offset.y;
+				child->gap_topleft_offset = Vector2D(gap_topleft_offset.x, 0);
+				child->gap_bottomright_offset = gap_bottomright_offset;
+				child->size.y += gap_bottomright_offset.y;
 			} else {
-				child->gap_pos_offset = Vector2D(gap_pos_offset.x, 0);
-				child->gap_size_offset = Vector2D(gap_size_offset.x, 0);
+				child->gap_topleft_offset = Vector2D(gap_topleft_offset.x, 0);
+				child->gap_bottomright_offset = Vector2D(gap_bottomright_offset.x, 0);
 			}
 
 			child->recalcSizePosRecursive(no_animation);
@@ -420,8 +426,9 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			child->size = tsize;
 			child->hidden = this->hidden || expand_focused || group->focused_child != child;
 
-			child->gap_pos_offset = Vector2D(gap_pos_offset.x, gap_pos_offset.y + tab_height_offset);
-			child->gap_size_offset = Vector2D(gap_size_offset.x, gap_size_offset.y + tab_height_offset);
+			child->gap_topleft_offset
+			    = Vector2D(gap_topleft_offset.x, gap_topleft_offset.y + tab_height_offset);
+			child->gap_bottomright_offset = gap_bottomright_offset;
 
 			child->recalcSizePosRecursive(no_animation);
 			break;
