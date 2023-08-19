@@ -93,11 +93,13 @@ public:
 	void changeGroupOnWorkspace(int workspace, Hy3GroupLayout);
 	void untabGroupOnWorkspace(int workspace);
 	void changeGroupToOppositeOnWorkspace(int workspace);
+	void toggleTabGroupOnWorkspace(int workspace);
 	void changeGroupEphemeralityOnWorkspace(int workspace, bool ephemeral);
 	void makeGroupOn(Hy3Node*, Hy3GroupLayout, GroupEphemeralityOption);
 	void makeOppositeGroupOn(Hy3Node*, GroupEphemeralityOption);
 	void changeGroupOn(Hy3Node&, Hy3GroupLayout);
 	void untabGroupOn(Hy3Node&);
+	void toggleTabGroupOn(Hy3Node&);
 	void changeGroupToOppositeOn(Hy3Node&);
 	void changeGroupEphemeralityOn(Hy3Node&, bool ephemeral);
 	void shiftWindow(int workspace, ShiftDirection, bool once);
