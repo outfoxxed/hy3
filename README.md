@@ -218,6 +218,7 @@ plugin {
  - `hy3:changegroup, <h | v | tab | untab | opposite>` - change the group the node belongs to, to a different layout
    - `untab` will untab the group if it was previously tabbed
    - `opposite` will toggle between horizontal and vertical layouts if the group is not tabbed.
+   - `toggle_tab` will toggle between tabbed group and split layout
  - `hy3:setephemeral, <true | false>` - change the ephemerality of the group the node belongs to
  - `hy3:movefocus, <l | u | d | r | left | down | up | right>, [visible]` - move the focus left, up, down, or right
    - `visible` - only move between visible nodes, not hidden tabs
