@@ -762,6 +762,13 @@ void Hy3Layout::untabGroupOnWorkspace(int workspace) {
 	this->untabGroupOn(*node);
 }
 
+void Hy3Layout::toggleTabGroupOnWorkspace(int workspace) {
+	auto* node = this->getWorkspaceFocusedNode(workspace);
+	if (node == nullptr) return;
+
+	this->toggleTabGroupOn(*node);
+}
+
 void Hy3Layout::changeGroupToOppositeOnWorkspace(int workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
@@ -836,6 +843,14 @@ void Hy3Layout::untabGroupOn(Hy3Node& node) {
 	if (group.layout != Hy3GroupLayout::Tabbed) return;
 
 	changeGroupOn(node, group.previous_nontab_layout);
+}
+
+void Hy3Layout::toggleTabGroupOn(Hy3Node& node) {
+	if (node.parent == nullptr) return;
+
+	auto& group = node.parent->data.as_group;
+	if (group.layout != Hy3GroupLayout::Tabbed) changeGroupOn(node, Hy3GroupLayout::Tabbed);
+	else changeGroupOn(node, group.previous_nontab_layout);
 }
 
 void Hy3Layout::changeGroupToOppositeOn(Hy3Node& node) {
