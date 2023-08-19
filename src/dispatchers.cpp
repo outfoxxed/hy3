@@ -43,6 +43,36 @@ void dispatch_makegroup(std::string value) {
 	}
 }
 
+void dispatch_changegroup(std::string value) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	auto args = CVarList(value);
+
+	if (args[0] == "h") {
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitH);
+	} else if (args[0] == "v") {
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::SplitV);
+	} else if (args[0] == "tab") {
+		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::Tabbed);
+	} else if (args[0] == "untab") {
+		g_Hy3Layout->untabGroupOnWorkspace(workspace);
+	} else if (args[0] == "opposite") {
+		g_Hy3Layout->changeGroupToOppositeOnWorkspace(workspace);
+	}
+}
+
+void dispatch_setephemeral(std::string value) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	auto args = CVarList(value);
+
+	bool ephemeral = args[0] == "true";
+
+	g_Hy3Layout->changeGroupEphemeralityOnWorkspace(workspace, ephemeral);
+}
+
 std::optional<ShiftDirection> parseShiftArg(std::string arg) {
 	if (arg == "l" || arg == "left") return ShiftDirection::Left;
 	else if (arg == "r" || arg == "right") return ShiftDirection::Right;
@@ -188,6 +218,8 @@ void dispatch_debug(std::string arg) {
 
 void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changegroup", dispatch_changegroup);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:setephemeral", dispatch_setephemeral);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changefocus", dispatch_changefocus);

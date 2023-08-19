@@ -8,10 +8,15 @@
 
 // Hy3GroupData //
 
-Hy3GroupData::Hy3GroupData(Hy3GroupLayout layout): layout(layout) {}
+Hy3GroupData::Hy3GroupData(Hy3GroupLayout layout): layout(layout) {
+	if (layout != Hy3GroupLayout::Tabbed) {
+		this->previous_nontab_layout = layout;
+	}
+}
 
 Hy3GroupData::Hy3GroupData(Hy3GroupData&& from) {
 	this->layout = from.layout;
+	this->previous_nontab_layout = from.previous_nontab_layout;
 	this->children = std::move(from.children);
 	this->group_focused = from.group_focused;
 	this->expand_focused = from.expand_focused;
@@ -49,6 +54,24 @@ void Hy3GroupData::collapseExpansions() {
 	{
 		node->data.as_group.expand_focused = ExpandFocusType::NotExpanded;
 		node = node->data.as_group.focused_child;
+	}
+}
+
+void Hy3GroupData::setLayout(Hy3GroupLayout layout) {
+	this->layout = layout;
+
+	if (layout != Hy3GroupLayout::Tabbed) {
+		this->previous_nontab_layout = layout;
+	}
+}
+
+void Hy3GroupData::setEphemeral(GroupEphemeralityOption ephemeral) {
+	switch (ephemeral) {
+	case GroupEphemeralityOption::Standard: this->ephemeral = false; break;
+	case GroupEphemeralityOption::ForceEphemeral: this->ephemeral = true; break;
+	case GroupEphemeralityOption::Ephemeral:
+		// no change
+		break;
 	}
 }
 
