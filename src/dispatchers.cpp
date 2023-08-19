@@ -57,6 +57,8 @@ void dispatch_changegroup(std::string value) {
 		g_Hy3Layout->changeGroupOnWorkspace(workspace, Hy3GroupLayout::Tabbed);
 	} else if (args[0] == "untab") {
 		g_Hy3Layout->untabGroupOnWorkspace(workspace);
+	} else if (args[0] == "toggletab") {
+		g_Hy3Layout->toggleTabGroupOnWorkspace(workspace);
 	} else if (args[0] == "opposite") {
 		g_Hy3Layout->changeGroupToOppositeOnWorkspace(workspace);
 	}
