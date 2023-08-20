@@ -90,8 +90,21 @@ void dispatch_movewindow(std::string value) {
 	auto args = CVarList(value);
 
 	if (auto shift = parseShiftArg(args[0])) {
-		auto once = args[1] == "once";
-		g_Hy3Layout->shiftWindow(workspace, shift.value(), once);
+		int i = 1;
+		bool once = false;
+		bool visible = false;
+
+		if (args[i] == "once") {
+			once = true;
+			i++;
+		}
+
+		if (args[i] == "visible") {
+			visible = true;
+			i++;
+		}
+
+		g_Hy3Layout->shiftWindow(workspace, shift.value(), once, visible);
 	}
 }
 

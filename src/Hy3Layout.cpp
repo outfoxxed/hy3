@@ -874,7 +874,7 @@ void Hy3Layout::changeGroupEphemeralityOn(Hy3Node& node, bool ephemeral) {
 	);
 }
 
-void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) {
+void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once, bool visible) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
@@ -890,7 +890,7 @@ void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once) 
 			node2->recalcSizePosRecursive();
 		}
 	} else {
-		this->shiftOrGetFocus(*node, direction, true, once, false);
+		this->shiftOrGetFocus(*node, direction, true, once, visible);
 	}
 }
 
@@ -1584,7 +1584,17 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 					    group_data.children.end(),
 					    group_data.focused_child
 					);
-				} else if (shiftMatchesLayout(group_data.layout, direction)) {
+				} else if (visible && group_data.layout == Hy3GroupLayout::Tabbed && group_data.focused_child != nullptr)
+				{
+					// if the group is tabbed and we're going by visible nodes, jump to the current entry
+					iter = std::find(
+					    group_data.children.begin(),
+					    group_data.children.end(),
+					    group_data.focused_child
+					);
+					shift_after = true;
+				} else if (shiftMatchesLayout(group_data.layout, direction) || (visible && group_data.layout == Hy3GroupLayout::Tabbed))
+				{
 					// if the group has the same orientation as movement pick the
 					// last/first child based on movement direction
 					if (shiftIsForward(direction)) iter = group_data.children.begin();

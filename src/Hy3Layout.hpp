@@ -102,7 +102,7 @@ public:
 	void toggleTabGroupOn(Hy3Node&);
 	void changeGroupToOppositeOn(Hy3Node&);
 	void changeGroupEphemeralityOn(Hy3Node&, bool ephemeral);
-	void shiftWindow(int workspace, ShiftDirection, bool once);
+	void shiftWindow(int workspace, ShiftDirection, bool once, bool visible);
 	void shiftFocus(int workspace, ShiftDirection, bool visible);
 	void changeFocus(int workspace, FocusShift);
 	void focusTab(int workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
