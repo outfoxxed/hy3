@@ -87,8 +87,11 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	Hy3Node* opening_into;
 	Hy3Node* opening_after = nullptr;
 
-	if (monitor->activeWorkspace != -1) {
-		auto* root = this->getWorkspaceRootGroup(monitor->activeWorkspace);
+	int specialWorkspaceID = monitor->specialWorkspaceID;
+	int workspace_id = specialWorkspaceID ? specialWorkspaceID : monitor->activeWorkspace;
+
+	if (workspace_id != -1) {
+		auto* root = this->getWorkspaceRootGroup(workspace_id);
 
 		if (root != nullptr) {
 			opening_after = root->getFocusedNode();
@@ -1368,7 +1371,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		);
 	}
 
-	if (monitor == nullptr) {
+	if (!g_pCompositor->isWorkspaceSpecial(node->workspace_id) && monitor == nullptr) {
 		Debug::log(ERR, "Orphaned Node %x (workspace ID: %i)!!", node, node->workspace_id);
 		errorNotif();
 		return;
@@ -1425,6 +1428,14 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		const auto reserved_area = window->getFullWindowReservedArea();
 		calcPos = calcPos + reserved_area.topLeft;
 		calcSize = calcSize - (reserved_area.topLeft - reserved_area.bottomRight);
+
+		if (g_pCompositor->isWorkspaceSpecial(window->m_iWorkspaceID)) {
+			// adjust for special workspaces
+			static const auto* scalefactor
+			    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:special_scale_factor")->floatValue;
+			calcPos = calcPos + (calcSize - calcSize * *scalefactor) / 2.f;
+			calcSize = calcSize * *scalefactor;
+		}
 
 		window->m_vRealPosition = calcPos;
 		window->m_vRealSize = calcSize;
