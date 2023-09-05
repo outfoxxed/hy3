@@ -8,8 +8,9 @@
 
 int workspace_for_action() {
 	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return -1;
-
-	int workspace_id = g_pCompositor->m_pLastMonitor->activeWorkspace;
+	int specialWorkspaceID = g_pCompositor->m_pLastMonitor->specialWorkspaceID;
+	int workspace_id
+	    = specialWorkspaceID ? specialWorkspaceID : g_pCompositor->m_pLastMonitor->activeWorkspace;
 
 	if (workspace_id == -1) return -1;
 	auto* workspace = g_pCompositor->getWorkspaceByID(workspace_id);

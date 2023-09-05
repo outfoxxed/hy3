@@ -142,6 +142,9 @@ plugin {
     # offset from group split direction when only one window is in a group
     group_inset = <int> # default: 10
 
+    # scale factor of windows on the special workspace
+    special_scale_factor = <float> # default: 0.8
+
     # tab group settings
     tabs {
       # height of the tab bar
