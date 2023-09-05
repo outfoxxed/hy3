@@ -79,6 +79,7 @@ public:
 	virtual std::any layoutMessage(SLayoutMessageHeader header, std::string content);
 	virtual SWindowRenderLayoutHints requestRenderHints(CWindow*);
 	virtual void switchWindows(CWindow*, CWindow*);
+	virtual void moveWindowTo(CWindow*, const std::string& direction);
 	virtual void alterSplitRatio(CWindow*, float, bool);
 	virtual std::string getLayoutName();
 	virtual CWindow* getNextWindowCandidate(CWindow*);
@@ -102,6 +103,7 @@ public:
 	void toggleTabGroupOn(Hy3Node&);
 	void changeGroupToOppositeOn(Hy3Node&);
 	void changeGroupEphemeralityOn(Hy3Node&, bool ephemeral);
+	void shiftNode(Hy3Node&, ShiftDirection, bool once, bool visible);
 	void shiftWindow(int workspace, ShiftDirection, bool once, bool visible);
 	void shiftFocus(int workspace, ShiftDirection, bool visible);
 	void changeFocus(int workspace, FocusShift);

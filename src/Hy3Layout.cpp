@@ -673,6 +673,20 @@ void Hy3Layout::switchWindows(CWindow* pWindowA, CWindow* pWindowB) {
 	// todo
 }
 
+void Hy3Layout::moveWindowTo(CWindow* window, const std::string& direction) {
+	auto* node = this->getNodeFromWindow(window);
+	if (node == nullptr) return;
+
+	ShiftDirection shift;
+	if (direction == "l") shift = ShiftDirection::Left;
+	else if (direction == "r") shift = ShiftDirection::Right;
+	else if (direction == "u") shift = ShiftDirection::Up;
+	else if (direction == "d") shift = ShiftDirection::Down;
+	else return;
+
+	this->shiftNode(*node, shift, false, false);
+}
+
 void Hy3Layout::alterSplitRatio(CWindow* pWindow, float delta, bool exact) {
 	// todo
 }
@@ -874,24 +888,28 @@ void Hy3Layout::changeGroupEphemeralityOn(Hy3Node& node, bool ephemeral) {
 	);
 }
 
+void Hy3Layout::shiftNode(Hy3Node& node, ShiftDirection direction, bool once, bool visible) {
+	if (once && node.parent != nullptr && node.parent->data.as_group.children.size() == 1) {
+		if (node.parent->parent == nullptr) {
+			node.parent->data.as_group.setLayout(Hy3GroupLayout::SplitH);
+			node.parent->recalcSizePosRecursive();
+		} else {
+			auto* node2 = node.parent;
+			Hy3Node::swapData(node, *node2);
+			node2->layout->nodes.remove(node);
+			node2->recalcSizePosRecursive();
+		}
+	} else {
+		this->shiftOrGetFocus(node, direction, true, once, visible);
+	}
+}
+
 void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once, bool visible) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
 
-	if (once && node->parent != nullptr && node->parent->data.as_group.children.size() == 1) {
-		if (node->parent->parent == nullptr) {
-			node->parent->data.as_group.setLayout(Hy3GroupLayout::SplitH);
-			node->parent->recalcSizePosRecursive();
-		} else {
-			auto* node2 = node->parent;
-			Hy3Node::swapData(*node, *node2);
-			node2->layout->nodes.remove(*node);
-			node2->recalcSizePosRecursive();
-		}
-	} else {
-		this->shiftOrGetFocus(*node, direction, true, once, visible);
-	}
+	this->shiftNode(*node, direction, once, visible);
 }
 
 void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible) {
