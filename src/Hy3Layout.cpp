@@ -359,6 +359,8 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
+	if (node->parent != nullptr && node->parent->data.as_group.focused_child == node)
+		node = &node->getExpandActor();
 
 	bool drag_x;
 	bool drag_y;
