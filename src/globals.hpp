@@ -1,4 +1,8 @@
+#pragma once
+
 #include "Hy3Layout.hpp"
+#include "log.hpp"
+
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 inline HANDLE PHANDLE = nullptr;

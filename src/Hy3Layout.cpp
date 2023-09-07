@@ -68,16 +68,21 @@ void Hy3Layout::onWindowCreated(CWindow* window) {
 }
 
 void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
+	hy3_log(
+	    TRACE,
+	    "onWindowCreatedTiling called with window {:x} (floating: {})",
+	    (uintptr_t) window,
+	    window->m_bIsFloating
+	);
 	if (window->m_bIsFloating) return;
 
 	auto* existing = this->getNodeFromWindow(window);
 	if (existing != nullptr) {
-		Debug::log(
-		    WARN,
-		    "Attempted to add a window(%p) that is already tiled(as %p) to the "
-		    "layout",
-		    window,
-		    existing
+		hy3_log(
+		    ERR,
+		    "onWindowCreatedTiling called with a window ({:x}) that is already tiled (node: {:x})",
+		    (uintptr_t) window,
+		    (uintptr_t) existing
 		);
 		return;
 	}
@@ -136,17 +141,17 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 	}
 
 	if (opening_into->data.type != Hy3NodeType::Group) {
-		Debug::log(ERR, "opening_into node %p was not of type Group", opening_into);
+		hy3_log(ERR, "opening_into node ({:x}) was not a group node", (uintptr_t) opening_into);
 		errorNotif();
 		return;
 	}
 
 	if (opening_into->workspace_id != window->m_iWorkspaceID) {
-		Debug::log(
+		hy3_log(
 		    WARN,
-		    "opening_into node %p has workspace %d which does not match the "
-		    "opening window (workspace %d)",
-		    opening_into,
+		    "opening_into node ({:x}) is on workspace {} which does not match the new window "
+		    "(workspace {})",
+		    (uintptr_t) opening_into,
 		    opening_into->workspace_id,
 		    window->m_iWorkspaceID
 		);
@@ -198,24 +203,17 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		children.insert(iter2, &node);
 	}
 
-	Debug::log(
+	hy3_log(
 	    LOG,
-	    "opened new window %p(node: %p) on window %p in %p",
-	    window,
-	    &node,
-	    opening_after,
-	    opening_into
+	    "tiled window ({:x} as node {:x}) after node {:x} in node {:x}",
+	    (uintptr_t) window,
+	    (uintptr_t) &node,
+	    (uintptr_t) opening_after,
+	    (uintptr_t) opening_into
 	);
 
 	node.markFocused();
 	opening_into->recalcSizePosRecursive();
-	Debug::log(
-	    LOG,
-	    "opening_into (%p) contains new child (%p)? %d",
-	    opening_into,
-	    &node,
-	    opening_into->data.as_group.hasChild(&node)
-	);
 }
 
 void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
@@ -223,12 +221,16 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:node_collapse_policy")->intValue;
 
 	auto* node = this->getNodeFromWindow(window);
-	Debug::log(LOG, "remove tiling %p (window %p)", node, window);
 
-	if (node == nullptr) {
-		Debug::log(ERR, "onWindowRemovedTiling node null?");
-		return;
-	}
+	if (node == nullptr) return;
+
+	hy3_log(
+	    LOG,
+	    "removing window ({:x} as node {:x}) from node {:x}",
+	    (uintptr_t) window,
+	    (uintptr_t) node,
+	    (uintptr_t) node->parent
+	);
 
 	window->m_sSpecialRenderData.rounding = true;
 	window->m_sSpecialRenderData.border = true;
@@ -271,9 +273,15 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 }
 
 void Hy3Layout::onWindowFocusChange(CWindow* window) {
-	Debug::log(LOG, "Switched windows to %p", window);
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
+
+	hy3_log(
+	    TRACE,
+	    "changing window focus to window {:x} as node {:x}",
+	    (uintptr_t) window,
+	    (uintptr_t) node
+	);
 
 	node->markFocused();
 	while (node->parent != nullptr) node = node->parent;
@@ -285,7 +293,7 @@ bool Hy3Layout::isWindowTiled(CWindow* window) {
 }
 
 void Hy3Layout::recalculateMonitor(const int& monitor_id) {
-	Debug::log(LOG, "Recalculate monitor %d", monitor_id);
+	hy3_log(LOG, "recalculating monitor {}", monitor_id);
 	const auto monitor = g_pCompositor->getMonitorFromID(monitor_id);
 	if (monitor == nullptr) return;
 
@@ -322,7 +330,6 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 			int outer_gaps = -(*gaps_in - *gaps_out);
 			auto gap_topleft_offset = Vector2D(outer_gaps, outer_gaps);
 			auto gap_bottomright_offset = Vector2D(outer_gaps, outer_gaps);
-			Debug::log(LOG, "FS gaps: %d", outer_gaps);
 
 			Hy3Node fakeNode = {
 			    .data = window,
@@ -464,8 +471,6 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 	cont2:
 		outer_node = outer_node->parent;
 	}
-
-	Debug::log(LOG, "resizeActive - inner_node: %p, outer_node: %p", inner_node, outer_node);
 
 	auto& inner_group = inner_parent->data.as_group;
 	// adjust the inner node
@@ -610,11 +615,9 @@ void Hy3Layout::fullscreenRequestForWindow(
 		}
 
 		if (fullscreen_mode == FULLSCREEN_FULL) {
-			Debug::log(LOG, "fullscreen");
 			window->m_vRealPosition = monitor->vecPosition;
 			window->m_vRealSize = monitor->vecSize;
 		} else {
-			Debug::log(LOG, "vaxry hack");
 			// Copy of vaxry's massive hack
 
 			// clang-format off
@@ -625,7 +628,6 @@ void Hy3Layout::fullscreenRequestForWindow(
 			int outer_gaps = -(*gaps_in - *gaps_out);
 			auto gap_pos_offset = Vector2D(outer_gaps, outer_gaps);
 			auto gap_size_offset = Vector2D(outer_gaps * 2, outer_gaps * 2);
-			Debug::log(LOG, "FS gaps: %d", outer_gaps);
 
 			Hy3Node fakeNode = {
 			    .data = window,
@@ -908,7 +910,6 @@ void Hy3Layout::shiftNode(Hy3Node& node, ShiftDirection direction, bool once, bo
 
 void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once, bool visible) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-	Debug::log(LOG, "ShiftWindow %p %d", node, direction);
 	if (node == nullptr) return;
 
 	this->shiftNode(*node, direction, once, visible);
@@ -916,7 +917,6 @@ void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once, 
 
 void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-	Debug::log(LOG, "ShiftFocus %p %d", node, direction);
 	if (node == nullptr) return;
 
 	Hy3Node* target;
@@ -1389,7 +1389,11 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	}
 
 	if (monitor == nullptr) {
-		Debug::log(ERR, "Orphaned Node %x (workspace ID: %i)!!", node, node->workspace_id);
+		hy3_log(
+		    ERR,
+		    "node {:x}'s workspace has no associated monitor, cannot apply node data",
+		    (uintptr_t) node
+		);
 		errorNotif();
 		return;
 	}
@@ -1401,7 +1405,13 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	// clang-format on
 
 	if (!g_pCompositor->windowExists(window) || !window->m_bIsMapped) {
-		Debug::log(ERR, "Node %p holding invalid window %p!!", node, window);
+		hy3_log(
+		    ERR,
+		    "node {:x} is an unmapped window ({:x}), cannot apply node data, removing from tiled "
+		    "layout",
+		    (uintptr_t) node,
+		    (uintptr_t) window
+		);
 		errorNotif();
 		this->onWindowRemovedTiling(window);
 		return;
@@ -1448,7 +1458,6 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 		window->m_vRealPosition = calcPos;
 		window->m_vRealSize = calcSize;
-		Debug::log(LOG, "Set size (%f %f)", calcSize.x, calcSize.y);
 
 		g_pXWaylandManager->setWindowSize(window, calcSize);
 

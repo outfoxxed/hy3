@@ -449,7 +449,6 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
-	Debug::log(LOG, "updated tab bar for %p", &node);
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
 	static const auto* bar_height

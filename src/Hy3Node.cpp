@@ -31,7 +31,6 @@ Hy3GroupData::~Hy3GroupData() {
 }
 
 bool Hy3GroupData::hasChild(Hy3Node* node) {
-	Debug::log(LOG, "Searching for child %p of %p", this, node);
 	for (auto child: this->children) {
 		if (child == node) return true;
 
@@ -88,13 +87,6 @@ Hy3NodeData::Hy3NodeData(Hy3GroupData group): type(Hy3NodeType::Group) {
 }
 
 Hy3NodeData::Hy3NodeData(Hy3NodeData&& from): type(from.type) {
-	Debug::log(
-	    LOG,
-	    "Move CTor type matches? %d is group? %d",
-	    this->type == from.type,
-	    this->type == Hy3NodeType::Group
-	);
-
 	switch (from.type) {
 	case Hy3NodeType::Window: this->as_window = from.as_window; break;
 	case Hy3NodeType::Group: new (&this->as_group) Hy3GroupData(std::move(from.as_group)); break;
@@ -126,13 +118,6 @@ Hy3NodeData& Hy3NodeData::operator=(Hy3GroupLayout layout) {
 }
 
 Hy3NodeData& Hy3NodeData::operator=(Hy3NodeData&& from) {
-	Debug::log(
-	    LOG,
-	    "operator= type matches? %d is group? %d",
-	    this->type == from.type,
-	    this->type == Hy3NodeType::Group
-	);
-
 	if (this->type == Hy3NodeType::Group) {
 		this->as_group.~Hy3GroupData();
 	}
@@ -235,15 +220,6 @@ Hy3Node* Hy3Node::getFocusedNode(bool ignore_group_focus, bool stop_at_expanded)
 	switch (this->data.type) {
 	case Hy3NodeType::Window: return this;
 	case Hy3NodeType::Group:
-		Debug::log(
-		    LOG,
-		    "focusing %p, gf: %d, ef: %d (stop: %d)",
-		    this,
-		    this->data.as_group.group_focused,
-		    this->data.as_group.expand_focused,
-		    stop_at_expanded
-		);
-
 		if (this->data.as_group.focused_child == nullptr
 		    || (!ignore_group_focus && this->data.as_group.group_focused)
 		    || (stop_at_expanded && this->data.as_group.expand_focused != ExpandFocusType::NotExpanded))
@@ -360,7 +336,12 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		}
 
 		if (expanded_node == nullptr) {
-			Debug::log(ERR, "indiect expand target is missing");
+			hy3_log(
+			    ERR,
+			    "recalcSizePosRecursive: unable to find expansion target of latch node {:x}",
+			    (uintptr_t) this
+			);
+			errorNotif();
 			return;
 		}
 
@@ -673,7 +654,7 @@ std::string Hy3Node::debugNode() {
 Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 	Hy3Node* parent = this;
 
-	Debug::log(LOG, "Recursively removing parent nodes of %p", parent);
+	hy3_log(TRACE, "removing parent nodes of {:x} recursively", (uintptr_t) parent);
 
 	if (this->parent != nullptr) {
 		auto& actor = this->getExpandActor();
@@ -685,14 +666,7 @@ Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 
 	while (parent != nullptr) {
 		if (parent->parent == nullptr) {
-			Debug::log(ERR, "* UAF DEBUGGING - %p's parent is null, its the root group", parent);
-
-			if (parent == this) {
-				Debug::log(ERR, "* UAF DEBUGGING - returning nullptr as this == root group");
-			} else {
-				Debug::log(ERR, "* UAF DEBUGGING - deallocing %p and returning nullptr", parent);
-				parent->layout->nodes.remove(*parent);
-			}
+			if (parent != this) parent->layout->nodes.remove(*parent);
 			return nullptr;
 		}
 
@@ -712,12 +686,12 @@ Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 		}
 
 		if (!group.children.remove(child)) {
-			Debug::log(
+			hy3_log(
 			    ERR,
-			    "Was unable to remove child node %p from parent %p. Child likely has "
-			    "a false parent pointer.",
-			    child,
-			    parent
+			    "unable to remove child node {:x} from parent node {:x}, child's parent pointer is "
+			    "likely dangling",
+			    (uintptr_t) child,
+			    (uintptr_t) parent
 			);
 
 			errorNotif();
@@ -789,7 +763,8 @@ bool Hy3Node::swallowGroups(Hy3Node* into) {
 	// group is wrong.
 	if (into->parent == nullptr && child->data.type != Hy3NodeType::Group) return false;
 
-	Debug::log(LOG, "Swallowing %p into %p", child, into);
+	hy3_log(TRACE, "swallowing node {:x} into node {:x}", (uintptr_t) child, (uintptr_t) into);
+
 	Hy3Node::swapData(*into, *child);
 	into->layout->nodes.remove(*child);
 
