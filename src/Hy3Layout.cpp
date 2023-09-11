@@ -1427,7 +1427,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	              && root_node->data.as_group.children.front()->data.type == Hy3NodeType::Window;
 
 	if (!g_pCompositor->isWorkspaceSpecial(window->m_iWorkspaceID)
-	    && ((*single_window_no_gaps && only_node)
+	    && ((*single_window_no_gaps && (only_node || window->m_bIsFullscreen))
 	        || (window->m_bIsFullscreen
 	            && g_pCompositor->getWorkspaceByID(window->m_iWorkspaceID)->m_efFullscreenMode
 	                   == FULLSCREEN_FULL)))
