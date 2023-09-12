@@ -153,27 +153,32 @@ void Hy3Node::focus() {
 	}
 }
 
-bool Hy3Node::focusWindow() {
+CWindow* Hy3Node::bringToTop() {
 	switch (this->data.type) {
 	case Hy3NodeType::Window:
 		this->markFocused();
 		this->data.as_window->setHidden(false);
-		g_pCompositor->focusWindow(this->data.as_window);
 
-		return true;
+		return this->data.as_window;
 	case Hy3NodeType::Group:
 		if (this->data.as_group.layout == Hy3GroupLayout::Tabbed) {
 			if (this->data.as_group.focused_child != nullptr) {
-				return this->data.as_group.focused_child->focusWindow();
+				return this->data.as_group.focused_child->bringToTop();
 			}
 		} else {
 			for (auto* node: this->data.as_group.children) {
-				if (node->focusWindow()) break;
+				auto* window = node->bringToTop();
+				if (window != nullptr) return window;
 			}
 		}
 
-		return false;
+		return nullptr;
 	}
+}
+
+void Hy3Node::focusWindow() {
+	auto* window = this->bringToTop();
+	if (window != nullptr) g_pCompositor->focusWindow(window);
 }
 
 void markGroupFocusedRecursive(Hy3GroupData& group) {

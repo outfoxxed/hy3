@@ -1,6 +1,6 @@
 {
   inputs = {
-    hyprland.url = "github:hyprwm/Hyprland";
+    hyprland.url = "github:outfoxxed/Hyprland?ref=bring-window-to-top";
   };
 
   outputs = { self, hyprland, ... }: let

@@ -92,7 +92,8 @@ struct Hy3Node {
 	bool operator==(const Hy3Node&) const;
 
 	void focus();
-	bool focusWindow();
+	void focusWindow();
+	CWindow* bringToTop();
 	void markFocused();
 	void raiseToTop();
 	Hy3Node* getFocusedNode(bool ignore_group_focus = false, bool stop_at_expanded = false);

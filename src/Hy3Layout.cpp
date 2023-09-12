@@ -715,10 +715,14 @@ void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
 	this->applyNodeDataToWindow(node);
 }
 
-void Hy3Layout::requestFocusForWindow(CWindow* window) {
+bool Hy3Layout::isWindowReachable(CWindow* window) {
+	return this->getNodeFromWindow(window) != nullptr || IHyprLayout::isWindowReachable(window);
+}
+
+void Hy3Layout::bringWindowToTop(CWindow* window) {
 	auto node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
-	node->focusWindow();
+	node->bringToTop();
 }
 
 void Hy3Layout::onEnable() {
