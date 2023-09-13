@@ -1751,5 +1751,12 @@ void Hy3Layout::updateAtWorkspaces() {
 }
 
 bool Hy3Layout::shouldAtWorkspace(int workspace_id) {
-	return this->at_workspaces.empty() || this->at_workspaces.contains(workspace_id);
+	static const auto* at_workspaces_except
+	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces.except")->intValue;
+
+	if (*at_workspaces_except) {
+		return !this->at_workspaces.empty() && !this->at_workspaces.contains(workspace_id);
+	} else {
+		return this->at_workspaces.empty() || this->at_workspaces.contains(workspace_id);
+	}
 }
