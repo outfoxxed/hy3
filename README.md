@@ -206,6 +206,12 @@ plugin {
       # 0 = always automatically split horizontally
       # <number> = pixel height to split at
       trigger_height = <int> # default: 0
+     
+      # a space or comma separated list of workspace ids where autotile should be enabled
+      workspaces = <string> # default: all
+     
+      # if enabled only workspaces that are not in the list are autotiled
+      workspaces.except = <bool> # default: false
     }
   }
 }
