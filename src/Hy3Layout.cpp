@@ -1,7 +1,7 @@
-#include <regex>
-#include <set>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <regex>
+#include <set>
 
 #include "globals.hpp"
 #include "Hy3Layout.hpp"
@@ -15,30 +15,6 @@ std::unique_ptr<HOOK_CALLBACK_FN> urgentHookPtr
     = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::windowGroupUrgentHook);
 std::unique_ptr<HOOK_CALLBACK_FN> tickHookPtr
     = std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::tickHook);
-
-std::set<int> getAutotileWorkspaces() {
-	std::set<int> workspaces;
-	auto at_workspaces = HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces")->strValue;
-
-	if (at_workspaces == "all") {
-		return workspaces;
-	}
-
-	// split on space and comma
-	const std::regex regex { R"([\s,]+)" };
-	const auto begin = std::regex_token_iterator(at_workspaces.begin(), at_workspaces.end(), regex, -1);
-	const auto end = std::regex_token_iterator<std::string::iterator>();
-
-    for (auto s = begin; s != end; ++s) {
-        try {
-			workspaces.insert(std::stoi(*s));
-        } catch (...) {
-			hy3_log(ERR, "autotile:workspaces: invalid workspace id: {}", (std::string) *s);
-        }
-    }
-
-	return workspaces;
-}
 
 bool performContainment(Hy3Node& node, bool contained, CWindow* window) {
 	if (node.data.type == Hy3NodeType::Group) {
@@ -189,13 +165,14 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		static const auto* at_ephemeral = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:ephemeral_groups")->intValue;
 		static const auto* at_trigger_width = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_width")->intValue;
 		static const auto* at_trigger_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_height")->intValue;
-		static const auto at_workspaces = getAutotileWorkspaces();
 		// clang-format on
+
+		this->updateAtWorkspaces();
 
 		auto& target_group = opening_into->data.as_group;
 		if (*at_enable && opening_after != nullptr && target_group.children.size() > 1
-		    && target_group.layout != Hy3GroupLayout::Tabbed &&
-			(at_workspaces.empty() || at_workspaces.contains(opening_into->workspace_id)))
+		    && target_group.layout != Hy3GroupLayout::Tabbed
+		    && this->shouldAtWorkspace(opening_into->workspace_id))
 		{
 			auto is_horizontal = target_group.layout == Hy3GroupLayout::SplitH;
 			auto trigger = is_horizontal ? *at_trigger_width : *at_trigger_height;
@@ -1737,4 +1714,42 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 	}
 
 	return nullptr;
+}
+
+void Hy3Layout::updateAtWorkspaces() {
+	static const auto* at_raw_workspaces
+	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces")->strValue;
+
+	if (*at_raw_workspaces == this->at_raw_workspaces) {
+		return;
+	}
+
+	this->at_raw_workspaces = *at_raw_workspaces;
+	this->at_workspaces.clear();
+
+	if (this->at_raw_workspaces == "all") {
+		return;
+	}
+
+	// split on space and comma
+	const std::regex regex {R"([\s,]+)"};
+	const auto begin = std::regex_token_iterator(
+	    this->at_raw_workspaces.begin(),
+	    this->at_raw_workspaces.end(),
+	    regex,
+	    -1
+	);
+	const auto end = std::regex_token_iterator<std::string::iterator>();
+
+	for (auto s = begin; s != end; ++s) {
+		try {
+			this->at_workspaces.insert(std::stoi(*s));
+		} catch (...) {
+			hy3_log(ERR, "autotile:workspaces: invalid workspace id: {}", (std::string) *s);
+		}
+	}
+}
+
+bool Hy3Layout::shouldAtWorkspace(int workspace_id) {
+	return this->at_workspaces.empty() || this->at_workspaces.contains(workspace_id);
 }

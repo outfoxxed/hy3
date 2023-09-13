@@ -9,6 +9,7 @@ enum class GroupEphemeralityOption {
 };
 
 #include <list>
+#include <set>
 
 #include <hyprland/src/layout/IHyprLayout.hpp>
 
@@ -137,6 +138,12 @@ private:
 	// nullptr, if shift is false, return the window in the given direction or
 	// nullptr. if once is true, only one group will be broken out of / into
 	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool shift, bool once, bool visible);
+
+	void updateAtWorkspaces();
+	bool shouldAtWorkspace(int);
+
+	std::string at_raw_workspaces;
+	std::set<int> at_workspaces;
 
 	friend struct Hy3Node;
 };
