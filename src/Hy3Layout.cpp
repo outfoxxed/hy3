@@ -67,7 +67,7 @@ void Hy3Layout::onWindowCreated(CWindow* window) {
 	IHyprLayout::onWindowCreated(window);
 }
 
-void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
+void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection direction) {
 	hy3_log(
 	    TRACE,
 	    "onWindowCreatedTiling called with window {:x} (floating: {})",

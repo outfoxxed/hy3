@@ -67,7 +67,7 @@ enum class ExpandFullscreenOption {
 class Hy3Layout: public IHyprLayout {
 public:
 	virtual void onWindowCreated(CWindow*);
-	virtual void onWindowCreatedTiling(CWindow*);
+  virtual void onWindowCreatedTiling(CWindow*, eDirection direction = DIRECTION_DEFAULT);
 	virtual void onWindowRemovedTiling(CWindow*);
 	virtual void onWindowFocusChange(CWindow*);
 	virtual bool isWindowTiled(CWindow*);
