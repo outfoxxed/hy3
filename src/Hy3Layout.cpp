@@ -57,17 +57,17 @@ bool performContainment(Hy3Node& node, bool contained, CWindow* window) {
 	return false;
 }
 
-void Hy3Layout::onWindowCreated(CWindow* window) {
+void Hy3Layout::onWindowCreated(CWindow* window, eDirection direction) {
 	for (auto& node: this->nodes) {
 		if (node.parent == nullptr && performContainment(node, false, window)) {
 			return;
 		}
 	}
 
-	IHyprLayout::onWindowCreated(window);
+	IHyprLayout::onWindowCreated(window, direction);
 }
 
-void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
+void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
 	hy3_log(
 	    TRACE,
 	    "onWindowCreatedTiling called with window {:x} (floating: {})",
