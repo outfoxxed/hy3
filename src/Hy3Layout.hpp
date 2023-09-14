@@ -143,6 +143,7 @@ private:
 	bool shouldAtWorkspace(int);
 
 	std::string at_raw_workspaces;
+	bool at_workspaces_blacklist;
 	std::set<int> at_workspaces;
 
 	friend struct Hy3Node;

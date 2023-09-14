@@ -1731,15 +1731,21 @@ void Hy3Layout::updateAtWorkspaces() {
 		return;
 	}
 
+	this->at_workspaces_blacklist = this->at_raw_workspaces.rfind("not:", 0) == 0;
+
+	const auto at_raw_workspaces_filtered = (this->at_workspaces_blacklist)
+	                                          ? this->at_raw_workspaces.substr(4)
+	                                          : this->at_raw_workspaces;
+
 	// split on space and comma
 	const std::regex regex {R"([\s,]+)"};
-	const auto begin = std::regex_token_iterator(
-	    this->at_raw_workspaces.begin(),
-	    this->at_raw_workspaces.end(),
+	const auto begin = std::sregex_token_iterator(
+	    at_raw_workspaces_filtered.begin(),
+	    at_raw_workspaces_filtered.end(),
 	    regex,
 	    -1
 	);
-	const auto end = std::regex_token_iterator<std::string::iterator>();
+	const auto end = std::sregex_token_iterator();
 
 	for (auto s = begin; s != end; ++s) {
 		try {
@@ -1751,11 +1757,8 @@ void Hy3Layout::updateAtWorkspaces() {
 }
 
 bool Hy3Layout::shouldAtWorkspace(int workspace_id) {
-	static const auto* at_workspaces_except
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces.except")->intValue;
-
-	if (*at_workspaces_except) {
-		return !this->at_workspaces.empty() && !this->at_workspaces.contains(workspace_id);
+	if (this->at_workspaces_blacklist) {
+		return !this->at_workspaces.contains(workspace_id);
 	} else {
 		return this->at_workspaces.empty() || this->at_workspaces.contains(workspace_id);
 	}
