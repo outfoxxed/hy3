@@ -212,9 +212,6 @@ plugin {
       # workspaces = 1,2 # autotiling will only be enabled on workspaces 1 and 2
       # workspaces = not:1,2 # autotiling will be enabled on all workspaces except 1 and 2
       workspaces = <string> # default: all
-     
-      # if enabled only workspaces that are not in the list are autotiled
-      workspaces.except = <bool> # default: false
     }
   }
 }
