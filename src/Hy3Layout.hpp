@@ -139,8 +139,8 @@ private:
 	// nullptr. if once is true, only one group will be broken out of / into
 	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool shift, bool once, bool visible);
 
-	void updateAtWorkspaces();
-	bool shouldAtWorkspace(int);
+	void updateAutotileWorkspaces();
+	bool shouldAutotileWorkspace(int);
 
 	std::string at_raw_workspaces;
 	bool at_workspaces_blacklist;

@@ -167,12 +167,12 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window) {
 		static const auto* at_trigger_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_height")->intValue;
 		// clang-format on
 
-		this->updateAtWorkspaces();
+		this->updateAutotileWorkspaces();
 
 		auto& target_group = opening_into->data.as_group;
 		if (*at_enable && opening_after != nullptr && target_group.children.size() > 1
 		    && target_group.layout != Hy3GroupLayout::Tabbed
-		    && this->shouldAtWorkspace(opening_into->workspace_id))
+		    && this->shouldAutotileWorkspace(opening_into->workspace_id))
 		{
 			auto is_horizontal = target_group.layout == Hy3GroupLayout::SplitH;
 			auto trigger = is_horizontal ? *at_trigger_width : *at_trigger_height;
@@ -1716,7 +1716,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 	return nullptr;
 }
 
-void Hy3Layout::updateAtWorkspaces() {
+void Hy3Layout::updateAutotileWorkspaces() {
 	static const auto* at_raw_workspaces
 	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces")->strValue;
 
@@ -1756,7 +1756,7 @@ void Hy3Layout::updateAtWorkspaces() {
 	}
 }
 
-bool Hy3Layout::shouldAtWorkspace(int workspace_id) {
+bool Hy3Layout::shouldAutotileWorkspace(int workspace_id) {
 	if (this->at_workspaces_blacklist) {
 		return !this->at_workspaces.contains(workspace_id);
 	} else {
