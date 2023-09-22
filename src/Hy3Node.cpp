@@ -212,7 +212,7 @@ void Hy3Node::markFocused() {
 
 void Hy3Node::raiseToTop() {
 	switch (this->data.type) {
-	case Hy3NodeType::Window: g_pCompositor->moveWindowToTop(this->data.as_window); break;
+	case Hy3NodeType::Window: g_pCompositor->changeWindowZOrder(this->data.as_window, true); break;
 	case Hy3NodeType::Group:
 		for (auto* child: this->data.as_group.children) {
 			child->raiseToTop();

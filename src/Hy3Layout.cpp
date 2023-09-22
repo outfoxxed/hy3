@@ -644,7 +644,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 
 	g_pCompositor->updateWindowAnimatedDecorationValues(window);
 	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
-	g_pCompositor->moveWindowToTop(window);
+	g_pCompositor->changeWindowZOrder(window, true);
 	this->recalculateMonitor(monitor->ID);
 }
 
@@ -1246,7 +1246,7 @@ unfullscreen:
 fsupdate:
 	g_pCompositor->updateWindowAnimatedDecorationValues(window);
 	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
-	g_pCompositor->moveWindowToTop(window);
+	g_pCompositor->changeWindowZOrder(window, true);
 	this->recalculateMonitor(monitor->ID);
 }
 
