@@ -1717,31 +1717,31 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 }
 
 void Hy3Layout::updateAutotileWorkspaces() {
-	static const auto* at_raw_workspaces
+	static const auto* autotile_raw_workspaces
 	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces")->strValue;
 
-	if (*at_raw_workspaces == this->at_raw_workspaces) {
+	if (*autotile_raw_workspaces == this->autotile.raw_workspaces) {
 		return;
 	}
 
-	this->at_raw_workspaces = *at_raw_workspaces;
-	this->at_workspaces.clear();
+	this->autotile.raw_workspaces = *autotile_raw_workspaces;
+	this->autotile.workspaces.clear();
 
-	if (this->at_raw_workspaces == "all") {
+	if (this->autotile.raw_workspaces == "all") {
 		return;
 	}
 
-	this->at_workspaces_blacklist = this->at_raw_workspaces.rfind("not:", 0) == 0;
+	this->autotile.workspace_blacklist = this->autotile.raw_workspaces.rfind("not:", 0) == 0;
 
-	const auto at_raw_workspaces_filtered = (this->at_workspaces_blacklist)
-	                                          ? this->at_raw_workspaces.substr(4)
-	                                          : this->at_raw_workspaces;
+	const auto autotile_raw_workspaces_filtered = (this->autotile.workspace_blacklist)
+	                                                ? this->autotile.raw_workspaces.substr(4)
+	                                                : this->autotile.raw_workspaces;
 
 	// split on space and comma
 	const std::regex regex {R"([\s,]+)"};
 	const auto begin = std::sregex_token_iterator(
-	    at_raw_workspaces_filtered.begin(),
-	    at_raw_workspaces_filtered.end(),
+	    autotile_raw_workspaces_filtered.begin(),
+	    autotile_raw_workspaces_filtered.end(),
 	    regex,
 	    -1
 	);
@@ -1749,7 +1749,7 @@ void Hy3Layout::updateAutotileWorkspaces() {
 
 	for (auto s = begin; s != end; ++s) {
 		try {
-			this->at_workspaces.insert(std::stoi(*s));
+			this->autotile.workspaces.insert(std::stoi(*s));
 		} catch (...) {
 			hy3_log(ERR, "autotile:workspaces: invalid workspace id: {}", (std::string) *s);
 		}
@@ -1757,9 +1757,9 @@ void Hy3Layout::updateAutotileWorkspaces() {
 }
 
 bool Hy3Layout::shouldAutotileWorkspace(int workspace_id) {
-	if (this->at_workspaces_blacklist) {
-		return !this->at_workspaces.contains(workspace_id);
+	if (this->autotile.workspace_blacklist) {
+		return !this->autotile.workspaces.contains(workspace_id);
 	} else {
-		return this->at_workspaces.empty() || this->at_workspaces.contains(workspace_id);
+		return this->autotile.workspaces.empty() || this->autotile.workspaces.contains(workspace_id);
 	}
 }

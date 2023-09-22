@@ -142,9 +142,11 @@ private:
 	void updateAutotileWorkspaces();
 	bool shouldAutotileWorkspace(int);
 
-	std::string at_raw_workspaces;
-	bool at_workspaces_blacklist;
-	std::set<int> at_workspaces;
+	struct {
+		std::string raw_workspaces;
+		bool workspace_blacklist;
+		std::set<int> workspaces;
+	} autotile;
 
 	friend struct Hy3Node;
 };
