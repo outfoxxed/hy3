@@ -19,12 +19,15 @@ Additional features may be suggested in the repo issues or the [matrix room](htt
 <video width="640" height="360" controls="controls" src="https://user-images.githubusercontent.com/83010835/255322916-85ae8196-8b12-4e15-b060-9872db10839f.mp4"></video>
 
 ### Stability
-hy3 always tracks the latest (git) version of hyprland. It likely will not work when built against a given stable
-hyprland release, however it will probably work within a few commits of the latest hyprland version. Please ping
-`@outfoxxed:outfoxxed.me` in the [matrix room](https://matrix.to/#/#hy3-general:outfoxxed.me) or make an issue
-if hy3 does not build or function against the latest hyprland commit.
+hy3 has a tagged release for each hyprland update, and master tracks hyprland's main branch.
+If you are running a release version of hyprland then use the matching tagged hy3 version.
+If you are running an untagged hyprland release then use the `master` branch of hy3.
 
-Commits are tested for obvious crashes before pushing and usually fine, however you may occasionally find a bug.
+Commits are tested before pushing and will build against the hyprland release **in the flake.lock file**.
+There may be a mismatch with hyprland's main branch. If hy3 fails to build against hyprland's main branch
+please make an issue or ping me in the [hy3 matrix room](https://matrix.to/#/#hy3-support:outfoxxed.me).
+
+Tagged hy3 versions are always checked against the corrosponding hyprland tag.
 
 If you encounter any bugs, please report them in the issue tracker.
 
@@ -37,6 +40,15 @@ If you are too lazy to use the issue tracker, please at least ping `@outfoxxed:o
 in the [matrix room](https://matrix.to/#/#hy3-support:outfoxxed.me) with your bug information.
 
 ## Installation
+
+> [!IMPORTANT]
+> The master branch of hy3 follows the master branch of hyprland.
+> Attempting to use a mismatched hyprland release will result in failure when building or loading hy3.
+>
+> To use hy3 against a release version of hyprland,
+> check out the matching hy3 tag for the hyprland version.
+> hy3 tags are formatted as `hl{version}` where `{version}` matches the release version of hyprland.
+
 ### Nix
 #### Hyprland home manager module
 Assuming you use hyprland's home manager module, you can easily integrate hy3 by adding it to the plugins array.
@@ -54,9 +66,11 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3 by
     };
 
     hyprland.url = "github:hyprwm/Hyprland";
+    # or "github:hyprwm/Hyprland?ref=v{version}" for a release version of hyprland
 
     hy3 = {
       url = "github:outfoxxed/hy3";
+      # or "github:outfoxxed/hy3?ref=hl{version}" for a release version of hyprland
       inputs.hyprland.follows = "hyprland";
     };
   };
@@ -112,6 +126,12 @@ The plugin will be located at `build/libhy3.so`, and you can load it normally
 Note that the hyprland headers and pkg-config file **MUST be installed correctly, for the target version of hyprland**.
 
 ## Configuration
+
+> [!IMPORTANT]
+> The configuration listed below is for the current hy3 commit.
+> If you are using a release version of hy3 then make sure you are
+> reading the tagged revision of this readme.
+
 Set your `general:layout` to `hy3` in hyprland.conf.
 
 hy3 requires using a few custom dispatchers for normal operation.
