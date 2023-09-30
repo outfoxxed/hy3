@@ -109,8 +109,27 @@ wayland.windowManager.hyprland = {
 ```
 
 ### Arch (AUR)
-There is an unofficial [hy3-git](https://aur.archlinux.org/packages/hy3-git) package,
-usable with the `hyprland-git` package.
+
+> [!IMPORTANT]
+> Pacman is not very reliable when it comes to building packages in the correct order.
+> If hy3 fails to load or build, crashes randomly or behaves oddly (commonly dispatchers stop working)
+> then your packages likely updated in the wrong order, or you have hyprland headers in `/usr/local`.
+>
+> To fix this, remove `/usr/include/hyprland`, `/usr/local/include/hyprland`, `/usr/share/pkgconfig/hyprland.pc` and `/usr/local/share/pkgconfig/hyprland.pc`,
+> then reinstall hyprland and hy3.
+>
+> If you know how to fix this please open an issue or pr, or message `@outfoxxed:outfoxxed.me` in the [matrix room](https://matrix.to/#/#hy3-support:outfoxxed.me).
+
+hy3 stable (for arch's `hyprland` package) is availible on the AUR as [hy3](https://aur.archlinux.org/packages/hy3).
+
+hy3-git (for `hyprland-git` on the AUR, unofficial package) is availible on the AUR as [hy3-git](https://aur.archlinux.org/packages/hy3-git).
+
+Both packages install hy3 as `/usr/lib/libhy3.so`.
+You can enable it in your hyprland configuration by adding the following line anywhere in your `hyprland.conf`
+
+```conf
+plugin = /usr/lib/libhy3.so
+```
 
 ### Manual
 Install hyprland, including its headers and pkg-config file, then run the following commands:
