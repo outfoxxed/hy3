@@ -43,6 +43,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("autotile:ephemeral_groups", int, 1);
 	CONF("autotile:trigger_height", int, 0);
 	CONF("autotile:trigger_width", int, 0);
+	CONF("autotile:workspaces", str, "all");
 
 #undef CONF
 

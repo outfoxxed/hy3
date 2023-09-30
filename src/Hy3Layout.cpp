@@ -1,5 +1,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <regex>
+#include <set>
 
 #include "globals.hpp"
 #include "Hy3Layout.hpp"
@@ -165,9 +167,12 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
 		static const auto* at_trigger_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_height")->intValue;
 		// clang-format on
 
+		this->updateAutotileWorkspaces();
+
 		auto& target_group = opening_into->data.as_group;
 		if (*at_enable && opening_after != nullptr && target_group.children.size() > 1
-		    && target_group.layout != Hy3GroupLayout::Tabbed)
+		    && target_group.layout != Hy3GroupLayout::Tabbed
+		    && this->shouldAutotileWorkspace(opening_into->workspace_id))
 		{
 			auto is_horizontal = target_group.layout == Hy3GroupLayout::SplitH;
 			auto trigger = is_horizontal ? *at_trigger_width : *at_trigger_height;
@@ -1713,4 +1718,52 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 	}
 
 	return nullptr;
+}
+
+void Hy3Layout::updateAutotileWorkspaces() {
+	static const auto* autotile_raw_workspaces
+	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces")->strValue;
+
+	if (*autotile_raw_workspaces == this->autotile.raw_workspaces) {
+		return;
+	}
+
+	this->autotile.raw_workspaces = *autotile_raw_workspaces;
+	this->autotile.workspaces.clear();
+
+	if (this->autotile.raw_workspaces == "all") {
+		return;
+	}
+
+	this->autotile.workspace_blacklist = this->autotile.raw_workspaces.rfind("not:", 0) == 0;
+
+	const auto autotile_raw_workspaces_filtered = (this->autotile.workspace_blacklist)
+	                                                ? this->autotile.raw_workspaces.substr(4)
+	                                                : this->autotile.raw_workspaces;
+
+	// split on space and comma
+	const std::regex regex {R"([\s,]+)"};
+	const auto begin = std::sregex_token_iterator(
+	    autotile_raw_workspaces_filtered.begin(),
+	    autotile_raw_workspaces_filtered.end(),
+	    regex,
+	    -1
+	);
+	const auto end = std::sregex_token_iterator();
+
+	for (auto s = begin; s != end; ++s) {
+		try {
+			this->autotile.workspaces.insert(std::stoi(*s));
+		} catch (...) {
+			hy3_log(ERR, "autotile:workspaces: invalid workspace id: {}", (std::string) *s);
+		}
+	}
+}
+
+bool Hy3Layout::shouldAutotileWorkspace(int workspace_id) {
+	if (this->autotile.workspace_blacklist) {
+		return !this->autotile.workspaces.contains(workspace_id);
+	} else {
+		return this->autotile.workspaces.empty() || this->autotile.workspaces.contains(workspace_id);
+	}
 }
