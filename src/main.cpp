@@ -21,6 +21,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("no_gaps_when_only", int, 0);
 	CONF("node_collapse_policy", int, 2);
 	CONF("group_inset", int, 10);
+	CONF("tab_first_window", int, 0);
 
 	// tabs
 	CONF("tabs:height", int, 15);

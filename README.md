@@ -181,6 +181,9 @@ plugin {
     # offset from group split direction when only one window is in a group
     group_inset = <int> # default: 10
 
+    # if a tab group will automatically be created for the first window spawned in a workspace
+    tab_first_window = <bool>
+
     # tab group settings
     tabs {
       # height of the tab bar

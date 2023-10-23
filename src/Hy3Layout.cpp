@@ -130,6 +130,8 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
 		opening_into = opening_after->parent;
 	} else {
 		if ((opening_into = this->getWorkspaceRootGroup(window->m_iWorkspaceID)) == nullptr) {
+			static const auto* tab_first_window = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tab_first_window")->intValue;
+
 			this->nodes.push_back({
 			    .data = Hy3GroupLayout::SplitH,
 			    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
@@ -137,6 +139,21 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
 			    .workspace_id = window->m_iWorkspaceID,
 			    .layout = this,
 			});
+
+			if (*tab_first_window) {
+				auto& parent = this->nodes.back();
+
+				this->nodes.push_back({
+					.parent = &parent,
+					.data = Hy3GroupLayout::Tabbed,
+			    .position = parent.position,
+			    .size = parent.size,
+					.workspace_id = window->m_iWorkspaceID,
+					.layout = this,
+				});
+
+				parent.data.as_group.children.push_back(&this->nodes.back());
+			}
 
 			opening_into = &this->nodes.back();
 		}
