@@ -1296,7 +1296,7 @@ Hy3Node* Hy3Layout::getWorkspaceFocusedNode(
 	return rootNode->getFocusedNode(ignore_group_focus, stop_at_expanded);
 }
 
-void Hy3Layout::renderHook(void*, std::any data) {
+void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 	static bool rendering_normally = false;
 	static std::vector<Hy3TabGroup*> rendered_groups;
 
@@ -1339,14 +1339,14 @@ void Hy3Layout::renderHook(void*, std::any data) {
 	}
 }
 
-void Hy3Layout::windowGroupUrgentHook(void* p, std::any data) {
+void Hy3Layout::windowGroupUrgentHook(void* p, SCallbackInfo& callback_info, std::any data) {
 	CWindow* window = std::any_cast<CWindow*>(data);
 	if (window == nullptr) return;
 	window->m_bIsUrgent = true;
-	Hy3Layout::windowGroupUpdateRecursiveHook(p, data);
+	Hy3Layout::windowGroupUpdateRecursiveHook(p, callback_info, data);
 }
 
-void Hy3Layout::windowGroupUpdateRecursiveHook(void*, std::any data) {
+void Hy3Layout::windowGroupUpdateRecursiveHook(void*, SCallbackInfo&, std::any data) {
 	CWindow* window = std::any_cast<CWindow*>(data);
 	if (window == nullptr) return;
 	auto* node = g_Hy3Layout->getNodeFromWindow(window);
@@ -1356,7 +1356,7 @@ void Hy3Layout::windowGroupUpdateRecursiveHook(void*, std::any data) {
 	node->updateTabBarRecursive();
 }
 
-void Hy3Layout::tickHook(void*, std::any) {
+void Hy3Layout::tickHook(void*, SCallbackInfo&, std::any) {
 	auto& tab_groups = g_Hy3Layout->tab_groups;
 	auto entry = tab_groups.begin();
 	while (entry != tab_groups.end()) {

@@ -123,10 +123,10 @@ public:
 	    bool stop_at_expanded = false
 	);
 
-	static void renderHook(void*, std::any);
-	static void windowGroupUrgentHook(void*, std::any);
-	static void windowGroupUpdateRecursiveHook(void*, std::any);
-	static void tickHook(void*, std::any);
+	static void renderHook(void*, SCallbackInfo&, std::any);
+	static void windowGroupUrgentHook(void*, SCallbackInfo&, std::any);
+	static void windowGroupUpdateRecursiveHook(void*, SCallbackInfo&, std::any);
+	static void tickHook(void*, SCallbackInfo&, std::any);
 
 	std::list<Hy3Node> nodes;
 	std::list<Hy3TabGroup> tab_groups;
