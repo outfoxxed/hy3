@@ -822,6 +822,7 @@ void Hy3Layout::makeGroupOn(
 		if (group.children.size() == 1) {
 			group.setLayout(layout);
 			group.setEphemeral(ephemeral);
+			node->parent->updateTabBarRecursive();
 			node->parent->recalcSizePosRecursive();
 			return;
 		}
@@ -860,6 +861,7 @@ void Hy3Layout::changeGroupOn(Hy3Node& node, Hy3GroupLayout layout) {
 
 	auto& group = node.parent->data.as_group;
 	group.setLayout(layout);
+	node.parent->updateTabBarRecursive();
 	node.parent->recalcSizePosRecursive();
 }
 
@@ -910,6 +912,7 @@ void Hy3Layout::shiftNode(Hy3Node& node, ShiftDirection direction, bool once, bo
 			auto* node2 = node.parent;
 			Hy3Node::swapData(node, *node2);
 			node2->layout->nodes.remove(node);
+			node2->updateTabBarRecursive();
 			node2->recalcSizePosRecursive();
 		}
 	} else {
@@ -928,8 +931,8 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 
-	Hy3Node* target;
-	if ((target = this->shiftOrGetFocus(*node, direction, false, false, visible))) {
+	auto* target = this->shiftOrGetFocus(*node, direction, false, false, visible);
+	if (target != nullptr) {
 		target->focus();
 		while (target->parent != nullptr) target = target->parent;
 		target->recalcSizePosRecursive();
@@ -1701,6 +1704,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 				Hy3Node::swallowGroups(old_parent);
 			}
 
+			old_parent->updateTabBarRecursive();
 			old_parent->recalcSizePosRecursive();
 		}
 
@@ -1711,6 +1715,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			target_parent = target_parent->parent;
 		}
 
+		node.updateTabBarRecursive();
 		node.focus();
 
 		if (target_parent != target_group && target_parent != nullptr)
