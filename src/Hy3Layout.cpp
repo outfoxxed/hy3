@@ -1169,9 +1169,9 @@ void Hy3Layout::setNodeSwallow(int workspace, SetSwallowOption option) {
 
 	auto* containment = &node->parent->data.as_group.containment;
 	switch (option) {
-	case SetSwallowOption::NoSwallow: *containment = false;
-	case SetSwallowOption::Swallow: *containment = true;
-	case SetSwallowOption::Toggle: *containment = !*containment;
+	case SetSwallowOption::NoSwallow: *containment = false; break;
+	case SetSwallowOption::Swallow: *containment = true; break;
+	case SetSwallowOption::Toggle: *containment = !*containment; break;
 	}
 }
 
