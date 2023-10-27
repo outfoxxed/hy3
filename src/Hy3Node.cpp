@@ -3,8 +3,8 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
-#include "globals.hpp"
 #include "Hy3Node.hpp"
+#include "globals.hpp"
 
 // Hy3GroupData //
 
@@ -310,15 +310,14 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	}
 
 	auto expand_focused = group->expand_focused != ExpandFocusType::NotExpanded;
-	bool directly_contains_expanded
-	    = expand_focused
-	   && (group->focused_child->data.type == Hy3NodeType::Window
-	       || group->focused_child->data.as_group.expand_focused == ExpandFocusType::NotExpanded);
+	bool directly_contains_expanded =
+	    expand_focused
+	    && (group->focused_child->data.type == Hy3NodeType::Window
+	        || group->focused_child->data.as_group.expand_focused == ExpandFocusType::NotExpanded);
 
 	auto child_count = group->children.size();
-	double ratio_mul = group->layout != Hy3GroupLayout::Tabbed
-	                     ? child_count <= 0 ? 0 : constraint / child_count
-	                     : 0;
+	double ratio_mul =
+	    group->layout != Hy3GroupLayout::Tabbed ? child_count <= 0 ? 0 : constraint / child_count : 0;
 
 	double offset = 0;
 
@@ -435,8 +434,8 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			child->size = tsize;
 			child->hidden = this->hidden || expand_focused || group->focused_child != child;
 
-			child->gap_topleft_offset
-			    = Vector2D(gap_topleft_offset.x, gap_topleft_offset.y + tab_height_offset);
+			child->gap_topleft_offset =
+			    Vector2D(gap_topleft_offset.x, gap_topleft_offset.y + tab_height_offset);
 			child->gap_bottomright_offset = gap_bottomright_offset;
 
 			child->recalcSizePosRecursive(no_animation);

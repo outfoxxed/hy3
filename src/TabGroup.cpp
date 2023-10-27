@@ -1,14 +1,13 @@
+#include "TabGroup.hpp"
+
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/helpers/Color.hpp>
-#include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <pango/pangocairo.h>
 #include <pixman.h>
 
 #include "globals.hpp"
-#include "Hy3Layout.hpp"
-#include "TabGroup.hpp"
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->focused.create(
@@ -342,10 +341,10 @@ exitloop:
 				continue;
 			}
 
-			auto moved
-			    = std::find_if(removed_entries.begin(), removed_entries.end(), [&node](auto entry) {
-				      return **node == *entry;
-			      });
+			auto moved =
+			    std::find_if(removed_entries.begin(), removed_entries.end(), [&node](auto entry) {
+				    return **node == *entry;
+			    });
 
 			if (moved != removed_entries.end()) {
 				this->entries.splice(entry, this->entries, *moved);
@@ -451,8 +450,8 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
-	static const auto* bar_height
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
+	static const auto* bar_height =
+	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
 
 	auto gaps = node.parent == nullptr ? *gaps_out : *gaps_in;
 	auto tpos = node.position + Vector2D(gaps, gaps) + node.gap_topleft_offset;
@@ -478,10 +477,10 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 }
 
 void Hy3TabGroup::tick() {
-	static const auto* enter_from_top
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
-	static const auto* padding
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
+	static const auto* enter_from_top =
+	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
+	static const auto* padding =
+	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
 	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
 
 	this->bar.tick();
@@ -522,12 +521,12 @@ void Hy3TabGroup::tick() {
 }
 
 void Hy3TabGroup::renderTabBar() {
-	static const auto* window_rounding
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
-	static const auto* enter_from_top
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
-	static const auto* padding
-	    = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
+	static const auto* window_rounding =
+	    &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
+	static const auto* enter_from_top =
+	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
+	static const auto* padding =
+	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
 
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
 	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
@@ -601,8 +600,8 @@ void Hy3TabGroup::renderTabBar() {
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	}
 
-	auto fade_opacity
-	    = this->bar.fade_opacity.fl() * (workspace == nullptr ? 1.0 : workspace->m_fAlpha.fl());
+	auto fade_opacity =
+	    this->bar.fade_opacity.fl() * (workspace == nullptr ? 1.0 : workspace->m_fAlpha.fl());
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
 		Vector2D entry_pos = {

@@ -3,9 +3,9 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
+#include "SelectionHook.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
-#include "SelectionHook.hpp"
 
 APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
 

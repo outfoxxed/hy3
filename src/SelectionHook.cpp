@@ -22,8 +22,8 @@ void hook_updateDecos(void* thisptr, CWindow* window) {
 }
 
 void init() {
-	static const auto decoUpdateCandidates
-	    = HyprlandAPI::findFunctionsByName(PHANDLE, "updateWindowAnimatedDecorationValues");
+	static const auto decoUpdateCandidates =
+	    HyprlandAPI::findFunctionsByName(PHANDLE, "updateWindowAnimatedDecorationValues");
 
 	if (decoUpdateCandidates.size() != 1) {
 		g_LastSelectionHook = nullptr;
