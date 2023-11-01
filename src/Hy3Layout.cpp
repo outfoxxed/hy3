@@ -866,10 +866,14 @@ void Hy3Layout::changeGroupToOppositeOn(Hy3Node& node) {
 
 	auto& group = node.parent->data.as_group;
 
-	if (group.layout == Hy3GroupLayout::Tabbed) return;
-	group.setLayout(
-	    group.layout == Hy3GroupLayout::SplitH ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH
-	);
+	if (group.layout == Hy3GroupLayout::Tabbed) {
+		group.setLayout(group.previous_nontab_layout);
+	} else {
+		group.setLayout(
+		    group.layout == Hy3GroupLayout::SplitH ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH
+		);
+	}
+
 	node.parent->recalcSizePosRecursive();
 }
 
