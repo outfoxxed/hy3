@@ -336,46 +336,6 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 			top_node->recalcSizePosRecursive();
 		}
 	}
-
-	if (workspace->m_bHasFullscreenWindow) {
-		const auto window = g_pCompositor->getFullscreenWindowOnWorkspace(workspace->m_iID);
-
-		if (workspace->m_efFullscreenMode == FULLSCREEN_FULL) {
-			window->m_vRealPosition = monitor->vecPosition;
-			window->m_vRealSize = monitor->vecSize;
-		} else {
-			// Vaxry's hack from below, but again
-
-			// clang-format off
-			static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
-			static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
-			// clang-format on
-
-			int outer_gaps = -(*gaps_in - *gaps_out);
-			auto gap_topleft_offset = Vector2D(outer_gaps, outer_gaps);
-			auto gap_bottomright_offset = Vector2D(outer_gaps, outer_gaps);
-
-			Hy3Node fakeNode = {
-			    .data = window,
-			    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
-			    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
-			    .gap_topleft_offset = gap_topleft_offset,
-			    .gap_bottomright_offset = gap_bottomright_offset,
-			    .workspace_id = window->m_iWorkspaceID,
-			};
-
-			this->applyNodeDataToWindow(&fakeNode);
-		}
-	} else {
-		const auto top_node = this->getWorkspaceRootGroup(monitor->activeWorkspace);
-
-		if (top_node != nullptr) {
-			top_node->position = monitor->vecPosition + monitor->vecReservedTopLeft;
-			top_node->size =
-			    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
-			top_node->recalcSizePosRecursive();
-		}
-	}
 }
 
 void Hy3Layout::recalculateWindow(CWindow* window) {
