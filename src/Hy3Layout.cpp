@@ -323,18 +323,25 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 
 	g_pHyprRenderer->damageMonitor(monitor);
 
-	const auto workspace = g_pCompositor->getWorkspaceByID(monitor->activeWorkspace);
-	if (workspace == nullptr) return;
+	// todo: refactor this
 
-	if (monitor->specialWorkspaceID) {
-		const auto top_node = this->getWorkspaceRootGroup(monitor->specialWorkspaceID);
+	auto* top_node = this->getWorkspaceRootGroup(monitor->activeWorkspace);
+	if (top_node != nullptr) {
+		top_node->position = monitor->vecPosition + monitor->vecReservedTopLeft;
+		top_node->size =
+		    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
 
-		if (top_node != nullptr) {
-			top_node->position = monitor->vecPosition + monitor->vecReservedTopLeft;
-			top_node->size =
-			    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
-			top_node->recalcSizePosRecursive();
-		}
+		top_node->recalcSizePosRecursive();
+	}
+
+	top_node = this->getWorkspaceRootGroup(monitor->specialWorkspaceID);
+
+	if (top_node != nullptr) {
+		top_node->position = monitor->vecPosition + monitor->vecReservedTopLeft;
+		top_node->size =
+		    monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight;
+
+		top_node->recalcSizePosRecursive();
 	}
 }
 
