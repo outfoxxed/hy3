@@ -455,7 +455,10 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 
 	auto gaps = node.parent == nullptr ? *gaps_out : *gaps_in;
 	auto tpos = node.position + Vector2D(gaps, gaps) + node.gap_topleft_offset;
-	auto tsize = Vector2D(node.size.x - node.gap_bottomright_offset.x - gaps * 2, *bar_height);
+	auto tsize = Vector2D(
+	    node.size.x - node.gap_bottomright_offset.x - node.gap_topleft_offset.x - gaps * 2,
+	    *bar_height
+	);
 
 	this->hidden = node.hidden;
 	if (this->pos.goalv() != tpos) {
