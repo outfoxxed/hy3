@@ -54,7 +54,7 @@ struct Hy3TabBarEntry {
 	void beginDestroy();
 	void unDestroy();
 	bool shouldRemove();
-	void prepareTexture(float, wlr_box&);
+	void prepareTexture(float, CBox&);
 };
 
 class Hy3TabBar {

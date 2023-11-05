@@ -1,6 +1,7 @@
 #include <sstream>
 
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/helpers/Box.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 #include "Hy3Node.hpp"
@@ -354,7 +355,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	{
 		group->focused_child->setHidden(false);
 
-		auto box = wlr_box {tpos.x, tpos.y, tsize.x, tsize.y};
+		auto box = CBox {tpos.x, tpos.y, tsize.x, tsize.y};
 		g_pHyprRenderer->damageBox(&box);
 	}
 

@@ -2,6 +2,7 @@
 
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/helpers/Box.hpp>
 #include <hyprland/src/helpers/Color.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <pango/pangocairo.h>
@@ -123,7 +124,7 @@ bool Hy3TabBarEntry::shouldRemove() {
 	return this->destroying && (this->vertical_pos.fl() == 1.0 || this->width.fl() == 0.0);
 }
 
-void Hy3TabBarEntry::prepareTexture(float scale, wlr_box& box) {
+void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 	// clang-format off
 	static const auto* s_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
 	static const auto* render_text = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:render_text")->intValue;
@@ -500,7 +501,7 @@ void Hy3TabGroup::tick() {
 	auto size = this->size.vec();
 
 	if (this->last_pos != pos || this->last_size != size) {
-		wlr_box damage_box = {this->last_pos.x, this->last_pos.y, this->last_size.x, this->last_size.y};
+		CBox damage_box = {this->last_pos.x, this->last_pos.y, this->last_size.x, this->last_size.y};
 		g_pHyprRenderer->damageBox(&damage_box);
 
 		this->bar.damaged = true;
@@ -515,7 +516,7 @@ void Hy3TabGroup::tick() {
 			pos.y -= *padding;
 		}
 
-		wlr_box damage_box = {pos.x, pos.y, size.x, size.y};
+		CBox damage_box = {pos.x, pos.y, size.x, size.y};
 		g_pHyprRenderer->damageBox(&damage_box);
 
 		this->bar.damaged = true;
@@ -589,8 +590,9 @@ void Hy3TabGroup::renderTabBar() {
 			auto wpos = window->m_vRealPosition.vec() - monitor->vecPosition;
 			auto wsize = window->m_vRealSize.vec();
 
-			wlr_box window_box = {wpos.x, wpos.y, wsize.x, wsize.y};
-			scaleBox(&window_box, scale);
+			CBox window_box = {wpos.x, wpos.y, wsize.x, wsize.y};
+			// scaleBox(&window_box, scale);
+			window_box.scale(scale);
 
 			if (window_box.width > 0 && window_box.height > 0)
 				g_pHyprOpenGL->renderRect(&window_box, CColor(0, 0, 0, 0), *window_rounding);
@@ -616,7 +618,7 @@ void Hy3TabGroup::renderTabBar() {
 		Vector2D entry_size = {((entry.width.fl() * size.x) - *padding) * scale, scaled_size.y};
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
 
-		wlr_box box = {
+		CBox box = {
 		    entry_pos.x,
 		    entry_pos.y,
 		    entry_size.x,
