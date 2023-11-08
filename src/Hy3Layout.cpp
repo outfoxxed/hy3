@@ -1434,8 +1434,12 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	            && g_pCompositor->getWorkspaceByID(window->m_iWorkspaceID)->m_efFullscreenMode
 	                   == FULLSCREEN_FULL)))
 	{
-		window->m_vRealPosition = window->m_vPosition;
-		window->m_vRealSize = window->m_vSize;
+
+		CBox wb = {window->m_vPosition, window->m_vSize};
+		wb.round();
+
+		window->m_vRealPosition = wb.pos();
+		window->m_vRealSize = wb.size();
 
 		window->updateWindowDecos();
 
@@ -1458,8 +1462,11 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		calcPos = calcPos + reserved_area.topLeft;
 		calcSize = calcSize - (reserved_area.topLeft - reserved_area.bottomRight);
 
-		window->m_vRealPosition = calcPos;
-		window->m_vRealSize = calcSize;
+		CBox wb = {calcPos, calcSize};
+		wb.round();
+
+		window->m_vRealPosition = wb.pos();
+		window->m_vRealSize = wb.size();
 
 		g_pXWaylandManager->setWindowSize(window, calcSize);
 
