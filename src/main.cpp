@@ -1,7 +1,9 @@
 #include <optional>
+#include <stdexcept>
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/version.h>
 
 #include "SelectionHook.hpp"
 #include "dispatchers.hpp"
@@ -11,6 +13,19 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
 
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	PHANDLE = handle;
+
+#ifndef HY3_NO_VERSION_CHECK
+	if (GIT_COMMIT_HASH != std::string(__hyprland_api_get_hash())) {
+		HyprlandAPI::addNotification(
+		    PHANDLE,
+		    "[hy3] Hy3 was compiled for a different version of hyprland; refusing to start.",
+		    CColor {1.0, 0.2, 0.2, 1.0},
+		    10000
+		);
+
+		throw std::runtime_error("[hy3] target hyprland version mismatch");
+	}
+#endif
 
 	selection_hook::init();
 
