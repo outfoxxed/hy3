@@ -3,6 +3,7 @@
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <ranges>
 
 #include "Hy3Layout.hpp"
 #include "SelectionHook.hpp"
@@ -689,6 +690,24 @@ void Hy3Layout::alterSplitRatio(CWindow* pWindow, float delta, bool exact) {
 std::string Hy3Layout::getLayoutName() { return "hy3"; }
 
 CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
+	auto* workspace = g_pCompositor->getWorkspaceByID(window->m_iWorkspaceID);
+
+	if (workspace->m_bHasFullscreenWindow) {
+		return g_pCompositor->getFullscreenWindowOnWorkspace(window->m_iWorkspaceID);
+	}
+
+	// return the first floating window on the same workspace that has not asked not to be focused
+	if (window->m_bIsFloating) {
+		for (std::unique_ptr<CWindow>& w: g_pCompositor->m_vWindows | std::views::reverse) {
+			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && w->m_iX11Type != 2
+			    && w->m_iWorkspaceID == window->m_iWorkspaceID && !w->m_bX11ShouldntFocus
+			    && !w->m_bNoFocus && w.get() != window)
+			{
+				return w.get();
+			}
+		}
+	}
+
 	auto* node = this->getWorkspaceFocusedNode(window->m_iWorkspaceID, true);
 	if (node == nullptr) return nullptr;
 
