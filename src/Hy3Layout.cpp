@@ -942,38 +942,13 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 	if (p_workspace->m_bHasFullscreenWindow) return;
 
 	if (current_window != nullptr && current_window->m_bIsFloating) {
-		CWindow* next_window = nullptr;
-		double next_distance = -1;
-
-		for (auto& w: g_pCompositor->m_vWindows) {
-			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && w->m_iX11Type != 2
-			    && w->m_iWorkspaceID == current_window->m_iWorkspaceID && !w->m_bX11ShouldntFocus
-			    && !w->m_bNoFocus && w.get() != current_window)
-			{
-				double distance = 0;
-
-				auto cpos = current_window->m_vRealPosition.vec() + (current_window->m_vRealSize.vec() / 2);
-				auto tpos = w->m_vRealPosition.vec() + (w->m_vRealSize.vec() / 2);
-
-				auto x_offset = tpos.x - cpos.x;
-				auto y_offset = tpos.y - cpos.y;
-
-				if (abs(x_offset) > abs(y_offset)) {
-					if (x_offset < 0 && direction == ShiftDirection::Left) distance = -x_offset;
-					else if (x_offset > 0 && direction == ShiftDirection::Right) distance = x_offset;
-				} else {
-					if (y_offset < 0 && direction == ShiftDirection::Up) distance = -y_offset;
-					else if (y_offset > 0 && direction == ShiftDirection::Down) distance = y_offset;
-				}
-
-				if (distance <= 0) continue;
-
-				if (next_distance == -1 || distance < next_distance) {
-					next_window = w.get();
-					next_distance = distance;
-				}
-			}
-		}
+		auto* next_window = g_pCompositor->getWindowInDirection(
+		    current_window,
+		    direction == ShiftDirection::Left   ? 'l'
+		    : direction == ShiftDirection::Up   ? 'u'
+		    : direction == ShiftDirection::Down ? 'd'
+		                                        : 'r'
+		);
 
 		if (next_window != nullptr) g_pCompositor->focusWindow(next_window);
 		return;
