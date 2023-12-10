@@ -938,20 +938,23 @@ void Hy3Layout::shiftWindow(int workspace, ShiftDirection direction, bool once, 
 
 void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible) {
 	auto* current_window = g_pCompositor->m_pLastWindow;
-	auto* p_workspace = g_pCompositor->getWorkspaceByID(current_window->m_iWorkspaceID);
-	if (p_workspace->m_bHasFullscreenWindow) return;
 
-	if (current_window != nullptr && current_window->m_bIsFloating) {
-		auto* next_window = g_pCompositor->getWindowInDirection(
-		    current_window,
-		    direction == ShiftDirection::Left   ? 'l'
-		    : direction == ShiftDirection::Up   ? 'u'
-		    : direction == ShiftDirection::Down ? 'd'
-		                                        : 'r'
-		);
+	if (current_window != nullptr) {
+		auto* p_workspace = g_pCompositor->getWorkspaceByID(current_window->m_iWorkspaceID);
+		if (p_workspace->m_bHasFullscreenWindow) return;
 
-		if (next_window != nullptr) g_pCompositor->focusWindow(next_window);
-		return;
+		if (current_window->m_bIsFloating) {
+			auto* next_window = g_pCompositor->getWindowInDirection(
+			    current_window,
+			    direction == ShiftDirection::Left   ? 'l'
+			    : direction == ShiftDirection::Up   ? 'u'
+			    : direction == ShiftDirection::Down ? 'd'
+			                                        : 'r'
+			);
+
+			if (next_window != nullptr) g_pCompositor->focusWindow(next_window);
+			return;
+		}
 	}
 
 	auto* node = this->getWorkspaceFocusedNode(workspace);
