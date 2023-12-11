@@ -1441,7 +1441,6 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	}
 
 	// clang-format off
-	static const auto* border_size = &HyprlandAPI::getConfigValue(PHANDLE, "general:border_size")->intValue;
 	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
 	static const auto* single_window_no_gaps = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only")->intValue;
 	// clang-format on
@@ -1461,9 +1460,6 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 	window->m_vSize = node->size;
 	window->m_vPosition = node->position;
-
-	auto calcPos = window->m_vPosition + Vector2D(*border_size, *border_size);
-	auto calcSize = window->m_vSize - Vector2D(2 * *border_size, 2 * *border_size);
 
 	auto only_node = root_node->data.as_group.children.size() == 1
 	              && root_node->data.as_group.children.front()->data.type == Hy3NodeType::Window;
@@ -1491,6 +1487,9 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		window->m_sSpecialRenderData.border = true;
 		window->m_sSpecialRenderData.decorate = true;
 
+		auto calcPos = window->m_vPosition;
+		auto calcSize = window->m_vSize;
+
 		auto gaps_offset_topleft = Vector2D(*gaps_in, *gaps_in) + node->gap_topleft_offset;
 		auto gaps_offset_bottomright = Vector2D(*gaps_in * 2, *gaps_in * 2)
 		                             + node->gap_bottomright_offset + node->gap_topleft_offset;
@@ -1500,7 +1499,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 		const auto reserved_area = window->getFullWindowReservedArea();
 		calcPos = calcPos + reserved_area.topLeft;
-		calcSize = calcSize - (reserved_area.topLeft - reserved_area.bottomRight);
+		calcSize = calcSize - (reserved_area.topLeft + reserved_area.bottomRight);
 
 		CBox wb = {calcPos, calcSize};
 		wb.round();
