@@ -142,7 +142,7 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 	auto width = box.width;
 	auto height = box.height;
 
-	auto rounding = std::min((double) *s_rounding, std::min(width * 0.5, height * 0.5));
+	auto rounding = std::min((double) *s_rounding * scale, std::min(width * 0.5, height * 0.5));
 
 	if (this->texture.m_iTexID == 0
 	    // clang-format off
