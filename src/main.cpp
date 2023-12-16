@@ -44,6 +44,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("tabs:from_top", int, 0);
 	CONF("tabs:rounding", int, 3);
 	CONF("tabs:render_text", int, 1);
+	CONF("tabs:text_center", int, 0);
 	CONF("tabs:text_font", str, "Sans");
 	CONF("tabs:text_height", int, 8);
 	CONF("tabs:text_padding", int, 3);

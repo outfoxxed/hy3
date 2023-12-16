@@ -201,6 +201,9 @@ plugin {
       # render the window title on the bar
       render_text = <bool> # default: true
 
+      # center the window title
+      text_center = <bool> # default: false
+
       # font to render the window title with
       text_font = <string> # default: Sans
 
