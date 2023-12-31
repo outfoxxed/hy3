@@ -128,6 +128,7 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 	// clang-format off
 	static const auto* s_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
 	static const auto* render_text = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:render_text")->intValue;
+	static const auto* text_center = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_center")->intValue;
 	static const auto* text_font = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_font")->strValue;
 	static const auto* text_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_height")->intValue;
 	static const auto* text_padding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_padding")->intValue;
@@ -223,6 +224,9 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 		if (*render_text) {
 			PangoLayout* layout = pango_cairo_create_layout(cairo);
 			pango_layout_set_text(layout, this->window_title.c_str(), -1);
+
+			if (*text_center)
+				pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
 
 			PangoFontDescription* font_desc = pango_font_description_from_string(text_font->c_str());
 			pango_font_description_set_size(font_desc, *text_height * scale * PANGO_SCALE);
