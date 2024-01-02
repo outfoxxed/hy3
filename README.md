@@ -128,7 +128,7 @@ hyprpm update
 (See [the wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/) for details.)
 
 > [!WARNING]
-> When you are running a tagged hyprland version hyprpm will build against hy3's
+> When you are running a tagged hyprland version hyprpm (0.34.0+) will build against hy3's
 > corrosponding release. However if you are running an untagged build (aka `-git`) hyprpm
 > will build against hy3's *latest* commit. This means **if you are running an out of date
 > untagged build of hyprland, hyprpm may pick an incompatible revision of hy3**.

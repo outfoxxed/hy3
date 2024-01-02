@@ -1,7 +1,9 @@
 [repository]
 name = "hy3"
 authors = ["outfoxxed"]
-commit_pins = []
+commit_pins = [
+	["03ebbe18ed8517ee22591eac82cd54322f42cb7d", "2f28dc810c0e1f42763a1f14fb011c4fce6db8be"]
+]
 
 [hy3]
 description = "i3 like tiling for hyprland"
