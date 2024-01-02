@@ -65,12 +65,13 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3 by
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    hyprland.url = "github:hyprwm/Hyprland";
-    # or "github:hyprwm/Hyprland?ref=v{version}" for a release version of hyprland
+    hyprland.url = "github:hyprwm/Hyprland?ref=v{version}"; # where {version} is the hyprland release version
+    # or "github:hyprwm/Hyprland" to follow the development branch
 
     hy3 = {
-      url = "github:outfoxxed/hy3";
-      # or "github:outfoxxed/hy3?ref=hl{version}" for a release version of hyprland
+      url = "github:outfoxxed/hy3?ref=hl{version}"; # where {version} is the hyprland release version
+      # or "github:outfoxxed/hy3" to follow the development branch.
+      # (you may encounter issues if you dont do the same for hyprland)
       inputs.hyprland.follows = "hyprland";
     };
   };
@@ -108,11 +109,55 @@ wayland.windowManager.hyprland = {
 };
 ```
 
+### hyprpm
+Hyprland now has a dedicated plugin manager, which should be used when your package manager
+isn't capable of locking hy3 builds to the correct hyprland version.
+
+To install hy3 via hyprpm run
+
+```sh
+hyprpm add https://github.com/outfoxxed/hy3
+```
+
+To update hy3 (and all other plugins), run
+
+```sh
+hyprpm update
+```
+
+(See [the wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/) for details.)
+
+> [!WARNING]
+> When you are running a tagged hyprland version hyprpm will build against hy3's
+> corrosponding release. However if you are running an untagged build (aka `-git`) hyprpm
+> will build against hy3's *latest* commit. This means **if you are running an out of date
+> untagged build of hyprland, hyprpm may pick an incompatible revision of hy3**.
+>
+> To fix this problem you will either need to update hyprland or manually build the correct
+> version of hy3.
+
+### Manual
+Install hyprland, including its headers and pkg-config file, then run the following commands:
+
+```sh
+cmake -DCMAKE_BUILD_TYPE=Release -B build
+cmake --build build
+```
+
+The plugin will be located at `build/libhy3.so`, and you can load it normally
+(See [the hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#installing--using-plugins) for details.)
+
+Note that the hyprland headers and pkg-config file **MUST be installed correctly, for the target version of hyprland**.
+
 ### Arch (AUR)
 
-> [!IMPORTANT]
+> [!NOTE]
+> This method of installation is deprecated and you should use *hyprpm* instead,
+> as it is simpler and less error prone.
+
+> [!CAUTION]
 > Pacman is not very reliable when it comes to building packages in the correct order.
-> If hy3 fails to load or build, crashes randomly or behaves oddly (commonly dispatchers stop working)
+> If you get a notification saying *hy3 was compiled for a different version of hyprland*
 > then your packages likely updated in the wrong order, or you have hyprland headers in `/usr/local`.
 >
 > To fix this, remove `/usr/include/hyprland`, `/usr/local/include/hyprland`, `/usr/share/pkgconfig/hyprland.pc` and `/usr/local/share/pkgconfig/hyprland.pc`,
@@ -130,19 +175,6 @@ You can enable it in your hyprland configuration by adding the following line an
 ```conf
 plugin = /usr/lib/libhy3.so
 ```
-
-### Manual
-Install hyprland, including its headers and pkg-config file, then run the following commands:
-
-```sh
-cmake -DCMAKE_BUILD_TYPE=Debug -B build
-cmake --build build
-```
-
-The plugin will be located at `build/libhy3.so`, and you can load it normally
-(See [the hyprland wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/#installing--using-plugins) for details.)
-
-Note that the hyprland headers and pkg-config file **MUST be installed correctly, for the target version of hyprland**.
 
 ## Configuration
 

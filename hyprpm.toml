@@ -1,0 +1,13 @@
+[repository]
+name = "hy3"
+authors = ["outfoxxed"]
+commit_pins = []
+
+[hy3]
+description = "i3 like tiling for hyprland"
+authors = ["outfoxxed"]
+output = "build/libhy3.so"
+build = [
+	"cmake -DCMAKE_BUILD_TYPE=Release -B build",
+	"cmake --build build"
+]
