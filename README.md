@@ -113,6 +113,15 @@ wayland.windowManager.hyprland = {
 Hyprland now has a dedicated plugin manager, which should be used when your package manager
 isn't capable of locking hy3 builds to the correct hyprland version.
 
+> [!IMPORTANT]
+> Make sure hyprpm is activated by putting
+>
+> ```conf
+> exec-once = hyprpm reload -n
+> ```
+>
+> in your hyprland.conf. (See [the wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/) for details.) 
+
 To install hy3 via hyprpm run
 
 ```sh
