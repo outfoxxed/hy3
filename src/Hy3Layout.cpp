@@ -73,11 +73,14 @@ void Hy3Layout::onWindowCreated(CWindow* window, eDirection direction) {
 
 void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
 	hy3_log(
-	    TRACE,
-	    "onWindowCreatedTiling called with window {:x} (floating: {})",
+	    LOG,
+	    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
 	    (uintptr_t) window,
-	    window->m_bIsFloating
+	    window->m_bIsFloating,
+	    window->m_iMonitorID,
+	    window->m_iWorkspaceID
 	);
+
 	if (window->m_bIsFloating) return;
 
 	auto* existing = this->getNodeFromWindow(window);
@@ -96,17 +99,15 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
 	Hy3Node* opening_into;
 	Hy3Node* opening_after = nullptr;
 
-	if (monitor->activeWorkspace != -1) {
-		auto* root = this->getWorkspaceRootGroup(monitor->activeWorkspace);
+	auto* root = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
 
-		if (root != nullptr) {
-			opening_after = root->getFocusedNode();
+	if (root != nullptr) {
+		opening_after = root->getFocusedNode();
 
-			// opening_after->parent cannot be nullptr
-			if (opening_after == root) {
-				opening_after =
-				    opening_after->intoGroup(Hy3GroupLayout::SplitH, GroupEphemeralityOption::Standard);
-			}
+		// opening_after->parent cannot be nullptr
+		if (opening_after == root) {
+			opening_after =
+			    opening_after->intoGroup(Hy3GroupLayout::SplitH, GroupEphemeralityOption::Standard);
 		}
 	}
 

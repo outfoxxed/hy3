@@ -225,8 +225,7 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 			PangoLayout* layout = pango_cairo_create_layout(cairo);
 			pango_layout_set_text(layout, this->window_title.c_str(), -1);
 
-			if (*text_center)
-				pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
+			if (*text_center) pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
 
 			PangoFontDescription* font_desc = pango_font_description_from_string(text_font->c_str());
 			pango_font_description_set_size(font_desc, *text_height * scale * PANGO_SCALE);
