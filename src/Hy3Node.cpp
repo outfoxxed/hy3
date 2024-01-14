@@ -759,6 +759,7 @@ Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 		}
 	}
 
+	this->parent = nullptr;
 	return parent;
 }
 

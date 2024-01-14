@@ -91,6 +91,7 @@ public:
 	virtual void onEnable();
 	virtual void onDisable();
 
+	void insertNode(Hy3Node& node);
 	void makeGroupOnWorkspace(int workspace, Hy3GroupLayout, GroupEphemeralityOption);
 	void makeOppositeGroupOnWorkspace(int workspace, GroupEphemeralityOption);
 	void changeGroupOnWorkspace(int workspace, Hy3GroupLayout);
@@ -108,6 +109,7 @@ public:
 	void shiftNode(Hy3Node&, ShiftDirection, bool once, bool visible);
 	void shiftWindow(int workspace, ShiftDirection, bool once, bool visible);
 	void shiftFocus(int workspace, ShiftDirection, bool visible);
+	void moveNodeToWorkspace(int origin, std::string wsname, bool follow);
 	void changeFocus(int workspace, FocusShift);
 	void focusTab(int workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
 	void setNodeSwallow(int workspace, SetSwallowOption);

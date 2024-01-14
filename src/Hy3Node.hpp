@@ -79,6 +79,7 @@ public:
 
 struct Hy3Node {
 	Hy3Node* parent = nullptr;
+	bool reparenting = false;
 	Hy3NodeData data;
 	Vector2D position;
 	Vector2D size;
