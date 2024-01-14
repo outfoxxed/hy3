@@ -7,6 +7,8 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 
 [Installation](#installation), [Configuration](#configuration)
 
+*Check the [changelog](./CHANGELOG.md) for a list of new features and improvements*
+
 ### Features
 - [x] i3 like tiling
 - [x] Node based window manipulation (you can interact with multiple windows at once)
