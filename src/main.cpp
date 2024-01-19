@@ -69,6 +69,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 	registerDispatchers();
 
+	HyprlandAPI::reloadConfig();
+
 	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};
 }
 
