@@ -174,6 +174,7 @@ CWindow* Hy3Node::bringToTop() {
 		}
 
 		return nullptr;
+	default: return nullptr;
 	}
 }
 
@@ -237,6 +238,7 @@ Hy3Node* Hy3Node::getFocusedNode(bool ignore_group_focus, bool stop_at_expanded)
 			    stop_at_expanded
 			);
 		}
+	default: return nullptr;
 	}
 }
 
@@ -584,6 +586,7 @@ bool Hy3Node::isUrgent() {
 		}
 
 		return false;
+	default: return false;
 	}
 }
 

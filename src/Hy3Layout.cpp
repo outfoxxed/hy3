@@ -752,6 +752,7 @@ CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 	switch (node->data.type) {
 	case Hy3NodeType::Window: return node->data.as_window;
 	case Hy3NodeType::Group: return nullptr;
+	default: return nullptr;
 	}
 }
 
@@ -1072,7 +1073,7 @@ void Hy3Layout::moveNodeToWorkspace(int origin, std::string wsname, bool follow)
 		);
 
 		Hy3Node* expand_actor = nullptr;
-		auto* parent = node->removeFromParentRecursive(&expand_actor);
+		node->removeFromParentRecursive(&expand_actor);
 		if (expand_actor != nullptr) expand_actor->recalcSizePosRecursive();
 
 		changeNodeWorkspaceRecursive(*node, workspace);
@@ -1402,12 +1403,14 @@ fullscreen:
 	window->m_vRealPosition = monitor->vecPosition;
 	window->m_vRealSize = monitor->vecSize;
 	goto fsupdate;
+#ifdef HY3_ENABLE_UNUSED_BLOCKS
 unfullscreen:
 	if (node->data.type != Hy3NodeType::Window) return;
 	window = node->data.as_window;
 	window->m_bIsFullscreen = false;
 	workspace->m_bHasFullscreenWindow = false;
 	goto fsupdate;
+#endif
 fsupdate:
 	g_pCompositor->updateWindowAnimatedDecorationValues(window);
 	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
@@ -1427,10 +1430,12 @@ bool Hy3Layout::shouldRenderSelected(CWindow* window) {
 
 	switch (focused->data.type) {
 	case Hy3NodeType::Window: return focused->data.as_window == window;
-	case Hy3NodeType::Group:
+	case Hy3NodeType::Group: {
 		auto* node = this->getNodeFromWindow(window);
 		if (node == nullptr) return false;
 		return focused->data.as_group.hasChild(node);
+	}
+	default: return false;
 	}
 }
 
