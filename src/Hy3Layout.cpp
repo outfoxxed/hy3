@@ -395,211 +395,141 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 	if (!g_pCompositor->windowValidMapped(window)) return;
 
 	auto* node = this->getNodeFromWindow(window);
-	if (node == nullptr) return;
-	if (node->parent != nullptr && node->parent->data.as_group.focused_child == node)
-		node = &node->getExpandActor();
+	if(node != nullptr) {
+		if (node->parent != nullptr && node->parent->data.as_group.focused_child == node)
+			node = &node->getExpandActor();
 
-	bool drag_x;
-	bool drag_y;
+		auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
 
-	if (corner == CORNER_NONE) {
-		drag_x = delta.x > 0;
-		drag_y = delta.y > 0;
+		const bool display_left =
+			STICKS(node->position.x, monitor->vecPosition.x + monitor->vecReservedTopLeft.x);
+		const bool display_right = STICKS(
+			node->position.x + node->size.x,
+			monitor->vecPosition.x + monitor->vecSize.x - monitor->vecReservedBottomRight.x
+		);
+		const bool display_top =
+			STICKS(node->position.y, monitor->vecPosition.y + monitor->vecReservedTopLeft.y);
+		const bool display_bottom = STICKS(
+			node->position.y + node->size.y,
+			monitor->vecPosition.y + monitor->vecSize.y - monitor->vecReservedBottomRight.y
+		);
+
+		Vector2D resize_delta = delta;
+		if (display_left && display_right) resize_delta.x = 0;
+		if (display_top && display_bottom) resize_delta.y = 0;
+
+		ShiftDirection target_edge_x;
+		ShiftDirection target_edge_y;
+
+		// Determine the direction in which we're going to look for the sibling node
+		// that will be resized
+		if(corner == CORNER_NONE) {			// It's probably a keyboard event
+			// If the horizontal delta is negative & there's space available to the left,
+			// or if the horizontal delta is positive but space ISN'T available to the right
+			// then resize against the left-hand sibling.
+			// Otherwise, resize against the right-hand sibling
+			target_edge_x = (delta.x < 0 && display_left) || (delta.x > 0 && !display_right)
+				? ShiftDirection::Left : ShiftDirection::Right;
+
+			// If the vertical delta is negative & there's space available above it,
+			// or if the vertical delta is positive but space ISN'T available below
+			// then resize against the upper sibling.
+			// Otherwise, resize against the lower sibling
+			target_edge_y = (delta.y < 0 && display_top) || (delta.y >0 && !display_bottom)
+				? ShiftDirection::Up : ShiftDirection::Down;
+		} else {							// It's probaly a mouse event
+			// If the event was triggered from the right-hand side then resize
+			// against the previous [left] sibling - otherwise, resize against
+			// the next [right] sibling
+			target_edge_x = corner == CORNER_TOPRIGHT || corner == CORNER_BOTTOMRIGHT
+				? ShiftDirection::Left : ShiftDirection::Right;
+
+			// If the event was triggered from the bottom edge then resize
+			// against the previous [upper] sibling - otherwise, resize against
+			// the next [lower] sibling
+			target_edge_y = corner == CORNER_BOTTOMLEFT || corner == CORNER_BOTTOMRIGHT
+				? ShiftDirection::Up : ShiftDirection::Down;
+		}
+
+		node = node->findSibling(node->data.as_group.layout, target_edge_x, target_edge_y);
+		auto* parent_node = node->parent;
+
+		if (parent_node != nullptr) {
+			resizeNode(node, resize_delta, target_edge_x, target_edge_y);
+
+			auto* outer_node = node->findSibling(parent_node->data.as_group.layout, target_edge_x, target_edge_y);
+			if (outer_node != nullptr && outer_node->parent != nullptr) {
+				resizeNode(outer_node, resize_delta, target_edge_x, target_edge_y);
+			}
+		}
 	} else {
-		drag_x = corner == CORNER_TOPRIGHT || corner == CORNER_BOTTOMRIGHT;
-		drag_y = corner == CORNER_BOTTOMLEFT || corner == CORNER_BOTTOMRIGHT;
+		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout
+		if(window->m_bIsFloating) {
+			const auto required_size = Vector2D(
+				std::max((window->m_vRealSize.goalv() + delta).x, 20.0),
+				std::max((window->m_vRealSize.goalv() + delta).y, 20.0)
+			);
+			window->m_vRealSize = required_size;
+		}
 	}
+}
 
+void Hy3Layout::resizeNode(
+	Hy3Node* node,
+	Vector2D resize_delta,
+	ShiftDirection target_edge_x,
+	ShiftDirection target_edge_y
+) {
+	auto& parent_node = node->parent;
+	auto& containing_group = parent_node->data.as_group;
 	const auto animate =
-	    &g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
+		&g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
 
-	auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
-
-	const bool display_left =
-	    STICKS(node->position.x, monitor->vecPosition.x + monitor->vecReservedTopLeft.x);
-	const bool display_right = STICKS(
-	    node->position.x + node->size.x,
-	    monitor->vecPosition.x + monitor->vecSize.x - monitor->vecReservedBottomRight.x
-	);
-	const bool display_top =
-	    STICKS(node->position.y, monitor->vecPosition.y + monitor->vecReservedTopLeft.y);
-	const bool display_bottom = STICKS(
-	    node->position.y + node->size.y,
-	    monitor->vecPosition.y + monitor->vecSize.y - monitor->vecReservedBottomRight.y
-	);
-
-	Vector2D allowed_movement = delta;
-	if (display_left && display_right) allowed_movement.x = 0;
-	if (display_top && display_bottom) allowed_movement.y = 0;
-
-	auto* inner_node = node;
-
-	// break into parent groups when encountering a corner we're dragging in or a
-	// tab group
-	while (inner_node->parent != nullptr) {
-		auto& group = inner_node->parent->data.as_group;
-
-		switch (group.layout) {
-		case Hy3GroupLayout::Tabbed:
-			// treat tabbed layouts as if they dont exist during resizing
-			goto cont;
-		case Hy3GroupLayout::SplitH:
-			if ((drag_x && group.children.back() == inner_node)
-			    || (!drag_x && group.children.front() == inner_node))
-			{
-				goto cont;
-			}
-			break;
-		case Hy3GroupLayout::SplitV:
-			if ((drag_y && group.children.back() == inner_node)
-			    || (!drag_y && group.children.front() == inner_node))
-			{
-				goto cont;
-			}
-			break;
-		}
-
-		break;
-	cont:
-		inner_node = inner_node->parent;
-	}
-
-	auto* inner_parent = inner_node->parent;
-	if (inner_parent == nullptr) return;
-
-	auto* outer_node = inner_node;
-
-	// break into parent groups when encountering a corner we're dragging in, a
-	// tab group, or a layout matching the inner_parent.
-	while (outer_node->parent != nullptr) {
-		auto& group = outer_node->parent->data.as_group;
-
-		// break out of all layouts that match the orientation of the inner_parent
-		if (group.layout == inner_parent->data.as_group.layout) goto cont2;
-
-		switch (group.layout) {
-		case Hy3GroupLayout::Tabbed:
-			// treat tabbed layouts as if they dont exist during resizing
-			goto cont2;
-		case Hy3GroupLayout::SplitH:
-			if ((drag_x && group.children.back() == outer_node)
-			    || (!drag_x && group.children.front() == outer_node))
-			{
-				goto cont2;
-			}
-			break;
-		case Hy3GroupLayout::SplitV:
-			if ((drag_y && group.children.back() == outer_node)
-			    || (!drag_y && group.children.front() == outer_node))
-			{
-				goto cont2;
-			}
-			break;
-		}
-
-		break;
-	cont2:
-		outer_node = outer_node->parent;
-	}
-
-	auto& inner_group = inner_parent->data.as_group;
-	// adjust the inner node
-	switch (inner_group.layout) {
+	switch (containing_group.layout) {
 	case Hy3GroupLayout::SplitH: {
 		auto ratio_mod =
-		    allowed_movement.x * (float) inner_group.children.size() / inner_parent->size.x;
+		    resize_delta.x * (float) containing_group.children.size() / parent_node->size.x;
 
-		auto iter = std::find(inner_group.children.begin(), inner_group.children.end(), inner_node);
+		auto iter = std::find(containing_group.children.begin(), containing_group.children.end(), node);
 
-		if (drag_x) {
-			if (inner_node == inner_group.children.back()) break;
+		if (target_edge_x == ShiftDirection::Left) {
+			if (node == containing_group.children.back()) break;
 			iter = std::next(iter);
 		} else {
-			if (inner_node == inner_group.children.front()) break;
+			if (node == containing_group.children.front()) break;
 			iter = std::prev(iter);
 			ratio_mod = -ratio_mod;
 		}
 
 		auto* neighbor = *iter;
 
-		inner_node->size_ratio += ratio_mod;
+		node->size_ratio += ratio_mod;
 		neighbor->size_ratio -= ratio_mod;
 	} break;
 	case Hy3GroupLayout::SplitV: {
-		auto ratio_mod = allowed_movement.y * (float) inner_parent->data.as_group.children.size()
-		               / inner_parent->size.y;
+		auto ratio_mod =
+			resize_delta.y * (float) containing_group.children.size() / parent_node->size.y;
 
-		auto iter = std::find(inner_group.children.begin(), inner_group.children.end(), inner_node);
+		auto iter = std::find(containing_group.children.begin(), containing_group.children.end(), node);
 
-		if (drag_y) {
-			if (inner_node == inner_group.children.back()) break;
+		if (target_edge_y == ShiftDirection::Up) {
+			if (node == containing_group.children.back()) break;
 			iter = std::next(iter);
 		} else {
-			if (inner_node == inner_group.children.front()) break;
+			if (node == containing_group.children.front()) break;
 			iter = std::prev(iter);
 			ratio_mod = -ratio_mod;
 		}
 
 		auto* neighbor = *iter;
 
-		inner_node->size_ratio += ratio_mod;
+		node->size_ratio += ratio_mod;
 		neighbor->size_ratio -= ratio_mod;
 	} break;
 	case Hy3GroupLayout::Tabbed: break;
 	}
 
-	inner_parent->recalcSizePosRecursive(*animate == 0);
-
-	if (outer_node != nullptr && outer_node->parent != nullptr) {
-		auto* outer_parent = outer_node->parent;
-		auto& outer_group = outer_parent->data.as_group;
-		// adjust the outer node
-		switch (outer_group.layout) {
-		case Hy3GroupLayout::SplitH: {
-			auto ratio_mod =
-			    allowed_movement.x * (float) outer_group.children.size() / outer_parent->size.x;
-
-			auto iter = std::find(outer_group.children.begin(), outer_group.children.end(), outer_node);
-
-			if (drag_x) {
-				if (outer_node == inner_group.children.back()) break;
-				iter = std::next(iter);
-			} else {
-				if (outer_node == inner_group.children.front()) break;
-				iter = std::prev(iter);
-				ratio_mod = -ratio_mod;
-			}
-
-			auto* neighbor = *iter;
-
-			outer_node->size_ratio += ratio_mod;
-			neighbor->size_ratio -= ratio_mod;
-		} break;
-		case Hy3GroupLayout::SplitV: {
-			auto ratio_mod = allowed_movement.y * (float) outer_parent->data.as_group.children.size()
-			               / outer_parent->size.y;
-
-			auto iter = std::find(outer_group.children.begin(), outer_group.children.end(), outer_node);
-
-			if (drag_y) {
-				if (outer_node == outer_group.children.back()) break;
-				iter = std::next(iter);
-			} else {
-				if (outer_node == outer_group.children.front()) break;
-				iter = std::prev(iter);
-				ratio_mod = -ratio_mod;
-			}
-
-			auto* neighbor = *iter;
-
-			outer_node->size_ratio += ratio_mod;
-			neighbor->size_ratio -= ratio_mod;
-		} break;
-		case Hy3GroupLayout::Tabbed: break;
-		}
-
-		outer_parent->recalcSizePosRecursive(*animate == 0);
-	}
+	parent_node->recalcSizePosRecursive(*animate == 0);
 }
 
 void Hy3Layout::fullscreenRequestForWindow(

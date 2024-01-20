@@ -808,6 +808,58 @@ bool Hy3Node::swallowGroups(Hy3Node* into) {
 	return true;
 }
 
+Hy3Node* getOuterChild(Hy3GroupData &group, ShiftDirection direction) {
+	switch (direction) {
+		case ShiftDirection::Left:
+		case ShiftDirection::Up:
+			return group.children.back();
+			break;
+		case ShiftDirection::Right:
+		case ShiftDirection::Down:
+			return group.children.front();
+			break;
+		default:
+			return nullptr;
+	}
+}
+
+Hy3Node* Hy3Node::findSibling(Hy3GroupLayout inner_layout, ShiftDirection direction_x, ShiftDirection direction_y) {
+	// break into parent groups when encountering a corner we're dragging in, a
+	// tab group, or a layout matching the inner_parent.
+
+	auto current_node = this;
+	while (current_node->parent != nullptr) {
+		auto& parent_group = current_node->parent->data.as_group;
+
+		// break out of all layouts that match the orientation of the inner_parent
+		if (parent_group.layout == inner_layout) {
+			goto cont2;
+		}
+
+		switch (parent_group.layout) {
+		case Hy3GroupLayout::Tabbed:
+			// treat tabbed layouts as if they dont exist during resizing
+			goto cont2;
+		case Hy3GroupLayout::SplitH:
+			if(getOuterChild(parent_group, direction_x) == current_node) {
+				goto cont2;
+			}
+			break;
+		case Hy3GroupLayout::SplitV:
+			if(getOuterChild(parent_group, direction_y) == current_node) {
+				goto cont2;
+			}
+			break;
+		}
+
+		break;
+	cont2:
+		current_node = current_node->parent;
+	}
+
+	return current_node;
+}
+
 void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 	Hy3NodeData aData = std::move(a.data);
 	a.data = std::move(b.data);

@@ -1,5 +1,8 @@
 # Changelog
 
+- Implement `resizeactivewindow` for floating windows
+- Fully implement `resizeactivewindow` for tiled windows
+
 ## Upcoming
 
 - Fixed `hy3:killactive` and `hy3:movetoworkspace` not working in fullscreen.

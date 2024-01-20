@@ -13,15 +13,15 @@ enum class GroupEphemeralityOption {
 
 #include <hyprland/src/layout/IHyprLayout.hpp>
 
-#include "Hy3Node.hpp"
-#include "TabGroup.hpp"
-
 enum class ShiftDirection {
 	Left,
 	Up,
 	Down,
 	Right,
 };
+
+#include "Hy3Node.hpp"
+#include "TabGroup.hpp"
 
 enum class FocusShift {
 	Top,
@@ -144,6 +144,7 @@ private:
 
 	void updateAutotileWorkspaces();
 	bool shouldAutotileWorkspace(int);
+	void resizeNode(Hy3Node*, Vector2D, ShiftDirection resize_edge_x, ShiftDirection resize_edge_y);
 
 	struct {
 		std::string raw_workspaces;

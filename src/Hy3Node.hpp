@@ -1,6 +1,7 @@
 #pragma once
 
 struct Hy3Node;
+struct Hy3GroupData;
 enum class Hy3GroupLayout;
 
 #include <list>
@@ -98,6 +99,7 @@ struct Hy3Node {
 	void markFocused();
 	void raiseToTop();
 	Hy3Node* getFocusedNode(bool ignore_group_focus = false, bool stop_at_expanded = false);
+	Hy3Node* findSibling(Hy3GroupLayout inner_layout, ShiftDirection direction_x, ShiftDirection direction_y);
 	bool isIndirectlyFocused();
 	Hy3Node& getExpandActor();
 
