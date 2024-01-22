@@ -23,7 +23,6 @@ add_library(hy3 SHARED
 )
 
 option(HY3_NO_VERSION_CHECK "Disable hyprland version check" FALSE)
-option(HY3_ENABLE_UNUSED_BLOCKS "Enable the compilation of unused blocks" FALSE)
 
 if (HY3_NO_VERSION_CHECK)
 	target_compile_definitions(hy3 PRIVATE -DHY3_NO_VERSION_CHECK=TRUE)

@@ -1333,14 +1333,12 @@ fullscreen:
 	window->m_vRealPosition = monitor->vecPosition;
 	window->m_vRealSize = monitor->vecSize;
 	goto fsupdate;
-#ifdef HY3_ENABLE_UNUSED_BLOCKS
-unfullscreen:
-	if (node->data.type != Hy3NodeType::Window) return;
-	window = node->data.as_window;
-	window->m_bIsFullscreen = false;
-	workspace->m_bHasFullscreenWindow = false;
-	goto fsupdate;
-#endif
+// unfullscreen:
+// 	if (node->data.type != Hy3NodeType::Window) return;
+// 	window = node->data.as_window;
+// 	window->m_bIsFullscreen = false;
+// 	workspace->m_bHasFullscreenWindow = false;
+// 	goto fsupdate;
 fsupdate:
 	g_pCompositor->updateWindowAnimatedDecorationValues(window);
 	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
