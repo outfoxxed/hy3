@@ -395,9 +395,9 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 	if (!g_pCompositor->windowValidMapped(window)) return;
 
 	auto* node = this->getNodeFromWindow(window);
+
 	if(node != nullptr) {
-		if (node->parent != nullptr && node->parent->data.as_group.focused_child == node)
-			node = &node->getExpandActor();
+		node = &node->getExpandActor();
 
 		auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
 
@@ -423,44 +423,26 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 
 		// Determine the direction in which we're going to look for the sibling node
 		// that will be resized
-		if(corner == CORNER_NONE) {			// It's probably a keyboard event
-			// If the horizontal delta is negative & there's space available to the left,
-			// or if the horizontal delta is positive but space ISN'T available to the right
-			// then resize against the left-hand sibling.
-			// Otherwise, resize against the right-hand sibling
-			target_edge_x = (delta.x < 0 && display_left) || (delta.x > 0 && !display_right)
+		if(corner == CORNER_NONE) {			// It's probably a keyboard event.
+			target_edge_x = display_right ? ShiftDirection::Left : ShiftDirection::Right;
+			target_edge_y = display_bottom ? ShiftDirection::Up : ShiftDirection::Down;
+		} else {							// It's probably a mouse event
+			// Resize against the edges corresponding to the selected corner
+			target_edge_x = corner == CORNER_TOPLEFT || corner == CORNER_BOTTOMLEFT
 				? ShiftDirection::Left : ShiftDirection::Right;
-
-			// If the vertical delta is negative & there's space available above it,
-			// or if the vertical delta is positive but space ISN'T available below
-			// then resize against the upper sibling.
-			// Otherwise, resize against the lower sibling
-			target_edge_y = (delta.y < 0 && display_top) || (delta.y >0 && !display_bottom)
-				? ShiftDirection::Up : ShiftDirection::Down;
-		} else {							// It's probaly a mouse event
-			// If the event was triggered from the right-hand side then resize
-			// against the previous [left] sibling - otherwise, resize against
-			// the next [right] sibling
-			target_edge_x = corner == CORNER_TOPRIGHT || corner == CORNER_BOTTOMRIGHT
-				? ShiftDirection::Left : ShiftDirection::Right;
-
-			// If the event was triggered from the bottom edge then resize
-			// against the previous [upper] sibling - otherwise, resize against
-			// the next [lower] sibling
-			target_edge_y = corner == CORNER_BOTTOMLEFT || corner == CORNER_BOTTOMRIGHT
+			target_edge_y = corner == CORNER_TOPLEFT || corner == CORNER_TOPRIGHT
 				? ShiftDirection::Up : ShiftDirection::Down;
 		}
 
-		node = node->findSibling(node->data.as_group.layout, target_edge_x, target_edge_y);
-		auto* parent_node = node->parent;
+		auto sibling_node_x = node->findSibling(target_edge_x);
+		auto sibling_node_y = node->findSibling(target_edge_y);
 
-		if (parent_node != nullptr) {
-			resizeNode(node, resize_delta, target_edge_x, target_edge_y);
+		if(sibling_node_x) {
+			sibling_node_x->resize(resize_delta.x, target_edge_x);
+		}
 
-			auto* outer_node = node->findSibling(parent_node->data.as_group.layout, target_edge_x, target_edge_y);
-			if (outer_node != nullptr && outer_node->parent != nullptr) {
-				resizeNode(outer_node, resize_delta, target_edge_x, target_edge_y);
-			}
+		if(sibling_node_y) {
+			sibling_node_y->resize(resize_delta.y, target_edge_y);
 		}
 	} else {
 		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout
@@ -472,64 +454,6 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 			window->m_vRealSize = required_size;
 		}
 	}
-}
-
-void Hy3Layout::resizeNode(
-	Hy3Node* node,
-	Vector2D resize_delta,
-	ShiftDirection target_edge_x,
-	ShiftDirection target_edge_y
-) {
-	auto& parent_node = node->parent;
-	auto& containing_group = parent_node->data.as_group;
-	const auto animate =
-		&g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
-
-	switch (containing_group.layout) {
-	case Hy3GroupLayout::SplitH: {
-		auto ratio_mod =
-		    resize_delta.x * (float) containing_group.children.size() / parent_node->size.x;
-
-		auto iter = std::find(containing_group.children.begin(), containing_group.children.end(), node);
-
-		if (target_edge_x == ShiftDirection::Left) {
-			if (node == containing_group.children.back()) break;
-			iter = std::next(iter);
-		} else {
-			if (node == containing_group.children.front()) break;
-			iter = std::prev(iter);
-			ratio_mod = -ratio_mod;
-		}
-
-		auto* neighbor = *iter;
-
-		node->size_ratio += ratio_mod;
-		neighbor->size_ratio -= ratio_mod;
-	} break;
-	case Hy3GroupLayout::SplitV: {
-		auto ratio_mod =
-			resize_delta.y * (float) containing_group.children.size() / parent_node->size.y;
-
-		auto iter = std::find(containing_group.children.begin(), containing_group.children.end(), node);
-
-		if (target_edge_y == ShiftDirection::Up) {
-			if (node == containing_group.children.back()) break;
-			iter = std::next(iter);
-		} else {
-			if (node == containing_group.children.front()) break;
-			iter = std::prev(iter);
-			ratio_mod = -ratio_mod;
-		}
-
-		auto* neighbor = *iter;
-
-		node->size_ratio += ratio_mod;
-		neighbor->size_ratio -= ratio_mod;
-	} break;
-	case Hy3GroupLayout::Tabbed: break;
-	}
-
-	parent_node->recalcSizePosRecursive(*animate == 0);
 }
 
 void Hy3Layout::fullscreenRequestForWindow(

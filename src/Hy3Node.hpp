@@ -99,7 +99,9 @@ struct Hy3Node {
 	void markFocused();
 	void raiseToTop();
 	Hy3Node* getFocusedNode(bool ignore_group_focus = false, bool stop_at_expanded = false);
-	Hy3Node* findSibling(Hy3GroupLayout inner_layout, ShiftDirection direction_x, ShiftDirection direction_y);
+	Hy3Node* findSibling(ShiftDirection);
+	Hy3Node* getImmediateSibling(ShiftDirection);
+	void resize(double, ShiftDirection);
 	bool isIndirectlyFocused();
 	Hy3Node& getExpandActor();
 
