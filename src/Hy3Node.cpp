@@ -7,7 +7,7 @@
 #include "Hy3Node.hpp"
 #include "globals.hpp"
 
-const float MIN_RATIO = 0.02f;
+const float MIN_WINDOW_SIZE = 20;
 
 // Hy3GroupData //
 
@@ -879,7 +879,7 @@ Axis getAxis(ShiftDirection direction) {
 	}
 }
 
-Hy3Node* Hy3Node::findSibling(ShiftDirection direction) {
+Hy3Node* Hy3Node::findNeighbor(ShiftDirection direction) {
 	auto current_node = this;
 	Hy3Node* sibling = nullptr;
 
@@ -901,39 +901,56 @@ Hy3Node* Hy3Node::findSibling(ShiftDirection direction) {
 	return sibling;
 }
 
+int directionToIteratorIncrement(ShiftDirection direction) {
+	switch (direction)
+	{
+		case ShiftDirection::Left:
+		case ShiftDirection::Up:
+			return -1;
+		case ShiftDirection::Right:
+		case ShiftDirection::Down:
+			return 1;
+		default:
+			hy3_log(WARN, "Unknown ShiftDirection enum value: {}", (int)direction);
+			return 1;
+	}
+}
+
 void Hy3Node::resize(
-	double resize_delta,
-	ShiftDirection target_edge_x
+	ShiftDirection direction,
+	double delta,
+	bool no_animation
 ) {
 	auto& parent_node = this->parent;
 	auto& containing_group = parent_node->data.as_group;
-	const auto animate =
-		&g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
 
-	if(containing_group.layout != Hy3GroupLayout::Tabbed && getAxis(target_edge_x) == getAxis(containing_group.layout)) {
-		double parent_size = getAxis(target_edge_x) == Axis::Horizontal ? parent_node->size.x
+	if(containing_group.layout != Hy3GroupLayout::Tabbed && getAxis(direction) == getAxis(containing_group.layout)) {
+		double parent_size = getAxis(direction) == Axis::Horizontal ? parent_node->size.x
 																		 : parent_node->size.y;
-		auto ratio_mod = resize_delta * (float) containing_group.children.size() / parent_size;
+		auto ratio_mod = delta * (float) containing_group.children.size() / parent_size;
 
-		auto iter = std::find(containing_group.children.begin(), containing_group.children.end(), this);
+		const auto end_of_children = containing_group.children.end();
+		auto iter = std::find(containing_group.children.begin(), end_of_children, this);
 
-		if (target_edge_x == ShiftDirection::Left || target_edge_x == ShiftDirection::Up) {
-			if (this != containing_group.children.back()) {
-				iter = std::next(iter);
+		if(iter != end_of_children) {
+			const auto outermost_node_in_group = getOuterChild(containing_group, direction);
+			if(this != outermost_node_in_group) {
+				auto inc = directionToIteratorIncrement(direction);
+				iter = std::next(iter, inc);
+				ratio_mod *= inc;
 			}
-		} else {
-			if (this != containing_group.children.front()) {
-				iter = std::prev(iter);
-				ratio_mod = -ratio_mod;
+
+			if(iter != end_of_children) {
+				auto* neighbor = *iter;
+				auto requested_size_ratio = this->size_ratio + ratio_mod;
+				auto requested_neighbor_size_ratio = neighbor->size_ratio -ratio_mod;
+
+				if(requested_size_ratio * parent_size >= MIN_WINDOW_SIZE) {
+					this->size_ratio = requested_size_ratio;
+					neighbor->size_ratio = requested_neighbor_size_ratio;
+					parent_node->recalcSizePosRecursive(no_animation);
+				}
 			}
-		}
-
-		auto* neighbor = *iter;
-
-		if(this->size_ratio + ratio_mod > MIN_RATIO && neighbor->size_ratio - ratio_mod > MIN_RATIO) {
-			this->size_ratio += ratio_mod;
-			neighbor->size_ratio -= ratio_mod;
-			parent_node->recalcSizePosRecursive(*animate == 0);
 		}
 	}
 }

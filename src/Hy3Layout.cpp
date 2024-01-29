@@ -390,6 +390,17 @@ void Hy3Layout::recalculateWindow(CWindow* window) {
 	node->recalcSizePosRecursive();
 }
 
+ShiftDirection reverse(ShiftDirection direction) {
+	switch (direction)
+	{
+	case ShiftDirection::Left: return ShiftDirection::Right;
+	case ShiftDirection::Right: return ShiftDirection::Left;
+	case ShiftDirection::Up: return ShiftDirection::Down;
+	case ShiftDirection::Down: return ShiftDirection::Up;
+	default: return direction;
+	}
+}
+
 void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow) {
 	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow;
 	if (!g_pCompositor->windowValidMapped(window)) return;
@@ -421,11 +432,15 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 		ShiftDirection target_edge_x;
 		ShiftDirection target_edge_y;
 
-		// Determine the direction in which we're going to look for the sibling node
+		// Determine the direction in which we're going to look for the neighbor node
 		// that will be resized
 		if(corner == CORNER_NONE) {			// It's probably a keyboard event.
 			target_edge_x = display_right ? ShiftDirection::Left : ShiftDirection::Right;
 			target_edge_y = display_bottom ? ShiftDirection::Up : ShiftDirection::Down;
+
+			// If the anchor is not at the top/left then reverse the delta
+			if(target_edge_x == ShiftDirection::Left) resize_delta.x = -resize_delta.x;
+			if(target_edge_y == ShiftDirection::Up) resize_delta.y = -resize_delta.y;
 		} else {							// It's probably a mouse event
 			// Resize against the edges corresponding to the selected corner
 			target_edge_x = corner == CORNER_TOPLEFT || corner == CORNER_BOTTOMLEFT
@@ -434,25 +449,32 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 				? ShiftDirection::Up : ShiftDirection::Down;
 		}
 
-		auto sibling_node_x = node->findSibling(target_edge_x);
-		auto sibling_node_y = node->findSibling(target_edge_y);
+		// Find the neighboring node in each axis, which will be either above or at the
+		// same level as the initiating node in the layout hierarchy.  These are the nodes
+		// which must get resized (rather than the initiator) because they are the
+		// highest point in the hierarchy
+		auto horizontal_neighbor = node->findNeighbor(target_edge_x);
+		auto vertical_neighbor = node->findNeighbor(target_edge_y);
 
-		if(sibling_node_x) {
-			sibling_node_x->resize(resize_delta.x, target_edge_x);
+		const auto animate =
+			&g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
+
+		// Note that the resize direction is reversed, because from the neighbor's perspective
+		// the edge to be moved is the opposite way round.  However, the delta is still the same.
+		if(horizontal_neighbor) {
+			horizontal_neighbor->resize(reverse(target_edge_x), resize_delta.x, *animate == 0);
 		}
 
-		if(sibling_node_y) {
-			sibling_node_y->resize(resize_delta.y, target_edge_y);
+		if(vertical_neighbor) {
+			vertical_neighbor->resize(reverse(target_edge_y), resize_delta.y, *animate == 0);
 		}
-	} else {
+	} else if(window->m_bIsFloating) {
 		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout
-		if(window->m_bIsFloating) {
-			const auto required_size = Vector2D(
-				std::max((window->m_vRealSize.goalv() + delta).x, 20.0),
-				std::max((window->m_vRealSize.goalv() + delta).y, 20.0)
-			);
-			window->m_vRealSize = required_size;
-		}
+		const auto required_size = Vector2D(
+			std::max((window->m_vRealSize.goalv() + delta).x, 20.0),
+			std::max((window->m_vRealSize.goalv() + delta).y, 20.0)
+		);
+		window->m_vRealSize = required_size;
 	}
 }
 
