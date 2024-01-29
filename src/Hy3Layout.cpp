@@ -429,44 +429,47 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 		if (display_left && display_right) resize_delta.x = 0;
 		if (display_top && display_bottom) resize_delta.y = 0;
 
-		ShiftDirection target_edge_x;
-		ShiftDirection target_edge_y;
+		// Don't execute the logic unless there's something to do
+		if(resize_delta.x != 0 || resize_delta.y != 0) {
+			ShiftDirection target_edge_x;
+			ShiftDirection target_edge_y;
 
-		// Determine the direction in which we're going to look for the neighbor node
-		// that will be resized
-		if(corner == CORNER_NONE) {			// It's probably a keyboard event.
-			target_edge_x = display_right ? ShiftDirection::Left : ShiftDirection::Right;
-			target_edge_y = display_bottom ? ShiftDirection::Up : ShiftDirection::Down;
+			// Determine the direction in which we're going to look for the neighbor node
+			// that will be resized
+			if(corner == CORNER_NONE) {			// It's probably a keyboard event.
+				target_edge_x = display_right ? ShiftDirection::Left : ShiftDirection::Right;
+				target_edge_y = display_bottom ? ShiftDirection::Up : ShiftDirection::Down;
 
-			// If the anchor is not at the top/left then reverse the delta
-			if(target_edge_x == ShiftDirection::Left) resize_delta.x = -resize_delta.x;
-			if(target_edge_y == ShiftDirection::Up) resize_delta.y = -resize_delta.y;
-		} else {							// It's probably a mouse event
-			// Resize against the edges corresponding to the selected corner
-			target_edge_x = corner == CORNER_TOPLEFT || corner == CORNER_BOTTOMLEFT
-				? ShiftDirection::Left : ShiftDirection::Right;
-			target_edge_y = corner == CORNER_TOPLEFT || corner == CORNER_TOPRIGHT
-				? ShiftDirection::Up : ShiftDirection::Down;
-		}
+				// If the anchor is not at the top/left then reverse the delta
+				if(target_edge_x == ShiftDirection::Left) resize_delta.x = -resize_delta.x;
+				if(target_edge_y == ShiftDirection::Up) resize_delta.y = -resize_delta.y;
+			} else {							// It's probably a mouse event
+				// Resize against the edges corresponding to the selected corner
+				target_edge_x = corner == CORNER_TOPLEFT || corner == CORNER_BOTTOMLEFT
+					? ShiftDirection::Left : ShiftDirection::Right;
+				target_edge_y = corner == CORNER_TOPLEFT || corner == CORNER_TOPRIGHT
+					? ShiftDirection::Up : ShiftDirection::Down;
+			}
 
-		// Find the neighboring node in each axis, which will be either above or at the
-		// same level as the initiating node in the layout hierarchy.  These are the nodes
-		// which must get resized (rather than the initiator) because they are the
-		// highest point in the hierarchy
-		auto horizontal_neighbor = node->findNeighbor(target_edge_x);
-		auto vertical_neighbor = node->findNeighbor(target_edge_y);
+			// Find the neighboring node in each axis, which will be either above or at the
+			// same level as the initiating node in the layout hierarchy.  These are the nodes
+			// which must get resized (rather than the initiator) because they are the
+			// highest point in the hierarchy
+			auto horizontal_neighbor = node->findNeighbor(target_edge_x);
+			auto vertical_neighbor = node->findNeighbor(target_edge_y);
 
-		const auto animate =
-			&g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
+			const auto animate =
+				&g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
 
-		// Note that the resize direction is reversed, because from the neighbor's perspective
-		// the edge to be moved is the opposite way round.  However, the delta is still the same.
-		if(horizontal_neighbor) {
-			horizontal_neighbor->resize(reverse(target_edge_x), resize_delta.x, *animate == 0);
-		}
+			// Note that the resize direction is reversed, because from the neighbor's perspective
+			// the edge to be moved is the opposite way round.  However, the delta is still the same.
+			if(horizontal_neighbor) {
+				horizontal_neighbor->resize(reverse(target_edge_x), resize_delta.x, *animate == 0);
+			}
 
-		if(vertical_neighbor) {
-			vertical_neighbor->resize(reverse(target_edge_y), resize_delta.y, *animate == 0);
+			if(vertical_neighbor) {
+				vertical_neighbor->resize(reverse(target_edge_y), resize_delta.y, *animate == 0);
+			}
 		}
 	} else if(window->m_bIsFloating) {
 		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout

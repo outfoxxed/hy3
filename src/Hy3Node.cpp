@@ -7,7 +7,7 @@
 #include "Hy3Node.hpp"
 #include "globals.hpp"
 
-const float MIN_WINDOW_SIZE = 20;
+const float MIN_RATIO = 0.0f;
 
 // Hy3GroupData //
 
@@ -945,9 +945,11 @@ void Hy3Node::resize(
 				auto requested_size_ratio = this->size_ratio + ratio_mod;
 				auto requested_neighbor_size_ratio = neighbor->size_ratio -ratio_mod;
 
-				if(requested_size_ratio * parent_size >= MIN_WINDOW_SIZE) {
+				if(requested_size_ratio  >= MIN_RATIO
+					&& requested_neighbor_size_ratio >= MIN_RATIO) {
 					this->size_ratio = requested_size_ratio;
 					neighbor->size_ratio = requested_neighbor_size_ratio;
+
 					parent_node->recalcSizePosRecursive(no_animation);
 				}
 			}
