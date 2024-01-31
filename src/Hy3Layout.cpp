@@ -426,8 +426,13 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 		);
 
 		Vector2D resize_delta = delta;
-		if (display_left && display_right) resize_delta.x = 0;
-		if (display_top && display_bottom) resize_delta.y = 0;
+		bool node_is_root = (node->data.type == Hy3NodeType::Group && node->parent == nullptr)
+			|| (node->data.type == Hy3NodeType::Window && (node->parent == nullptr || node->parent->parent == nullptr));
+
+		if(node_is_root) {
+			if (display_left && display_right) resize_delta.x = 0;
+			if (display_top && display_bottom) resize_delta.y = 0;
+		}
 
 		// Don't execute the logic unless there's something to do
 		if(resize_delta.x != 0 || resize_delta.y != 0) {
