@@ -117,6 +117,7 @@ public:
 	void setNodeSwallow(int workspace, SetSwallowOption);
 	void killFocusedNode(int workspace);
 	void expand(int workspace, ExpandOption, ExpandFullscreenOption);
+	void resizeNode(const Vector2D& delta, eRectCorner corner, Hy3Node* node);
 
 	bool shouldRenderSelected(CWindow*);
 
@@ -146,7 +147,6 @@ private:
 
 	void updateAutotileWorkspaces();
 	bool shouldAutotileWorkspace(int);
-	void resizeNode(Hy3Node*, Vector2D, ShiftDirection resize_edge_x, ShiftDirection resize_edge_y);
 
 	struct {
 		std::string raw_workspaces;

@@ -8,6 +8,7 @@
 
 int workspace_for_action(bool allow_fullscreen = false) {
 	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return -1;
+	if(!g_pCompositor->m_pLastMonitor) return -1;
 
 	int workspace_id = g_pCompositor->m_pLastMonitor->activeWorkspace;
 
@@ -245,7 +246,19 @@ void dispatch_debug(std::string arg) {
 	}
 }
 
+void dispatch_resizenode(std::string value) {
+	int workspace = workspace_for_action();
+	if (workspace == -1) return;
+
+	auto* node = g_Hy3Layout->getWorkspaceFocusedNode(workspace, false, true);
+	const auto delta = g_pCompositor->parseWindowVectorArgsRelative(value, Vector2D(0, 0));
+
+	hy3_log(LOG, "resizeNode: node: {:x}, delta: {:X}", (uintptr_t)node, delta);
+	g_Hy3Layout->resizeNode(delta, CORNER_NONE, node);
+}
+
 void registerDispatchers() {
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:resizenode", dispatch_resizenode);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:makegroup", dispatch_makegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changegroup", dispatch_changegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:setephemeral", dispatch_setephemeral);

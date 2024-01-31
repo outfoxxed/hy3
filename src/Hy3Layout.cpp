@@ -407,16 +407,9 @@ ShiftDirection reverse(ShiftDirection direction) {
 	}
 }
 
-void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow) {
-	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow;
-	if (!g_pCompositor->windowValidMapped(window)) return;
-
-	auto* node = this->getNodeFromWindow(window);
-
-	if (node != nullptr) {
-		node = &node->getExpandActor();
-
-		auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
+void executeResizeOperation(const Vector2D& delta, eRectCorner corner, Hy3Node *node, CMonitor* monitor) {
+	if (node == nullptr) return;
+	if (monitor == nullptr) return;
 
 		const bool display_left =
 		    STICKS(node->position.x, monitor->vecPosition.x + monitor->vecReservedTopLeft.x);
@@ -465,12 +458,12 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 				                  : ShiftDirection::Down;
 			}
 
-			// Find the neighboring node in each axis, which will be either above or at the
-			// same level as the initiating node in the layout hierarchy.  These are the nodes
-			// which must get resized (rather than the initiator) because they are the
-			// highest point in the hierarchy
-			auto horizontal_neighbor = node->findNeighbor(target_edge_x);
-			auto vertical_neighbor = node->findNeighbor(target_edge_y);
+		// Find the neighboring node in each axis, which will be either above or at the
+		// same level as the initiating node in the layout hierarchy.  These are the nodes
+		// which must get resized (rather than the initiator) because they are the
+		// highest point in the hierarchy
+		auto horizontal_neighbor = node->findNeighbor(target_edge_x);
+		auto vertical_neighbor = node->findNeighbor(target_edge_y);
 
 			static const auto animate = ConfigValue<Hyprlang::INT>("misc:animate_manual_resizes");
 
@@ -480,11 +473,28 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 				horizontal_neighbor->resize(reverse(target_edge_x), resize_delta.x, *animate == 0);
 			}
 
-			if (vertical_neighbor) {
-				vertical_neighbor->resize(reverse(target_edge_y), resize_delta.y, *animate == 0);
-			}
+		if (vertical_neighbor) {
+			vertical_neighbor->resize(reverse(target_edge_y), resize_delta.y, *animate == 0);
 		}
-	} else if (window->m_bIsFloating) {
+	}
+}
+
+void Hy3Layout::resizeNode(const Vector2D& delta, eRectCorner corner, Hy3Node* node) {
+	if(node == nullptr) return;
+
+	auto monitor = g_pCompositor->getMonitorFromID(g_pCompositor->getWorkspaceByID(node->workspace_id)->m_iMonitorID);
+	executeResizeOperation(delta, corner, node, monitor);
+}
+
+void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow) {
+	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow;
+	if(window == nullptr || ! g_pCompositor->windowValidMapped(window)) return;
+
+	auto* node = this->getNodeFromWindow(window);
+
+	if (node != nullptr) {
+		executeResizeOperation(delta, corner, &node->getExpandActor(), g_pCompositor->getMonitorFromID(window->m_iMonitorID));
+	} else if(window->m_bIsFloating) {
 		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout
 		const auto required_size = Vector2D(
 		    std::max((window->m_vRealSize.goalv() + delta).x, 20.0),

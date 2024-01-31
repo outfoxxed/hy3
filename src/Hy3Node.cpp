@@ -926,6 +926,8 @@ void Hy3Node::resize(ShiftDirection direction, double delta, bool no_animation) 
 					neighbor->size_ratio = requested_neighbor_size_ratio;
 
 					parent_node->recalcSizePosRecursive(no_animation);
+				} else {
+					hy3_log(WARN, "Requested size ratio {} or {} out of bounds, ignoring", requested_size_ratio, requested_neighbor_size_ratio);
 				}
 			}
 		}

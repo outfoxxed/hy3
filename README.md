@@ -341,6 +341,7 @@ plugin {
    - `require_hovered` - affect the tab group under the mouse. do nothing if none are hovered.
    - `wrap` - wrap to the opposite size of the tab bar if moving off the end
  - `hy3:debugnodes` - print the node tree into the hyprland log
+ - `hy3:resizenode, <vector>` - like Hyprland `resizeactive`, but applied to the whole focused group instead of just a window
  - :warning: **ALPHA QUALITY** `hy3:setswallow, <true | false | toggle>` - set the containing node's window swallow state
  - :warning: **ALPHA QUALITY** `hy3:expand, <expand | shrink | base>` - expand the current node to cover other nodes
    - `expand` - expand by one node
