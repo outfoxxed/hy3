@@ -2,7 +2,8 @@
 name = "hy3"
 authors = ["outfoxxed"]
 commit_pins = [
-	["03ebbe18ed8517ee22591eac82cd54322f42cb7d", "2f28dc810c0e1f42763a1f14fb011c4fce6db8be"]
+	["03ebbe18ed8517ee22591eac82cd54322f42cb7d", "2f28dc810c0e1f42763a1f14fb011c4fce6db8be"],
+	["84ab8d11e8951a6551d1e1bf87796a8589da6d47", "d3e20856a9896f28b506195b31407eddc6df2e20"]
 ]
 
 [hy3]
