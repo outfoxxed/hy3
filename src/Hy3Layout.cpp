@@ -156,8 +156,10 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 		{
 			opening_after = this->getNodeFromWindow(g_pCompositor->m_pLastWindow);
 		} else {
-			auto* mouse_window =
-			    g_pCompositor->vectorToWindowTiled(g_pInputManager->getMouseCoordsInternal());
+			auto* mouse_window = g_pCompositor->vectorToWindowUnified(
+			    g_pInputManager->getMouseCoordsInternal(),
+			    RESERVED_EXTENTS | INPUT_EXTENTS
+			);
 
 			if (mouse_window != nullptr && mouse_window->m_iWorkspaceID == node.workspace_id) {
 				opening_after = this->getNodeFromWindow(mouse_window);
@@ -180,8 +182,13 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 			static const auto* tab_first_window =
 			    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tab_first_window")->intValue;
 
+			auto width =
+			    monitor->vecSize.x - monitor->vecReservedBottomRight.x - monitor->vecReservedTopLeft.x;
+			auto height =
+			    monitor->vecSize.y - monitor->vecReservedBottomRight.y - monitor->vecReservedTopLeft.y;
+
 			this->nodes.push_back({
-			    .data = Hy3GroupLayout::SplitH,
+			    .data = height > width ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
 			    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
 			    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
 			    .workspace_id = node.workspace_id,
@@ -1112,8 +1119,13 @@ void Hy3Layout::focusTab(
 	Hy3Node* tab_focused_node;
 
 	if (target == TabFocus::MouseLocation || mouse != TabFocusMousePriority::Ignore) {
-		if (g_pCompositor->windowFloatingFromCursor() == nullptr) {
-			auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
+		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
+		if (g_pCompositor->vectorToWindowUnified(
+		        mouse_pos,
+		        RESERVED_EXTENTS | INPUT_EXTENTS | ALLOW_FLOATING | FLOATING_ONLY
+		    )
+		    == nullptr)
+		{
 			tab_node = findTabBarAt(*node, mouse_pos, &tab_focused_node);
 			if (tab_node != nullptr) goto hastab;
 		}
