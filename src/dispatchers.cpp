@@ -239,7 +239,7 @@ void dispatch_debug(std::string arg) {
 	if (workspace == -1) return;
 
 	auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace);
-	if (workspace == -1) {
+	if (root == nullptr) {
 		hy3_log(LOG, "DEBUG NODES: no nodes on workspace");
 	} else {
 		hy3_log(LOG, "DEBUG NODES\n{}", root->debugNode().c_str());

@@ -2,3 +2,5 @@ build/
 compile_commands.json
 .vscode/
 *.log
+.env
+.env.*

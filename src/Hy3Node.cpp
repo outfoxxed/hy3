@@ -33,18 +33,6 @@ Hy3GroupData::~Hy3GroupData() {
 	if (this->tab_bar != nullptr) this->tab_bar->bar.beginDestroy();
 }
 
-bool Hy3GroupData::hasChild(Hy3Node* node) {
-	for (auto child: this->children) {
-		if (child == node) return true;
-
-		if (child->data.type == Hy3NodeType::Group) {
-			if (child->data.as_group.hasChild(node)) return true;
-		}
-	}
-
-	return false;
-}
-
 void Hy3GroupData::collapseExpansions() {
 	if (this->expand_focused == ExpandFocusType::NotExpanded) return;
 	this->expand_focused = ExpandFocusType::NotExpanded;
@@ -195,20 +183,17 @@ void markGroupFocusedRecursive(Hy3GroupData& group) {
 void Hy3Node::markFocused() {
 	Hy3Node* node = this;
 
-	// undo decos for root focus
-	auto* root = node;
-	while (root->parent != nullptr) root = root->parent;
-
 	// update focus
 	if (this->data.type == Hy3NodeType::Group) {
 		markGroupFocusedRecursive(this->data.as_group);
 	}
 
-	auto* node2 = node;
-	while (node2->parent != nullptr) {
-		node2->parent->data.as_group.focused_child = node2;
-		node2->parent->data.as_group.group_focused = false;
-		node2 = node2->parent;
+	// undo decos for root focus
+	auto* root = node;
+	while (root->parent != nullptr) {
+		root->parent->data.as_group.focused_child = root;
+		root->parent->data.as_group.group_focused = false;
+		root = root->parent;
 	}
 
 	root->updateDecos();
@@ -842,24 +827,6 @@ Hy3Node* Hy3Node::getImmediateSibling(ShiftDirection direction) {
 	return *list_sibling;
 }
 
-Axis getAxis(Hy3GroupLayout layout) {
-	switch (layout) {
-	case Hy3GroupLayout::SplitH: return Axis::Horizontal;
-	case Hy3GroupLayout::SplitV: return Axis::Vertical;
-	default: return Axis::None;
-	}
-}
-
-Axis getAxis(ShiftDirection direction) {
-	switch (direction) {
-	case ShiftDirection::Left:
-	case ShiftDirection::Right: return Axis::Horizontal;
-	case ShiftDirection::Down:
-	case ShiftDirection::Up: return Axis::Vertical;
-	default: return Axis::None;
-	}
-}
-
 Hy3Node* Hy3Node::findNeighbor(ShiftDirection direction) {
 	auto current_node = this;
 	Hy3Node* sibling = nullptr;
@@ -892,6 +859,10 @@ int directionToIteratorIncrement(ShiftDirection direction) {
 	case ShiftDirection::Down: return 1;
 	default: hy3_log(WARN, "Unknown ShiftDirection enum value: {}", (int) direction); return 1;
 	}
+}
+
+CBox Hy3Node::getMainSurfaceBox() {
+	return { this->position, this->size };
 }
 
 void Hy3Node::resize(ShiftDirection direction, double delta, bool no_animation) {
@@ -950,4 +921,20 @@ void Hy3Node::swapData(Hy3Node& a, Hy3Node& b) {
 			child->parent = &b;
 		}
 	}
+}
+
+bool Hy3Node::hasChild(Hy3Node* node) {
+	if(this->data.type == Hy3NodeType::Window) return false;
+
+	auto n = node;
+	while(n != nullptr && n->parent != this) n = n->parent;
+
+	return n != nullptr;
+}
+
+Hy3Node* Hy3Node::getRoot() {
+	Hy3Node* maybeRoot = this;
+	while(maybeRoot->parent) maybeRoot = maybeRoot->parent;
+
+	return maybeRoot;
 }

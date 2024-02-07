@@ -1,4 +1,9 @@
 #pragma once
+#include <list>
+#include <set>
+
+#include <hyprland/src/layout/IHyprLayout.hpp>
+#include <map>
 
 class Hy3Layout;
 
@@ -8,11 +13,6 @@ enum class GroupEphemeralityOption {
 	ForceEphemeral,
 };
 
-#include <list>
-#include <set>
-
-#include <hyprland/src/layout/IHyprLayout.hpp>
-
 enum class ShiftDirection {
 	Left,
 	Up,
@@ -20,10 +20,17 @@ enum class ShiftDirection {
 	Right,
 };
 
+enum class SearchDirection {
+	None,
+	Forwards,
+	Backwards
+};
+
 enum class Axis { None, Horizontal, Vertical };
 
 #include "Hy3Node.hpp"
 #include "TabGroup.hpp"
+#include "conversions.hpp"
 
 enum class FocusShift {
 	Top,
@@ -67,17 +74,25 @@ enum class ExpandFullscreenOption {
 	MaximizeAsFullscreen,
 };
 
+struct FocusOverride {
+	Hy3Node *left = nullptr;
+	Hy3Node *up = nullptr;
+	Hy3Node *right = nullptr;
+	Hy3Node *down = nullptr;
+};
+
+
 class Hy3Layout: public IHyprLayout {
 public:
 	virtual void onWindowCreated(CWindow*, eDirection = DIRECTION_DEFAULT);
 	virtual void onWindowCreatedTiling(CWindow*, eDirection = DIRECTION_DEFAULT);
 	virtual void onWindowRemovedTiling(CWindow*);
+	virtual void onWindowRemovedFloating(CWindow*);
 	virtual void onWindowFocusChange(CWindow*);
 	virtual bool isWindowTiled(CWindow*);
 	virtual void recalculateMonitor(const int& monitor_id);
 	virtual void recalculateWindow(CWindow*);
-	virtual void
-	resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow = nullptr);
+	virtual void resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow = nullptr);
 	virtual void fullscreenRequestForWindow(CWindow*, eFullscreenMode, bool enable_fullscreen);
 	virtual std::any layoutMessage(SLayoutMessageHeader header, std::string content);
 	virtual SWindowRenderLayoutHints requestRenderHints(CWindow*);
@@ -139,6 +154,10 @@ public:
 private:
 	Hy3Node* getNodeFromWindow(CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
+	void shiftFocusToMonitor(ShiftDirection direction);
+	std::unordered_map<CWindow*, FocusOverride> m_focusIntercepts;
+	Hy3Node* getFocusOverride(CWindow* src, ShiftDirection direction);
+	void setFocusOverride(CWindow* src, ShiftDirection direction, Hy3Node* dest);
 
 	// if shift is true, shift the window in the given direction, returning
 	// nullptr, if shift is false, return the window in the given direction or
@@ -147,6 +166,8 @@ private:
 
 	void updateAutotileWorkspaces();
 	bool shouldAutotileWorkspace(int);
+	void resizeNode(Hy3Node*, Vector2D, ShiftDirection resize_edge_x, ShiftDirection resize_edge_y);
+	void focusMonitor(CMonitor*);
 
 	struct {
 		std::string raw_workspaces;

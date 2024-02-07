@@ -10,6 +10,7 @@ enum class Hy3GroupLayout;
 
 #include "Hy3Layout.hpp"
 #include "TabGroup.hpp"
+#include "conversions.hpp"
 
 enum class Hy3GroupLayout {
 	SplitH,
@@ -42,7 +43,6 @@ struct Hy3GroupData {
 	Hy3GroupData(Hy3GroupLayout layout);
 	~Hy3GroupData();
 
-	bool hasChild(Hy3Node* child);
 	void collapseExpansions();
 	void setLayout(Hy3GroupLayout layout);
 	void setEphemeral(GroupEphemeralityOption ephemeral);
@@ -101,9 +101,11 @@ struct Hy3Node {
 	Hy3Node* getFocusedNode(bool ignore_group_focus = false, bool stop_at_expanded = false);
 	Hy3Node* findNeighbor(ShiftDirection);
 	Hy3Node* getImmediateSibling(ShiftDirection);
+	Hy3Node* getRoot();
 	void resize(ShiftDirection, double, bool no_animation = false);
 	bool isIndirectlyFocused();
 	Hy3Node& getExpandActor();
+	CBox getMainSurfaceBox();
 
 	void recalcSizePosRecursive(bool no_animation = false);
 	void updateTabBar(bool no_animation = false);
@@ -116,6 +118,7 @@ struct Hy3Node {
 
 	Hy3Node* findNodeForTabGroup(Hy3TabGroup&);
 	void appendAllWindows(std::vector<CWindow*>&);
+	bool hasChild(Hy3Node* child);
 	std::string debugNode();
 
 	// Remove this node from its parent, deleting the parent if it was
@@ -130,4 +133,36 @@ struct Hy3Node {
 	// Attempt to swallow a group. returns true if swallowed
 	static bool swallowGroups(Hy3Node* into);
 	static void swapData(Hy3Node&, Hy3Node&);
+};
+
+struct Distance {
+	bool is_forward;
+	double primary_axis = -1;
+	double secondary_axis = -1;
+	bool operator< (Distance other) {
+		return isInitialised()
+			&& other.isInitialised()
+			&& is_forward == other.is_forward
+			&& (primary_axis < other.primary_axis || (primary_axis == other.primary_axis && secondary_axis < other.secondary_axis));
+	}
+	bool isInitialised() { return primary_axis != -1; }
+	bool isNotInitialised() { return primary_axis == -1; }
+	bool isSameDirection(Distance other) {
+		return other.primary_axis != 0 && other.is_forward == is_forward;
+	}
+	bool isInDirection(ShiftDirection direction) {
+		bool direction_is_forward = getSearchDirection(direction) == SearchDirection::Forwards;
+		return is_forward == direction_is_forward;
+	}
+	Distance(ShiftDirection direction) {
+		is_forward = getSearchDirection(direction) == SearchDirection::Forwards;
+	}
+	Distance(ShiftDirection direction, CBox from, CBox to) {
+		auto middle_from = from.middle(), middle_to = to.middle();
+		auto primary_dist = getAxis(direction) == Axis::Horizontal ? middle_from.x - middle_to.x : middle_from.y - middle_to.y;
+
+		is_forward = std::signbit(primary_dist);
+		primary_axis = abs(primary_dist);
+		secondary_axis  = abs(getAxis(direction) == Axis::Horizontal  ? middle_from.y - middle_to.y : middle_from.x - middle_to.x);
+	}
 };

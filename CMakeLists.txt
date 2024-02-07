@@ -16,6 +16,7 @@ pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm pango pangocairo)
 add_library(hy3 SHARED
 	src/main.cpp
 	src/dispatchers.cpp
+	src/conversions.cpp
 	src/Hy3Layout.cpp
 	src/Hy3Node.cpp
 	src/TabGroup.cpp

@@ -4,7 +4,10 @@
 
 - Implement `resizeactivewindow` for floating windows
 - Fully implement `resizeactivewindow` for tiled windows
-
+- Add `hy3:resizenode` dispatcher, drop-in replacement for `resizeactivewindow` applied at the Hy3 group level.
+- Implement keyboard-based focusing for floating windows
+- Implement keyboard-based movement for floating windows
+  - Add configuration `kbd_shift_delta` providing delta [in pixels] for shift
 ## hl0.35.0 and before
 
 - Fixed `hy3:killactive` and `hy3:movetoworkspace` not working in fullscreen.
