@@ -630,7 +630,7 @@ CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 		for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
 			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && w->m_iX11Type != 2
 			    && w->m_iWorkspaceID == window->m_iWorkspaceID && !w->m_bX11ShouldntFocus
-			    && !w->m_bNoFocus && w.get() != window)
+			    && !w->m_sAdditionalConfigData.noFocus && w.get() != window)
 			{
 				return w.get();
 			}
