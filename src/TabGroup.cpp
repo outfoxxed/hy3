@@ -126,18 +126,18 @@ bool Hy3TabBarEntry::shouldRemove() {
 
 void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 	// clang-format off
-	static const auto* s_rounding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:rounding")->intValue;
-	static const auto* render_text = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:render_text")->intValue;
-	static const auto* text_center = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_center")->intValue;
-	static const auto* text_font = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_font")->strValue;
-	static const auto* text_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_height")->intValue;
-	static const auto* text_padding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:text_padding")->intValue;
-	static const auto* col_active = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.active")->intValue;
-	static const auto* col_urgent = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.urgent")->intValue;
-	static const auto* col_inactive = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.inactive")->intValue;
-	static const auto* col_text_active = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.text.active")->intValue;
-	static const auto* col_text_urgent = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.text.urgent")->intValue;
-	static const auto* col_text_inactive = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:col.text.inactive")->intValue;
+	static const auto s_rounding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:rounding");
+	static const auto render_text = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:render_text");
+	static const auto text_center = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_center");
+	static const auto text_font = ConfigValue<Hyprlang::STRING>("plugin:hy3:tabs:text_font");
+	static const auto text_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_height");
+	static const auto text_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_padding");
+	static const auto col_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active");
+	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
+	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
+	static const auto col_text_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.text.active");
+	static const auto col_text_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.text.urgent");
+	static const auto col_text_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.text.inactive");
 	// clang-format on
 
 	auto width = box.width;
@@ -227,7 +227,7 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 
 			if (*text_center) pango_layout_set_alignment(layout, PANGO_ALIGN_CENTER);
 
-			PangoFontDescription* font_desc = pango_font_description_from_string(text_font->c_str());
+			PangoFontDescription* font_desc = pango_font_description_from_string(*text_font);
 			pango_font_description_set_size(font_desc, *text_height * scale * PANGO_SCALE);
 			pango_layout_set_font_description(layout, font_desc);
 			pango_font_description_free(font_desc);
@@ -452,10 +452,9 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
-	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
-	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
-	static const auto* bar_height =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
+	static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
+	static const auto gaps_out = ConfigValue<Hyprlang::INT>("general:gaps_out");
+	static const auto bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 
 	auto gaps = node.parent == nullptr ? *gaps_out : *gaps_in;
 	auto tpos = node.position + Vector2D(gaps, gaps) + node.gap_topleft_offset;
@@ -484,10 +483,8 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 }
 
 void Hy3TabGroup::tick() {
-	static const auto* enter_from_top =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
-	static const auto* padding =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
+	static const auto enter_from_top = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:from_top");
+	static const auto padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
 
 	this->bar.tick();
@@ -528,12 +525,9 @@ void Hy3TabGroup::tick() {
 }
 
 void Hy3TabGroup::renderTabBar() {
-	static const auto* window_rounding =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "decoration:rounding")->intValue;
-	static const auto* enter_from_top =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:from_top")->intValue;
-	static const auto* padding =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
+	static const auto window_rounding = ConfigValue<Hyprlang::INT>("decoration:rounding");
+	static const auto enter_from_top = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:from_top");
+	static const auto padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
 	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);

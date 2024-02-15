@@ -1,6 +1,3 @@
-#include <optional>
-#include <stdexcept>
-
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
@@ -30,37 +27,41 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	selection_hook::init();
 
 #define CONF(NAME, TYPE, VALUE)                                                                    \
-	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:" NAME, SConfigValue {.TYPE##Value = VALUE})
+	HyprlandAPI::addConfigValue(                                                                     \
+	    PHANDLE,                                                                                     \
+	    "plugin:hy3:" NAME,                                                                          \
+	    Hyprlang::CConfigValue((Hyprlang::TYPE) VALUE)                                               \
+	)
 
 	// general
-	CONF("no_gaps_when_only", int, 0);
-	CONF("node_collapse_policy", int, 2);
-	CONF("group_inset", int, 10);
-	CONF("tab_first_window", int, 0);
+	CONF("no_gaps_when_only", INT, 0);
+	CONF("node_collapse_policy", INT, 2);
+	CONF("group_inset", INT, 10);
+	CONF("tab_first_window", INT, 0);
 
 	// tabs
-	CONF("tabs:height", int, 15);
-	CONF("tabs:padding", int, 5);
-	CONF("tabs:from_top", int, 0);
-	CONF("tabs:rounding", int, 3);
-	CONF("tabs:render_text", int, 1);
-	CONF("tabs:text_center", int, 0);
-	CONF("tabs:text_font", str, "Sans");
-	CONF("tabs:text_height", int, 8);
-	CONF("tabs:text_padding", int, 3);
-	CONF("tabs:col.active", int, 0xff32b4ff);
-	CONF("tabs:col.urgent", int, 0xffff4f4f);
-	CONF("tabs:col.inactive", int, 0x80808080);
-	CONF("tabs:col.text.active", int, 0xff000000);
-	CONF("tabs:col.text.urgent", int, 0xff000000);
-	CONF("tabs:col.text.inactive", int, 0xff000000);
+	CONF("tabs:height", INT, 15);
+	CONF("tabs:padding", INT, 5);
+	CONF("tabs:from_top", INT, 0);
+	CONF("tabs:rounding", INT, 3);
+	CONF("tabs:render_text", INT, 1);
+	CONF("tabs:text_center", INT, 0);
+	CONF("tabs:text_font", STRING, "Sans");
+	CONF("tabs:text_height", INT, 8);
+	CONF("tabs:text_padding", INT, 3);
+	CONF("tabs:col.active", INT, 0xff32b4ff);
+	CONF("tabs:col.urgent", INT, 0xffff4f4f);
+	CONF("tabs:col.inactive", INT, 0x80808080);
+	CONF("tabs:col.text.active", INT, 0xff000000);
+	CONF("tabs:col.text.urgent", INT, 0xff000000);
+	CONF("tabs:col.text.inactive", INT, 0xff000000);
 
 	// autotiling
-	CONF("autotile:enable", int, 0);
-	CONF("autotile:ephemeral_groups", int, 1);
-	CONF("autotile:trigger_height", int, 0);
-	CONF("autotile:trigger_width", int, 0);
-	CONF("autotile:workspaces", str, "all");
+	CONF("autotile:enable", INT, 0);
+	CONF("autotile:ephemeral_groups", INT, 1);
+	CONF("autotile:trigger_height", INT, 0);
+	CONF("autotile:trigger_width", INT, 0);
+	CONF("autotile:workspaces", STRING, "all");
 
 #undef CONF
 

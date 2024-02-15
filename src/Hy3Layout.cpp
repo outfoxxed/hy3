@@ -179,8 +179,8 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 		opening_into = opening_after->parent;
 	} else {
 		if ((opening_into = this->getWorkspaceRootGroup(node.workspace_id)) == nullptr) {
-			static const auto* tab_first_window =
-			    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tab_first_window")->intValue;
+			static const auto tab_first_window =
+			    ConfigValue<Hyprlang::INT>("plugin:hy3:tab_first_window");
 
 			auto width =
 			    monitor->vecSize.x - monitor->vecReservedBottomRight.x - monitor->vecReservedTopLeft.x;
@@ -233,10 +233,10 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 
 	{
 		// clang-format off
-		static const auto* at_enable = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:enable")->intValue;
-		static const auto* at_ephemeral = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:ephemeral_groups")->intValue;
-		static const auto* at_trigger_width = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_width")->intValue;
-		static const auto* at_trigger_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:trigger_height")->intValue;
+		static const auto at_enable = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:enable");
+		static const auto at_ephemeral = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:ephemeral_groups");
+		static const auto at_trigger_width = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:trigger_width");
+		static const auto at_trigger_height = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:trigger_height");
 		// clang-format on
 
 		this->updateAutotileWorkspaces();
@@ -287,8 +287,8 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 }
 
 void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
-	static const auto* node_collapse_policy =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:node_collapse_policy")->intValue;
+	static const auto node_collapse_policy =
+	    ConfigValue<Hyprlang::INT>("plugin:hy3:node_collapse_policy");
 
 	auto* node = this->getNodeFromWindow(window);
 
@@ -398,8 +398,7 @@ void Hy3Layout::recalculateWindow(CWindow* window) {
 }
 
 ShiftDirection reverse(ShiftDirection direction) {
-	switch (direction)
-	{
+	switch (direction) {
 	case ShiftDirection::Left: return ShiftDirection::Right;
 	case ShiftDirection::Right: return ShiftDirection::Left;
 	case ShiftDirection::Up: return ShiftDirection::Down;
@@ -414,53 +413,56 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 
 	auto* node = this->getNodeFromWindow(window);
 
-	if(node != nullptr) {
+	if (node != nullptr) {
 		node = &node->getExpandActor();
 
 		auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
 
 		const bool display_left =
-			STICKS(node->position.x, monitor->vecPosition.x + monitor->vecReservedTopLeft.x);
+		    STICKS(node->position.x, monitor->vecPosition.x + monitor->vecReservedTopLeft.x);
 		const bool display_right = STICKS(
-			node->position.x + node->size.x,
-			monitor->vecPosition.x + monitor->vecSize.x - monitor->vecReservedBottomRight.x
+		    node->position.x + node->size.x,
+		    monitor->vecPosition.x + monitor->vecSize.x - monitor->vecReservedBottomRight.x
 		);
 		const bool display_top =
-			STICKS(node->position.y, monitor->vecPosition.y + monitor->vecReservedTopLeft.y);
+		    STICKS(node->position.y, monitor->vecPosition.y + monitor->vecReservedTopLeft.y);
 		const bool display_bottom = STICKS(
-			node->position.y + node->size.y,
-			monitor->vecPosition.y + monitor->vecSize.y - monitor->vecReservedBottomRight.y
+		    node->position.y + node->size.y,
+		    monitor->vecPosition.y + monitor->vecSize.y - monitor->vecReservedBottomRight.y
 		);
 
 		Vector2D resize_delta = delta;
 		bool node_is_root = (node->data.type == Hy3NodeType::Group && node->parent == nullptr)
-			|| (node->data.type == Hy3NodeType::Window && (node->parent == nullptr || node->parent->parent == nullptr));
+		                 || (node->data.type == Hy3NodeType::Window
+		                     && (node->parent == nullptr || node->parent->parent == nullptr));
 
-		if(node_is_root) {
+		if (node_is_root) {
 			if (display_left && display_right) resize_delta.x = 0;
 			if (display_top && display_bottom) resize_delta.y = 0;
 		}
 
 		// Don't execute the logic unless there's something to do
-		if(resize_delta.x != 0 || resize_delta.y != 0) {
+		if (resize_delta.x != 0 || resize_delta.y != 0) {
 			ShiftDirection target_edge_x;
 			ShiftDirection target_edge_y;
 
 			// Determine the direction in which we're going to look for the neighbor node
 			// that will be resized
-			if(corner == CORNER_NONE) {			// It's probably a keyboard event.
+			if (corner == CORNER_NONE) { // It's probably a keyboard event.
 				target_edge_x = display_right ? ShiftDirection::Left : ShiftDirection::Right;
 				target_edge_y = display_bottom ? ShiftDirection::Up : ShiftDirection::Down;
 
 				// If the anchor is not at the top/left then reverse the delta
-				if(target_edge_x == ShiftDirection::Left) resize_delta.x = -resize_delta.x;
-				if(target_edge_y == ShiftDirection::Up) resize_delta.y = -resize_delta.y;
-			} else {							// It's probably a mouse event
+				if (target_edge_x == ShiftDirection::Left) resize_delta.x = -resize_delta.x;
+				if (target_edge_y == ShiftDirection::Up) resize_delta.y = -resize_delta.y;
+			} else { // It's probably a mouse event
 				// Resize against the edges corresponding to the selected corner
 				target_edge_x = corner == CORNER_TOPLEFT || corner == CORNER_BOTTOMLEFT
-					? ShiftDirection::Left : ShiftDirection::Right;
+				                  ? ShiftDirection::Left
+				                  : ShiftDirection::Right;
 				target_edge_y = corner == CORNER_TOPLEFT || corner == CORNER_TOPRIGHT
-					? ShiftDirection::Up : ShiftDirection::Down;
+				                  ? ShiftDirection::Up
+				                  : ShiftDirection::Down;
 			}
 
 			// Find the neighboring node in each axis, which will be either above or at the
@@ -470,24 +472,23 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 			auto horizontal_neighbor = node->findNeighbor(target_edge_x);
 			auto vertical_neighbor = node->findNeighbor(target_edge_y);
 
-			const auto animate =
-				&g_pConfigManager->getConfigValuePtr("misc:animate_manual_resizes")->intValue;
+			static const auto animate = ConfigValue<Hyprlang::INT>("misc:animate_manual_resizes");
 
 			// Note that the resize direction is reversed, because from the neighbor's perspective
 			// the edge to be moved is the opposite way round.  However, the delta is still the same.
-			if(horizontal_neighbor) {
+			if (horizontal_neighbor) {
 				horizontal_neighbor->resize(reverse(target_edge_x), resize_delta.x, *animate == 0);
 			}
 
-			if(vertical_neighbor) {
+			if (vertical_neighbor) {
 				vertical_neighbor->resize(reverse(target_edge_y), resize_delta.y, *animate == 0);
 			}
 		}
-	} else if(window->m_bIsFloating) {
+	} else if (window->m_bIsFloating) {
 		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout
 		const auto required_size = Vector2D(
-			std::max((window->m_vRealSize.goalv() + delta).x, 20.0),
-			std::max((window->m_vRealSize.goalv() + delta).y, 20.0)
+		    std::max((window->m_vRealSize.goalv() + delta).x, 20.0),
+		    std::max((window->m_vRealSize.goalv() + delta).y, 20.0)
 		);
 		window->m_vRealSize = required_size;
 	}
@@ -542,8 +543,8 @@ void Hy3Layout::fullscreenRequestForWindow(
 			// Copy of vaxry's massive hack
 
 			// clang-format off
-			static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
-			static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
+			static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
+			static const auto gaps_out = ConfigValue<Hyprlang::INT>("general:gaps_out");
 			// clang-format on
 
 			int outer_gaps = -(*gaps_in - *gaps_out);
@@ -982,8 +983,8 @@ void Hy3Layout::moveNodeToWorkspace(int origin, std::string wsname, bool follow)
 
 		monitor->changeWorkspace(workspace);
 
-		static auto* const allow_workspace_cycles =
-		    &g_pConfigManager->getConfigValuePtr("binds:allow_workspace_cycles")->intValue;
+		static const auto allow_workspace_cycles =
+		    ConfigValue<Hyprlang::INT>("binds:allow_workspace_cycles");
 		if (*allow_workspace_cycles) workspace->rememberPrevWorkspace(origin_ws);
 	}
 }
@@ -1048,10 +1049,10 @@ bottom:
 
 Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	// clang-format off
-	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
-	static const auto* gaps_out = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_out")->intValue;
-	static const auto* tab_bar_height = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:height")->intValue;
-	static const auto* tab_bar_padding = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:tabs:padding")->intValue;
+	static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
+	static const auto gaps_out = ConfigValue<Hyprlang::INT>("general:gaps_out");
+	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
+	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 	// clang-format on
 
 	auto inset = *tab_bar_height + *tab_bar_padding;
@@ -1467,8 +1468,8 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	}
 
 	// clang-format off
-	static const auto* gaps_in = &HyprlandAPI::getConfigValue(PHANDLE, "general:gaps_in")->intValue;
-	static const auto* single_window_no_gaps = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:no_gaps_when_only")->intValue;
+	static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
+	static const auto single_window_no_gaps = ConfigValue<Hyprlang::INT>("plugin:hy3:no_gaps_when_only");
 	// clang-format on
 
 	if (!g_pCompositor->windowExists(window) || !window->m_bIsMapped) {
@@ -1788,8 +1789,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 }
 
 void Hy3Layout::updateAutotileWorkspaces() {
-	static const auto* autotile_raw_workspaces =
-	    &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:autotile:workspaces")->strValue;
+	static const auto autotile_raw_workspaces =
+	    ConfigValue<Hyprlang::STRING>("plugin:hy3:autotile:workspaces");
 
 	if (*autotile_raw_workspaces == this->autotile.raw_workspaces) {
 		return;

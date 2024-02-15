@@ -20,11 +20,7 @@ enum class ShiftDirection {
 	Right,
 };
 
-enum class Axis {
-	None,
-	Horizontal,
-	Vertical
-};
+enum class Axis { None, Horizontal, Vertical };
 
 #include "Hy3Node.hpp"
 #include "TabGroup.hpp"
