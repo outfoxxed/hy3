@@ -1078,8 +1078,14 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, bool co
 	const auto current_surface_box = source->getWindowMainSurfaceBox();
 	auto target_distance = Distance { direction };
 
+	// TODO: Don't assume that source window is on focused monitor
+	// BUG:  This will only find windows on the immediately neighbouring monitor, it won't find any on
+	// the neighbour's neighbour if the immediate neighbour happens to be empty
+	CMonitor* other_monitor = considerOtherMonitors ? g_pCompositor->getMonitorInDirection(directionToChar(direction))
+													: nullptr;
+
 	auto isCandidate = [=, mon = source->m_iMonitorID](CWindow* w) {
-		return (considerOtherMonitors || w->m_iMonitorID == mon)
+		return (w->m_iMonitorID == mon || (other_monitor && w->m_iMonitorID == other_monitor->ID))
 			&& ((considerFloating && w->m_bIsFloating) || (considerTiled && !w->m_bIsFloating) || (w->m_iMonitorID != mon))
 			&& w->m_bIsMapped
 			&& w->m_iX11Type != 2
@@ -1100,6 +1106,27 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, bool co
 	}
 
 	hy3_log(LOG, "getWindowInDirection: closest window to {} is {}", source, target_window);
+
+	// If the closest window is on a different monitor and the nearest edge has the same position
+	// as the last focused window on that monitor's workspace then choose the last focused window instead
+	if(target_window && other_monitor && target_window->m_iMonitorID == other_monitor->ID) {
+		auto new_workspace = g_pCompositor->getWorkspaceByID(other_monitor->activeWorkspace);
+		if(new_workspace) {
+			auto last_focused = new_workspace->getLastFocusedWindow();
+			if(last_focused) {
+				auto target_bounds = CBox(target_window->m_vRealPosition.vec(), target_window->m_vRealSize.vec());
+				auto last_focused_bounds = CBox(last_focused->m_vRealPosition.vec(), last_focused->m_vRealSize.vec());
+				if((direction == ShiftDirection::Left && target_bounds.x + target_bounds.w == last_focused_bounds.x + last_focused_bounds.w)
+					|| (direction == ShiftDirection::Right && target_bounds.x == last_focused_bounds.x)
+					|| (direction == ShiftDirection::Up && target_bounds.y + target_bounds.h == last_focused_bounds.y + last_focused_bounds.h)
+					|| (direction == ShiftDirection::Down && target_bounds.y == last_focused_bounds.y)) {
+						target_window = last_focused;
+				}
+			}
+		}
+	}
+
+
 	return target_window;
 }
 
