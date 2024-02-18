@@ -134,7 +134,7 @@ void dispatch_movefocus(std::string value) {
 		}
 
 		if(!layerArg) {
-			auto default_movefocus_layer = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:default_movefocus_layer")->strValue;
+			auto default_movefocus_layer = ConfigValue<Hyprlang::STRING>("plugin:hy3:default_movefocus_layer");
 			if((layerArg = parseLayerArg(*default_movefocus_layer))) layers = layerArg.value();
 		}
 
