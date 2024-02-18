@@ -1042,23 +1042,16 @@ bool isObscured (CWindow* window) {
 	bool is_obscured = false;
 	for(auto& w :g_pCompositor->m_vWindows | std::views::reverse) {
 		if(w.get() == window) {
-			hy3_log(LOG, "{} doesn't obscure itself", window);
 			// Don't go any further if this is a floating window, because m_vWindows is sorted bottom->top per Compositor.cpp
 			if(window->m_bIsFloating) break; else continue;
 		}
 
-		if(!w->m_bIsFloating) {
-			hy3_log(LOG, "Tiled window {} can't obscure anything", w.get());
-			continue;
-		}
+		if(!w->m_bIsFloating) continue;
 
 		const auto outer_box = w->getWindowMainSurfaceBox();
 		is_obscured = covers(outer_box, inner_box);
 
-		if(is_obscured) {
-			hy3_log(LOG, "{} obscures {}", w.get(), window);
-			break;
-		}
+		if(is_obscured) break;
 	};
 
 	return is_obscured;
@@ -1221,7 +1214,6 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 
 Hy3Node* Hy3Layout::getFocusOverride(CWindow* src, ShiftDirection direction) {
 	if(auto intercept = this->m_focusIntercepts.find(src); intercept != this->m_focusIntercepts.end()) {
-		hy3_log(LOG, "getFocusOverride: Found intercept for {}", src);
 		Hy3Node** accessor;
 
 		switch (direction)
@@ -1252,14 +1244,11 @@ Hy3Node* Hy3Layout::getFocusOverride(CWindow* src, ShiftDirection direction) {
 		}
 	}
 
-	hy3_log(LOG, "getFocusOverride: No intercept found for: {}", src);
 	return nullptr;
 }
 
 void Hy3Layout::setFocusOverride(CWindow* src, ShiftDirection direction, Hy3Node* dest) {
-	hy3_log(LOG, "setFocusOverride: Storing intercept for: {} to: {:x}", src, (uintptr_t)dest);
 	if(auto intercept = this->m_focusIntercepts.find(src);intercept != this->m_focusIntercepts.end()) {
-		hy3_log(LOG, "setFocusOverride: Updating existing intercept");
 		switch(direction) {
 			case ShiftDirection::Left: intercept->second.left = dest; break;
 			case ShiftDirection::Up: intercept->second.up = dest; break;
@@ -1268,7 +1257,6 @@ void Hy3Layout::setFocusOverride(CWindow* src, ShiftDirection direction, Hy3Node
 			default: hy3_log(WARN, "Unknown ShiftDirection: {}", (int) direction);
 		}
 	} else {
-		hy3_log(LOG, "setFocusOverride: Adding new intercept");
 		FocusOverride override;
 		switch(direction) {
 			case ShiftDirection::Left: override.left = dest; break;
