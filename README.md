@@ -221,6 +221,20 @@ plugin {
     # 2 = keep the nested group only if its parent is a tab group
     node_collapse_policy = <int> # default: 2
 
+    # policy controlling what windows will be focused using `hy3:movefocused`
+    # 0 = focus strictly by layout, don't attempt to skip windows that are obscured by another one
+    # 1 = do not focus windows which are entirely obscured by a floating window
+    # 2 = when `hy3:movefocus` layer is `samelayer` then use focus policy 0 (focus strictly by layout)
+    #     when `hy3:movefocus` layer is `all` then use focus policy 1 (don't focus obscured windows)
+    focus_obscured_windows_policy = <int> # default: 2
+
+    # which layers should be considered when changing focus with `hy3:movefocus`?
+    # samelayer = only focus windows on same layer as the source window (floating or tiled)
+    # all       = choose the closest window irrespective of the layout
+    # tiled     = only choose tiled windows, not especially useful but permitted by parser
+    # floating  = only choose floating windows, not especially useful but permitted by parser
+    default_movefocus_layer = <string>    # default: `samelayer`
+
     # offset from group split direction when only one window is in a group
     group_inset = <int> # default: 10
 

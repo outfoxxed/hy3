@@ -84,6 +84,14 @@ std::optional<ShiftDirection> parseShiftArg(std::string arg) {
 	else return {};
 }
 
+std::optional<BitFlag<Layer>> parseLayerArg(std::string arg) {
+	if (arg == "same" || arg == "samelayer") return Layer::None;
+	else if (arg == "tiled") return Layer::Tiled;
+	else if (arg == "floating") return Layer::Floating;
+	else if (arg == "all" || arg == "any") return Layer::Tiled | Layer::Floating;
+	else return {};
+}
+
 void dispatch_movewindow(std::string value) {
 	int workspace = workspace_for_action();
 	if (workspace == -1) return;
@@ -114,9 +122,23 @@ void dispatch_movefocus(std::string value) {
 	if (workspace == -1) return;
 
 	auto args = CVarList(value);
+	std::optional<BitFlag<Layer>> layerArg;
 
 	if (auto shift = parseShiftArg(args[0])) {
-		g_Hy3Layout->shiftFocus(workspace, shift.value(), args[1] == "visible");
+		bool visible;
+		BitFlag<Layer> layers;
+
+		for(auto arg: args) {
+			if(arg == "visible") visible = true;
+			else if ((layerArg = parseLayerArg(arg))) layers = layerArg.value();
+		}
+
+		if(!layerArg) {
+			auto default_movefocus_layer = &HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:default_movefocus_layer")->strValue;
+			if((layerArg = parseLayerArg(*default_movefocus_layer))) layers = layerArg.value();
+		}
+
+		g_Hy3Layout->shiftFocus(workspace, shift.value(), visible, layers);
 	}
 }
 

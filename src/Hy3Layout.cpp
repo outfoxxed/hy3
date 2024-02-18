@@ -10,6 +10,7 @@
 #include "SelectionHook.hpp"
 #include "globals.hpp"
 #include "conversions.hpp"
+#include "BitFlag.hpp"
 
 std::unique_ptr<HOOK_CALLBACK_FN> renderHookPtr =
     std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::renderHook);
@@ -948,7 +949,7 @@ void shiftFloatingWindow(CWindow* window, ShiftDirection direction) {
 				g_pCompositor->setActiveMonitor(new_monitor);
 
 				static auto* const allow_workspace_cycles =
-		    		&g_pConfigManager->getConfigValuePtr("binds:allow_workspace_cycles")->intValue;
+		    		&HyprlandAPI::getConfigValue(PHANDLE, "binds:allow_workspace_cycles")->intValue;
 				if (*allow_workspace_cycles) new_workspace->rememberPrevWorkspace(old_workspace);
 			}
 		} else {
@@ -1064,22 +1065,30 @@ bool isObscured(Hy3Node* node) {
 bool isNotObscured(CWindow* window) { return !isObscured(window); }
 bool isNotObscured(Hy3Node* node) { return !isObscured(node); }
 
-CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, bool considerFloating, bool considerTiled, bool considerOtherMonitors) {
+CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag<Layer> layers_same_monitor, BitFlag<Layer> layers_other_monitors) {
 	if(!source) return nullptr;
+	if(layers_other_monitors == Layer::None && layers_same_monitor == Layer::None) return nullptr;
 
 	CWindow *target_window = nullptr;
 	const auto current_surface_box = source->getWindowMainSurfaceBox();
 	auto target_distance = Distance { direction };
 
+	int focus_policy = *&HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:focus_obscured_windows_policy")->intValue;
+	bool permit_obscured_windows = focus_policy == 0 || (focus_policy == 2 && layers_same_monitor.HasNot(Layer::Floating | Layer::Tiled));
+
 	// TODO: Don't assume that source window is on focused monitor
 	// BUG:  This will only find windows on the immediately neighbouring monitor, it won't find any on
 	// the neighbour's neighbour if the immediate neighbour happens to be empty
-	CMonitor* other_monitor = considerOtherMonitors ? g_pCompositor->getMonitorInDirection(directionToChar(direction))
-													: nullptr;
+	CMonitor* other_monitor = layers_other_monitors.HasAny(Layer::Floating | Layer::Tiled)
+								? g_pCompositor->getMonitorInDirection(directionToChar(direction))
+								: nullptr;
 
 	auto isCandidate = [=, mon = source->m_iMonitorID](CWindow* w) {
+		const auto window_layer = w->m_bIsFloating ? Layer::Floating : Layer::Tiled;
+		const auto monitor_flags = w->m_iMonitorID == mon ? layers_same_monitor : layers_other_monitors;
+
 		return (w->m_iMonitorID == mon || (other_monitor && w->m_iMonitorID == other_monitor->ID))
-			&& ((considerFloating && w->m_bIsFloating) || (considerTiled && !w->m_bIsFloating) || (w->m_iMonitorID != mon))
+			&& (monitor_flags.Has(window_layer))
 			&& w->m_bIsMapped
 			&& w->m_iX11Type != 2
 			&& !w->m_bNoFocus
@@ -1091,7 +1100,7 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, bool co
 		auto w = pw.get();
 		if(w != source && isCandidate(w)) {
 			auto dist = Distance { direction, current_surface_box, w->getWindowMainSurfaceBox() };
-			if((dist < target_distance || (target_distance.isNotInitialised() && dist.isInDirection(direction))) && isNotObscured(w) ) {
+			if((dist < target_distance || (target_distance.isNotInitialised() && dist.isInDirection(direction))) && (permit_obscured_windows || isNotObscured(w)) ) {
 				target_window = w;
 				target_distance = dist;
 			}
@@ -1101,12 +1110,11 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, bool co
 	hy3_log(LOG, "getWindowInDirection: closest window to {} is {}", source, target_window);
 
 	// If the closest window is on a different monitor and the nearest edge has the same position
-	// as the last focused window on that monitor's workspace then choose the last focused window instead
+	// as the last focused window on that monitor's workspace then choose the last focused window instead; this
+	// allows seamless back-and-forth by direction keys
 	if(target_window && other_monitor && target_window->m_iMonitorID == other_monitor->ID) {
-		auto new_workspace = g_pCompositor->getWorkspaceByID(other_monitor->activeWorkspace);
-		if(new_workspace) {
-			auto last_focused = new_workspace->getLastFocusedWindow();
-			if(last_focused) {
+		if (auto new_workspace = g_pCompositor->getWorkspaceByID(other_monitor->activeWorkspace)) {
+			if (auto last_focused = new_workspace->getLastFocusedWindow()) {
 				auto target_bounds = CBox(target_window->m_vRealPosition.vec(), target_window->m_vRealSize.vec());
 				auto last_focused_bounds = CBox(last_focused->m_vRealPosition.vec(), last_focused->m_vRealSize.vec());
 				if((direction == ShiftDirection::Left && target_bounds.x + target_bounds.w == last_focused_bounds.x + last_focused_bounds.w)
@@ -1119,7 +1127,6 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, bool co
 		}
 	}
 
-
 	return target_window;
 }
 
@@ -1128,19 +1135,17 @@ void Hy3Layout::shiftFocusToMonitor(ShiftDirection direction) {
 	if(target_monitor) this->focusMonitor(target_monitor);
 }
 
-void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible) {
+void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible, BitFlag<Layer> eligible_layers) {
 	Hy3Node    *candidate_node   = nullptr;
 	CWindow    *closest_window   = nullptr;
 	Hy3Node    *source_node      = nullptr;
 	CWindow    *source_window    = g_pCompositor->m_pLastWindow;
 	CWorkspace *source_workspace = g_pCompositor->getWorkspaceByID(workspace);
 
-	if(source_window == nullptr) {
+	if(source_window == nullptr || (source_workspace && source_workspace->m_bHasFullscreenWindow)) {
 		shiftFocusToMonitor(direction);
 		return;
 	}
-
-	if(source_workspace == nullptr) return;
 
 	hy3_log(LOG,
 		"shiftFocus: Source: {} ({}), workspace: {}, direction: {}, visible: {}",
@@ -1151,24 +1156,35 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 		visible
 	);
 
+	// If no eligible_layers specified then choose the same layer as the source window
+	if(eligible_layers == Layer::None) eligible_layers = source_window->m_bIsFloating ? Layer::Floating : Layer::Tiled;
+
+	int focus_policy = *&HyprlandAPI::getConfigValue(PHANDLE, "plugin:hy3:focus_obscured_windows_policy")->intValue;
+	bool skip_obscured = focus_policy == 1 || (focus_policy == 2 && eligible_layers.Has(Layer::Floating | Layer::Tiled));
+
 	// Determine the starting point for looking for a tiled node - it's either the
 	// workspace's focused node or the floating window's focus entry point (which may be null)
-	source_node = source_window->m_bIsFloating ? getFocusOverride(source_window, direction)
-											   : getWorkspaceFocusedNode(workspace);
+	if (eligible_layers.Has(Layer::Tiled)) {
+		source_node = source_window->m_bIsFloating ? getFocusOverride(source_window, direction)
+											       : getWorkspaceFocusedNode(workspace);
 
-	// Get the closest node to the starting point
-	if(source_node) {
-		candidate_node = this->shiftOrGetFocus(*source_node, direction, false, false, visible);
-		while(candidate_node && !isNotObscured(candidate_node)) {
-			candidate_node = this->shiftOrGetFocus(*candidate_node, direction, false, false, visible);
+		if(source_node) {
+			candidate_node = this->shiftOrGetFocus(*source_node, direction, false, false, visible);
+			while(candidate_node && skip_obscured && isObscured(candidate_node)) {
+				candidate_node = this->shiftOrGetFocus(*candidate_node, direction, false, false, visible);
+			}
 		}
 	}
 
-	bool select_tiled_windows = source_window->m_bIsFloating && !candidate_node;
+	BitFlag<Layer> this_monitor = eligible_layers & Layer::Floating;
+	if(source_window->m_bIsFloating && !candidate_node) this_monitor |= (eligible_layers & Layer::Tiled);
 
-	// Find the closest window in the right direction.  Only consider tiled windows or other monitors
-	// if `shiftOrGetFocus` didn't provide a candidate.
-	closest_window = getWindowInDirection(source_window, direction, true, select_tiled_windows, !candidate_node);
+	BitFlag<Layer> other_monitors;
+	if(!candidate_node) other_monitors |= eligible_layers;
+
+	// Find the closest window in the right direction.  Consider other monitors
+	// if we don't have a tiled candidate
+	closest_window = getWindowInDirection(source_window, direction, this_monitor, other_monitors);
 
 	// If there's a window in the right direction then choose between that window and the tiled candidate.
 	bool focus_closest_window = false;
@@ -1189,8 +1205,7 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 		}
 	}
 
-	auto new_monitor_id = source_window->m_iMonitorID;
-
+	std::optional<uint64_t> new_monitor_id;
 	if(focus_closest_window) {
 		new_monitor_id = closest_window->m_iMonitorID;
 		setFocusOverride(closest_window, direction, source_node);
@@ -1198,6 +1213,8 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 	} else if(candidate_node) {
 		if(candidate_node->data.type == Hy3NodeType::Window) {
 			new_monitor_id = candidate_node->data.as_window->m_iMonitorID;
+		} else if(auto *workspace = g_pCompositor->getWorkspaceByID(candidate_node->getRoot()->workspace_id)) {
+			new_monitor_id = workspace->m_iMonitorID;
 		}
 		candidate_node->focusWindow();
 		candidate_node->getRoot()->recalcSizePosRecursive();
@@ -1205,8 +1222,8 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 		shiftFocusToMonitor(direction);
 	}
 
-	if(new_monitor_id != source_window->m_iMonitorID) {
-		if(auto *monitor = g_pCompositor->getMonitorFromID(new_monitor_id)) {
+	if(new_monitor_id.has_value()) {
+		if(auto *monitor = g_pCompositor->getMonitorFromID(new_monitor_id.value())) {
 			g_pCompositor->setActiveMonitor(monitor);
 		}
 	}

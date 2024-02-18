@@ -4,6 +4,7 @@
 
 #include <hyprland/src/layout/IHyprLayout.hpp>
 #include <map>
+#include "BitFlag.hpp"
 
 class Hy3Layout;
 
@@ -27,6 +28,20 @@ enum class SearchDirection {
 };
 
 enum class Axis { None, Horizontal, Vertical };
+
+enum class Layer {
+	None     = 0,
+	Tiled    = 1 << 0,
+	Floating = 1 << 1
+};
+
+inline Layer operator| (Layer a, Layer b) {
+	return static_cast<Layer>((int)a | (int)b);
+}
+
+inline Layer operator& (Layer a, Layer b) {
+	return static_cast<Layer>((int)a & (int)b);
+}
 
 #include "Hy3Node.hpp"
 #include "TabGroup.hpp"
@@ -125,7 +140,7 @@ public:
 	void changeGroupEphemeralityOn(Hy3Node&, bool ephemeral);
 	void shiftNode(Hy3Node&, ShiftDirection, bool once, bool visible);
 	void shiftWindow(int workspace, ShiftDirection, bool once, bool visible);
-	void shiftFocus(int workspace, ShiftDirection, bool visible);
+	void shiftFocus(int workspace, ShiftDirection, bool visible, BitFlag<Layer> = Layer::None);
 	void moveNodeToWorkspace(int origin, std::string wsname, bool follow);
 	void changeFocus(int workspace, FocusShift);
 	void focusTab(int workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
