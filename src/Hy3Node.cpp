@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sstream>
 
 #include <hyprland/src/Compositor.hpp>
@@ -861,8 +862,8 @@ int directionToIteratorIncrement(ShiftDirection direction) {
 	}
 }
 
-CBox Hy3Node::getMainSurfaceBox() {
-	return { this->position, this->size };
+Vector2D Hy3Node::middle() {
+	return this->position + this->size / 2.f;
 }
 
 void Hy3Node::resize(ShiftDirection direction, double delta, bool no_animation) {

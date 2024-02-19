@@ -1068,8 +1068,8 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag
 	if(layers_other_monitors == Layer::None && layers_same_monitor == Layer::None) return nullptr;
 
 	CWindow *target_window = nullptr;
-	const auto current_surface_box = source->getWindowMainSurfaceBox();
-	auto target_distance = Distance { direction };
+	const auto source_middle = source->middle();
+	std::optional<Distance> target_distance;
 
 	const auto static focus_policy = ConfigValue<Hyprlang::INT>("plugin:hy3:focus_obscured_windows_policy");
 	bool permit_obscured_windows = *focus_policy == 0 || (*focus_policy == 2 && layers_same_monitor.HasNot(Layer::Floating | Layer::Tiled));
@@ -1097,8 +1097,8 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag
 	for(auto &pw: g_pCompositor->m_vWindows) {
 		auto w = pw.get();
 		if(w != source && isCandidate(w)) {
-			auto dist = Distance { direction, current_surface_box, w->getWindowMainSurfaceBox() };
-			if((dist < target_distance || (target_distance.isNotInitialised() && dist.isInDirection(direction))) && (permit_obscured_windows || isNotObscured(w)) ) {
+			auto dist = Distance { direction, source_middle, w->middle() };
+			if((target_distance.has_value() ? dist < target_distance.value() : dist.isInDirection(direction)) && (permit_obscured_windows || isNotObscured(w)) ) {
 				target_window = w;
 				target_distance = dist;
 			}
@@ -1191,9 +1191,9 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 			// If the closest window is tiled then focus the tiled node which was obtained from `shiftOrGetFocus`,
 			// otherwise focus whichever is closer
 			if(closest_window->m_bIsFloating) {
-				const auto source_box = source_window->getWindowMainSurfaceBox();
-				Distance distanceToClosestWindow(direction, source_box, closest_window->getWindowMainSurfaceBox());
-				Distance distanceToTiledNode(direction, source_box, candidate_node->getMainSurfaceBox());
+				Distance distanceToClosestWindow(direction, source_window->middle(), closest_window->middle());
+				Distance distanceToTiledNode(direction, source_window->middle(), candidate_node->middle());
+
 				if(distanceToClosestWindow < distanceToTiledNode) {
 					focus_closest_window = true;
 				}
@@ -1220,7 +1220,7 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 		shiftFocusToMonitor(direction);
 	}
 
-	if(new_monitor_id.has_value()) {
+	if(new_monitor_id && new_monitor_id.value() != source_window->m_iMonitorID) {
 		if(auto *monitor = g_pCompositor->getMonitorFromID(new_monitor_id.value())) {
 			g_pCompositor->setActiveMonitor(monitor);
 		}

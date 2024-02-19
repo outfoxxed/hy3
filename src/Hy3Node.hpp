@@ -98,6 +98,7 @@ struct Hy3Node {
 	CWindow* bringToTop();
 	void markFocused();
 	void raiseToTop();
+	Vector2D middle();
 	Hy3Node* getFocusedNode(bool ignore_group_focus = false, bool stop_at_expanded = false);
 	Hy3Node* findNeighbor(ShiftDirection);
 	Hy3Node* getImmediateSibling(ShiftDirection);
@@ -105,7 +106,6 @@ struct Hy3Node {
 	void resize(ShiftDirection, double, bool no_animation = false);
 	bool isIndirectlyFocused();
 	Hy3Node& getExpandActor();
-	CBox getMainSurfaceBox();
 
 	void recalcSizePosRecursive(bool no_animation = false);
 	void updateTabBar(bool no_animation = false);
@@ -136,33 +136,32 @@ struct Hy3Node {
 };
 
 struct Distance {
-	bool is_forward;
-	double primary_axis = -1;
-	double secondary_axis = -1;
-	bool operator< (Distance other) {
-		return isInitialised()
-			&& other.isInitialised()
-			&& is_forward == other.is_forward
-			&& (primary_axis < other.primary_axis || (primary_axis == other.primary_axis && secondary_axis < other.secondary_axis));
-	}
-	bool isInitialised() { return primary_axis != -1; }
-	bool isNotInitialised() { return primary_axis == -1; }
-	bool isSameDirection(Distance other) {
-		return other.primary_axis != 0 && other.is_forward == is_forward;
-	}
-	bool isInDirection(ShiftDirection direction) {
-		bool direction_is_forward = getSearchDirection(direction) == SearchDirection::Forwards;
-		return is_forward == direction_is_forward;
-	}
-	Distance(ShiftDirection direction) {
-		is_forward = getSearchDirection(direction) == SearchDirection::Forwards;
-	}
-	Distance(ShiftDirection direction, CBox from, CBox to) {
-		auto middle_from = from.middle(), middle_to = to.middle();
-		auto primary_dist = getAxis(direction) == Axis::Horizontal ? middle_from.x - middle_to.x : middle_from.y - middle_to.y;
+	double primary_axis;
+	double secondary_axis;
 
-		is_forward = std::signbit(primary_dist);
-		primary_axis = abs(primary_dist);
-		secondary_axis  = abs(getAxis(direction) == Axis::Horizontal  ? middle_from.y - middle_to.y : middle_from.x - middle_to.x);
+	Distance() = default;
+
+	Distance(ShiftDirection direction, Vector2D from, Vector2D to) {
+		auto dist = from - to;
+		primary_axis = getAxis(direction) == Axis::Horizontal ? dist.x : dist.y;
+		secondary_axis = getAxis(direction) == Axis::Horizontal ? dist.y : dist.x;
+	}
+
+	bool operator< (Distance other) {
+		return signbit(primary_axis) == signbit(other.primary_axis)
+			&& (abs(primary_axis) < abs(other.primary_axis) || (primary_axis == other.primary_axis && abs(secondary_axis) < abs(other.secondary_axis)));
+	}
+
+	bool operator> (Distance other) {
+		return signbit(primary_axis) == signbit(other.primary_axis)
+			&& (abs(primary_axis) > abs(other.primary_axis) || (primary_axis == other.primary_axis && abs(secondary_axis) > abs(other.secondary_axis)));
+	}
+
+	bool isSameDirection(Distance other) {
+		return signbit(primary_axis) == signbit(other.primary_axis);
+	}
+
+	bool isInDirection(ShiftDirection direction) {
+		return std::signbit(primary_axis) == (getSearchDirection(direction) == SearchDirection::Forwards);
 	}
 };
