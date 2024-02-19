@@ -1551,7 +1551,9 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 				break;
 			}
 		}
-	} else {
+	}
+
+	if (monitor == nullptr) {
 		monitor = g_pCompositor->getMonitorFromID(
 		    g_pCompositor->getWorkspaceByID(node->workspace_id)->m_iMonitorID
 		);
