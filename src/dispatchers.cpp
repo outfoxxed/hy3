@@ -130,12 +130,12 @@ void dispatch_movefocus(std::string value) {
 
 		for(auto arg: args) {
 			if(arg == "visible") visible = true;
-			else if ((layerArg = parseLayerArg(arg))) layers = layerArg.value();
+			else if ((layerArg = parseLayerArg(arg))) layers |= layerArg.value();
 		}
 
 		if(!layerArg) {
-			auto default_movefocus_layer = ConfigValue<Hyprlang::STRING>("plugin:hy3:default_movefocus_layer");
-			if((layerArg = parseLayerArg(*default_movefocus_layer))) layers = layerArg.value();
+			const static auto default_movefocus_layer = ConfigValue<Hyprlang::STRING>("plugin:hy3:default_movefocus_layer");
+			if((layerArg = parseLayerArg(*default_movefocus_layer))) layers |= layerArg.value();
 		}
 
 		g_Hy3Layout->shiftFocus(workspace, shift.value(), visible, layers);

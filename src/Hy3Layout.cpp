@@ -947,8 +947,7 @@ void shiftFloatingWindow(CWindow* window, ShiftDirection direction) {
 				g_pCompositor->moveWindowToWorkspaceSafe(window, new_workspace);
 				g_pCompositor->setActiveMonitor(new_monitor);
 
-				static auto* const allow_workspace_cycles =
-		    		&HyprlandAPI::getConfigValue(PHANDLE, "binds:allow_workspace_cycles")->intValue;
+				const static auto allow_workspace_cycles = ConfigValue<Hyprlang::INT>("binds:allow_workspace_cycles");
 				if (*allow_workspace_cycles) new_workspace->rememberPrevWorkspace(old_workspace);
 			}
 		} else {
@@ -989,7 +988,7 @@ void Hy3Layout::focusMonitor(CMonitor* monitor) {
 			for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
 				if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && w->m_iX11Type != 2
 					&& w->m_iWorkspaceID == next_window->m_iWorkspaceID && !w->m_bX11ShouldntFocus
-					&& !w->m_bNoFocus)
+					&& !w->m_sAdditionalConfigData.noFocus)
 				{
 					next_window = w.get();
 					break;
@@ -1072,8 +1071,8 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag
 	const auto current_surface_box = source->getWindowMainSurfaceBox();
 	auto target_distance = Distance { direction };
 
-	int focus_policy = *ConfigValue<Hyprlang::INT>("plugin:hy3:focus_obscured_windows_policy");
-	bool permit_obscured_windows = focus_policy == 0 || (focus_policy == 2 && layers_same_monitor.HasNot(Layer::Floating | Layer::Tiled));
+	const auto static focus_policy = ConfigValue<Hyprlang::INT>("plugin:hy3:focus_obscured_windows_policy");
+	bool permit_obscured_windows = *focus_policy == 0 || (*focus_policy == 2 && layers_same_monitor.HasNot(Layer::Floating | Layer::Tiled));
 
 	// TODO: Don't assume that source window is on focused monitor
 	// BUG:  This will only find windows on the immediately neighbouring monitor, it won't find any on
@@ -1090,7 +1089,7 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag
 			&& (monitor_flags.Has(window_layer))
 			&& w->m_bIsMapped
 			&& w->m_iX11Type != 2
-			&& !w->m_bNoFocus
+			&& !w->m_sAdditionalConfigData.noFocus
 			&& !w->isHidden()
 			&& !w->m_bX11ShouldntFocus;
 	};
@@ -1158,8 +1157,8 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 	// If no eligible_layers specified then choose the same layer as the source window
 	if(eligible_layers == Layer::None) eligible_layers = source_window->m_bIsFloating ? Layer::Floating : Layer::Tiled;
 
-	int focus_policy = *ConfigValue<Hyprlang::INT>("plugin:hy3:focus_obscured_windows_policy");
-	bool skip_obscured = focus_policy == 1 || (focus_policy == 2 && eligible_layers.Has(Layer::Floating | Layer::Tiled));
+	const auto static focus_policy = ConfigValue<Hyprlang::INT>("plugin:hy3:focus_obscured_windows_policy");
+	bool skip_obscured = *focus_policy == 1 || (*focus_policy == 2 && eligible_layers.Has(Layer::Floating | Layer::Tiled));
 
 	// Determine the starting point for looking for a tiled node - it's either the
 	// workspace's focused node or the floating window's focus entry point (which may be null)
