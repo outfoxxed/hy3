@@ -10,7 +10,7 @@
     packages = hyprlandSystems (system: pkgs: let
       hyprlandPackage = hyprland.packages.${system}.hyprland;
     in rec {
-      hy3 = hyprlandPackage.stdenv.mkDerivation {
+      hy3 = (pkgs.keepDebugInfo hyprlandPackage.stdenv).mkDerivation {
         pname = "hy3";
         version = "0.1";
         src = ./.;
