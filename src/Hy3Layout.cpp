@@ -543,13 +543,21 @@ void Hy3Layout::fullscreenRequestForWindow(
 			// Copy of vaxry's massive hack
 
 			// clang-format off
-			static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
-			static const auto gaps_out = ConfigValue<Hyprlang::INT>("general:gaps_out");
+			static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+			static const auto gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
 			// clang-format on
 
-			int outer_gaps = -(*gaps_in - *gaps_out);
-			auto gap_pos_offset = Vector2D(outer_gaps, outer_gaps);
-			auto gap_size_offset = Vector2D(outer_gaps * 2, outer_gaps * 2);
+			// clang-format off
+			auto gap_pos_offset = Vector2D(
+			    -(gaps_in->left - gaps_out->left),
+			    -(gaps_in->top - gaps_out->top)
+			);
+			// clang-format on
+
+			auto gap_size_offset = Vector2D(
+			    -(gaps_in->left - gaps_out->left) + -(gaps_in->right - gaps_out->right),
+			    -(gaps_in->top - gaps_out->top) + -(gaps_in->bottom - gaps_out->bottom)
+			);
 
 			Hy3Node fakeNode = {
 			    .data = window,
@@ -1049,8 +1057,8 @@ bottom:
 
 Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	// clang-format off
-	static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
-	static const auto gaps_out = ConfigValue<Hyprlang::INT>("general:gaps_out");
+	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	static const auto gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 	// clang-format on
@@ -1058,9 +1066,9 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	auto inset = *tab_bar_height + *tab_bar_padding;
 
 	if (node.parent == nullptr) {
-		inset += *gaps_out;
+		inset += gaps_out->left;
 	} else {
-		inset += *gaps_in;
+		inset += gaps_in->left;
 	}
 
 	if (node.data.type == Hy3NodeType::Group) {
@@ -1468,7 +1476,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	}
 
 	// clang-format off
-	static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
+	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 	static const auto single_window_no_gaps = ConfigValue<Hyprlang::INT>("plugin:hy3:no_gaps_when_only");
 	// clang-format on
 
@@ -1517,9 +1525,10 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		auto calcPos = window->m_vPosition;
 		auto calcSize = window->m_vSize;
 
-		auto gaps_offset_topleft = Vector2D(*gaps_in, *gaps_in) + node->gap_topleft_offset;
-		auto gaps_offset_bottomright = Vector2D(*gaps_in * 2, *gaps_in * 2)
-		                             + node->gap_bottomright_offset + node->gap_topleft_offset;
+		auto gaps_offset_topleft = Vector2D(gaps_in->left, gaps_in->top) + node->gap_topleft_offset;
+		auto gaps_offset_bottomright =
+		    Vector2D(gaps_in->left + gaps_in->right, gaps_in->top + gaps_in->bottom)
+		    + node->gap_bottomright_offset + node->gap_topleft_offset;
 
 		calcPos = calcPos + gaps_offset_topleft;
 		calcSize = calcSize - gaps_offset_bottomright;

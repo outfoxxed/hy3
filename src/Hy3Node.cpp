@@ -270,11 +270,23 @@ Hy3Node& Hy3Node::getExpandActor() {
 
 void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	// clang-format off
-	static const auto gaps_in = ConfigValue<Hyprlang::INT>("general:gaps_in");
-	static const auto gaps_out = ConfigValue<Hyprlang::INT>("general:gaps_out");
+	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	static const auto gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
 	static const auto group_inset = ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
+	// clang-format on
+
+	// clang-format off
+	auto gap_topleft_offset = Vector2D(
+	    -(gaps_in->left - gaps_out->left),
+	    -(gaps_in->top - gaps_out->top)
+	);
+
+	auto gap_bottomright_offset = Vector2D(
+	    -(gaps_in->right - gaps_out->right),
+	    -(gaps_in->bottom - gaps_out->bottom)
+	);
 	// clang-format on
 
 	if (this->data.type == Hy3NodeType::Window && this->data.as_window->m_bIsFullscreen) {
@@ -286,11 +298,6 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 			this->data.as_window->m_vRealSize = monitor->vecSize;
 			return;
 		}
-
-		int outer_gaps = -(*gaps_in - *gaps_out);
-
-		auto gap_topleft_offset = Vector2D(outer_gaps, outer_gaps);
-		auto gap_bottomright_offset = Vector2D(outer_gaps, outer_gaps);
 
 		Hy3Node fake_node = {
 		    .data = this->data.as_window,
@@ -305,15 +312,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		return;
 	}
 
-	int outer_gaps = 0;
-	Vector2D gap_topleft_offset;
-	Vector2D gap_bottomright_offset;
-	if (this->parent == nullptr) {
-		outer_gaps = -(*gaps_in - *gaps_out);
-
-		gap_topleft_offset = Vector2D(outer_gaps, outer_gaps);
-		gap_bottomright_offset = Vector2D(outer_gaps, outer_gaps);
-	} else {
+	if (this->parent != nullptr) {
 		gap_topleft_offset = this->gap_topleft_offset;
 		gap_bottomright_offset = this->gap_bottomright_offset;
 	}
