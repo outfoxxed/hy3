@@ -506,7 +506,7 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 		g_pXWaylandManager->setWindowSize(window, required_size);
 	} else if (auto* node = this->getNodeFromWindow(window);node != nullptr) {
 		executeResizeOperation(delta, corner, &node->getExpandActor(), g_pCompositor->getMonitorFromID(window->m_iMonitorID));
-	};
+	}
 }
 
 void Hy3Layout::fullscreenRequestForWindow(
@@ -2056,8 +2056,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 				auto& group_data = target_group->data.as_group;
 
 				if (group_data.children.empty()) {
+					// in theory this would never happen
 					return nullptr;
-				} // in theory this would never happen
+				}
 
 				bool shift_after = false;
 
