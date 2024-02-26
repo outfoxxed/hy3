@@ -94,6 +94,20 @@ struct FocusOverride {
 	Hy3Node *up = nullptr;
 	Hy3Node *right = nullptr;
 	Hy3Node *down = nullptr;
+
+	Hy3Node **forDirection(ShiftDirection direction) {
+		switch(direction) {
+			case ShiftDirection::Left: return &left;
+			case ShiftDirection::Up: return &up;
+			case ShiftDirection::Right: return &right;
+			case ShiftDirection::Down: return &down;
+			default: UNREACHABLE();
+		}
+	}
+
+	bool isEmpty() {
+		return !(left || right || up || down);
+	}
 };
 
 

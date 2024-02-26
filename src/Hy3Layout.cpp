@@ -1074,24 +1074,27 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag
 	const auto static focus_policy = ConfigValue<Hyprlang::INT>("plugin:hy3:focus_obscured_windows_policy");
 	bool permit_obscured_windows = *focus_policy == 0 || (*focus_policy == 2 && layers_same_monitor.HasNot(Layer::Floating | Layer::Tiled));
 
-	// TODO: Don't assume that source window is on focused monitor
-	// BUG:  This will only find windows on the immediately neighbouring monitor, it won't find any on
-	// the neighbour's neighbour if the immediate neighbour happens to be empty
-	CMonitor* other_monitor = layers_other_monitors.HasAny(Layer::Floating | Layer::Tiled)
-								? g_pCompositor->getMonitorInDirection(directionToChar(direction))
-								: nullptr;
+	const auto source_monitor = g_pCompositor->getMonitorFromID(source->m_iMonitorID);
+	const auto next_monitor = layers_other_monitors.HasAny(Layer::Floating | Layer::Tiled)
+							? g_pCompositor->getMonitorInDirection(source_monitor, directionToChar(direction))
+							: nullptr;
+
+	const auto next_workspace = next_monitor
+							  ? next_monitor->specialWorkspaceID ? next_monitor->specialWorkspaceID
+							 									 : next_monitor->activeWorkspace
+							  : WORKSPACE_INVALID;
 
 	auto isCandidate = [=, mon = source->m_iMonitorID](CWindow* w) {
 		const auto window_layer = w->m_bIsFloating ? Layer::Floating : Layer::Tiled;
 		const auto monitor_flags = w->m_iMonitorID == mon ? layers_same_monitor : layers_other_monitors;
 
-		return (w->m_iMonitorID == mon || (other_monitor && w->m_iMonitorID == other_monitor->ID))
-			&& (monitor_flags.Has(window_layer))
+		return (monitor_flags.Has(window_layer))
 			&& w->m_bIsMapped
 			&& w->m_iX11Type != 2
 			&& !w->m_sAdditionalConfigData.noFocus
 			&& !w->isHidden()
-			&& !w->m_bX11ShouldntFocus;
+			&& !w->m_bX11ShouldntFocus
+			&& (w->m_bPinned || w->m_iWorkspaceID == source->m_iWorkspaceID || w->m_iWorkspaceID == next_workspace);
 	};
 
 	for(auto &pw: g_pCompositor->m_vWindows) {
@@ -1110,8 +1113,8 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag
 	// If the closest window is on a different monitor and the nearest edge has the same position
 	// as the last focused window on that monitor's workspace then choose the last focused window instead; this
 	// allows seamless back-and-forth by direction keys
-	if(target_window && other_monitor && target_window->m_iMonitorID == other_monitor->ID) {
-		if (auto new_workspace = g_pCompositor->getWorkspaceByID(other_monitor->activeWorkspace)) {
+	if(target_window && target_window->m_iWorkspaceID == next_workspace) {
+		if (auto new_workspace = g_pCompositor->getWorkspaceByID(next_workspace)) {
 			if (auto last_focused = new_workspace->getLastFocusedWindow()) {
 				auto target_bounds = CBox(target_window->m_vRealPosition.vec(), target_window->m_vRealSize.vec());
 				auto last_focused_bounds = CBox(last_focused->m_vRealPosition.vec(), last_focused->m_vRealSize.vec());
@@ -1229,28 +1232,14 @@ void Hy3Layout::shiftFocus(int workspace, ShiftDirection direction, bool visible
 
 Hy3Node* Hy3Layout::getFocusOverride(CWindow* src, ShiftDirection direction) {
 	if(auto intercept = this->m_focusIntercepts.find(src); intercept != this->m_focusIntercepts.end()) {
-		Hy3Node** accessor;
-
-		switch (direction)
-		{
-			case ShiftDirection::Left: accessor = &intercept->second.left; break;
-			case ShiftDirection::Up: accessor = &intercept->second.up; break;
-			case ShiftDirection::Right: accessor = &intercept->second.right; break;
-			case ShiftDirection::Down: accessor = &intercept->second.down; break;
-			default: hy3_log(WARN, "Unknown ShiftDirection: {}", (int) direction); return nullptr;
-		}
+		Hy3Node** accessor = intercept->second.forDirection(direction);
 
 		if(auto override = *accessor) {
 			// If the root isn't valid or is on a different workspsace then update the intercept data
 			if(override->workspace_id != src->m_iWorkspaceID || !std::ranges::contains(this->nodes, *override)) {
-				override = nullptr;
 				*accessor = nullptr;
 				// If there are no remaining overrides then discard the intercept
-				if(intercept->second.left == nullptr
-					&& intercept->second.up == nullptr
-					&& intercept->second.right == nullptr
-					&& intercept->second.down == nullptr
-				) {
+				if(intercept->second.isEmpty()) {
 					this->m_focusIntercepts.erase(intercept);
 				}
 			}
@@ -1264,22 +1253,10 @@ Hy3Node* Hy3Layout::getFocusOverride(CWindow* src, ShiftDirection direction) {
 
 void Hy3Layout::setFocusOverride(CWindow* src, ShiftDirection direction, Hy3Node* dest) {
 	if(auto intercept = this->m_focusIntercepts.find(src);intercept != this->m_focusIntercepts.end()) {
-		switch(direction) {
-			case ShiftDirection::Left: intercept->second.left = dest; break;
-			case ShiftDirection::Up: intercept->second.up = dest; break;
-			case ShiftDirection::Right: intercept->second.right = dest; break;
-			case ShiftDirection::Down: intercept->second.down = dest; break;
-			default: hy3_log(WARN, "Unknown ShiftDirection: {}", (int) direction);
-		}
+		*intercept->second.forDirection(direction) = dest;
 	} else {
 		FocusOverride override;
-		switch(direction) {
-			case ShiftDirection::Left: override.left = dest; break;
-			case ShiftDirection::Up: override.up = dest; break;
-			case ShiftDirection::Right: override.right = dest; break;
-			case ShiftDirection::Down: override.down = dest; break;
-			default: hy3_log(WARN, "Unknown ShiftDirection: {}", (int) direction);
-		}
+		*override.forDirection(direction) = dest;
 		this->m_focusIntercepts.insert({ src, override });
 	}
 }
