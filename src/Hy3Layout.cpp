@@ -1113,15 +1113,16 @@ CWindow* getWindowInDirection(CWindow* source, ShiftDirection direction, BitFlag
 	// If the closest window is on a different monitor and the nearest edge has the same position
 	// as the last focused window on that monitor's workspace then choose the last focused window instead; this
 	// allows seamless back-and-forth by direction keys
-	if(target_window && target_window->m_iWorkspaceID == next_workspace) {
+	if(target_window && target_window->m_iMonitorID != source->m_iMonitorID) {
 		if (auto new_workspace = g_pCompositor->getWorkspaceByID(next_workspace)) {
 			if (auto last_focused = new_workspace->getLastFocusedWindow()) {
 				auto target_bounds = CBox(target_window->m_vRealPosition.vec(), target_window->m_vRealSize.vec());
 				auto last_focused_bounds = CBox(last_focused->m_vRealPosition.vec(), last_focused->m_vRealSize.vec());
-				if((direction == ShiftDirection::Left && target_bounds.x + target_bounds.w == last_focused_bounds.x + last_focused_bounds.w)
-					|| (direction == ShiftDirection::Right && target_bounds.x == last_focused_bounds.x)
-					|| (direction == ShiftDirection::Up && target_bounds.y + target_bounds.h == last_focused_bounds.y + last_focused_bounds.h)
-					|| (direction == ShiftDirection::Down && target_bounds.y == last_focused_bounds.y)) {
+
+				if((direction == ShiftDirection::Left && STICKS(target_bounds.x + target_bounds.w, last_focused_bounds.x + last_focused_bounds.w))
+					|| (direction == ShiftDirection::Right && STICKS(target_bounds.x, last_focused_bounds.x))
+					|| (direction == ShiftDirection::Up && STICKS(target_bounds.y + target_bounds.h, last_focused_bounds.y + last_focused_bounds.h))
+					|| (direction == ShiftDirection::Down && STICKS(target_bounds.y, last_focused_bounds.y))) {
 						target_window = last_focused;
 				}
 			}
