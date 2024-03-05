@@ -1,4 +1,16 @@
-build/
-compile_commands.json
-.vscode/
-*.log
+# build
+/result
+/build/
+/compile_commands.json
+
+# clangd
+/.cache
+
+# direnv
+/.envrc
+/.direnv/
+
+# vscode
+/.vscode/
+
+/*.log
