@@ -1,6 +1,6 @@
 # Changelog
 
-## Upcoming
+## hl0.36.0 and before
 
 - Implement `resizeactivewindow` for floating windows
 - Fully implement `resizeactivewindow` for tiled windows
