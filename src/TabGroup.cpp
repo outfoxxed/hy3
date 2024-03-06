@@ -53,11 +53,6 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	    AVARDAMAGE_NONE
 	);
 
-	// !!! Can be removed after hyprland#4992
-	this->offset = -1.0f;
-	this->width = -1.0f;
-	this->vertical_pos = 1.0f;
-
 	this->focused.registerVar();
 	this->urgent.registerVar();
 	this->offset.registerVar();
@@ -282,9 +277,6 @@ Hy3TabBar::Hy3TabBar() {
 	    nullptr,
 	    AVARDAMAGE_NONE
 	);
-
-	// !!! Can be removed after hyprland#4992
-	this->fade_opacity = 1.0f;
 
 	this->fade_opacity.registerVar();
 	this->fade_opacity.setUpdateCallback([this](void*) { this->dirty = true; });
