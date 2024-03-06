@@ -9,7 +9,8 @@
 int workspace_for_action(bool allow_fullscreen = false) {
 	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return -1;
 
-	int workspace_id = g_pCompositor->m_pLastMonitor->activeWorkspace;
+	int workspace_id = g_pCompositor->m_pLastMonitor->specialWorkspaceID;
+	if (workspace_id == 0) workspace_id = g_pCompositor->m_pLastMonitor->activeWorkspace;
 
 	if (workspace_id == -1) return -1;
 	auto* workspace = g_pCompositor->getWorkspaceByID(workspace_id);
