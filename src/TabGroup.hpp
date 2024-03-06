@@ -16,12 +16,12 @@ struct Hy3TabBarEntry {
 	std::string window_title;
 	bool destroying = false;
 	CTexture texture;
-	CAnimatedVariable focused;
-	CAnimatedVariable urgent;
-	CAnimatedVariable offset;       // 0.0-1.0 of total bar
-	CAnimatedVariable width;        // 0.0-1.0 of total bar
-	CAnimatedVariable vertical_pos; // 0.0-1.0, user specified direction
-	CAnimatedVariable fade_opacity; // 0.0-1.0
+	CAnimatedVariable<float> focused;
+	CAnimatedVariable<float> urgent;
+	CAnimatedVariable<float> offset;       // 0.0-1.0 of total bar
+	CAnimatedVariable<float> width;        // 0.0-1.0 of total bar
+	CAnimatedVariable<float> vertical_pos; // 0.0-1.0, user specified direction
+	CAnimatedVariable<float> fade_opacity; // 0.0-1.0
 	Hy3TabBar& tab_bar;
 	Hy3Node& node; // only used for comparioson. do not deref.
 
@@ -62,7 +62,7 @@ public:
 	bool destroy = false;
 	bool dirty = true;
 	bool damaged = true;
-	CAnimatedVariable fade_opacity;
+	CAnimatedVariable<float> fade_opacity;
 
 	Hy3TabBar();
 	void beginDestroy();
@@ -89,8 +89,8 @@ public:
 	int workspace_id = -1;
 	bool hidden = false;
 	Hy3TabBar bar;
-	CAnimatedVariable pos;
-	CAnimatedVariable size;
+	CAnimatedVariable<Vector2D> pos;
+	CAnimatedVariable<Vector2D> size;
 
 	// initialize a group with the given node. UB if node is not a group.
 	Hy3TabGroup(Hy3Node&);

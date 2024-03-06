@@ -487,8 +487,8 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 	} else if (window->m_bIsFloating) {
 		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout
 		const auto required_size = Vector2D(
-		    std::max((window->m_vRealSize.goalv() + delta).x, 20.0),
-		    std::max((window->m_vRealSize.goalv() + delta).y, 20.0)
+		    std::max((window->m_vRealSize.goal() + delta).x, 20.0),
+		    std::max((window->m_vRealSize.goal() + delta).y, 20.0)
 		);
 		window->m_vRealSize = required_size;
 	}
@@ -530,10 +530,10 @@ void Hy3Layout::fullscreenRequestForWindow(
 
 		// save position and size if floating
 		if (window->m_bIsFloating) {
-			window->m_vLastFloatingPosition = window->m_vRealPosition.goalv();
-			window->m_vPosition = window->m_vRealPosition.goalv();
-			window->m_vLastFloatingSize = window->m_vRealSize.goalv();
-			window->m_vSize = window->m_vRealSize.goalv();
+			window->m_vLastFloatingPosition = window->m_vRealPosition.goal();
+			window->m_vPosition = window->m_vRealPosition.goal();
+			window->m_vLastFloatingSize = window->m_vRealSize.goal();
+			window->m_vSize = window->m_vRealSize.goal();
 		}
 
 		if (fullscreen_mode == FULLSCREEN_FULL) {
@@ -573,7 +573,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 	}
 
 	g_pCompositor->updateWindowAnimatedDecorationValues(window);
-	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
+	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
 	g_pCompositor->changeWindowZOrder(window, true);
 	this->recalculateMonitor(monitor->ID);
 }
@@ -1085,14 +1085,14 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 				auto& children = node.data.as_group.children;
 				auto& tab_bar = *node.data.as_group.tab_bar;
 
-				auto size = tab_bar.size.vec();
-				auto x = pos.x - tab_bar.pos.vec().x;
+				auto size = tab_bar.size.value();
+				auto x = pos.x - tab_bar.pos.value().x;
 				auto child_iter = children.begin();
 
 				for (auto& tab: tab_bar.bar.entries) {
 					if (child_iter == children.end()) break;
 
-					if (x > tab.offset.fl() * size.x && x < (tab.offset.fl() + tab.width.fl()) * size.x) {
+					if (x > tab.offset.value() * size.x && x < (tab.offset.value() + tab.width.value()) * size.x) {
 						*focused_node = *child_iter;
 						return &node;
 					}
@@ -1316,7 +1316,7 @@ fullscreen:
 // 	goto fsupdate;
 fsupdate:
 	g_pCompositor->updateWindowAnimatedDecorationValues(window);
-	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goalv());
+	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
 	g_pCompositor->changeWindowZOrder(window, true);
 	this->recalculateMonitor(monitor->ID);
 }

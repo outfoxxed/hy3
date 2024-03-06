@@ -10,13 +10,12 @@
         "xdph": "xdph"
       },
       "locked": {
-        "lastModified": 1709080360,
-        "narHash": "sha256-oZe4k6jtO/0govmERGcbeyvE9EfTvXY5bnyIs6AsL9U=",
-        "ref": "v0.36.0",
-        "rev": "1c460e98f870676b15871fe4e5bfeb1a32a3d6d8",
-        "revCount": 4102,
-        "type": "git",
-        "url": "file:///home/admin/programming/outfoxxed/hyprland/Hyprland"
+        "lastModified": 1709339717,
+        "narHash": "sha256-VXh6tiY1+Tmaz+dgUNE5IpWaFq4wbf/iCTHclGm33vA=",
+        "owner": "hyprwm",
+        "repo": "Hyprland",
+        "rev": "b2c34404777ea0850f90f4c38f64484f03599d14",
+        "type": "github"
       },
       "original": {
         "owner": "hyprwm",
