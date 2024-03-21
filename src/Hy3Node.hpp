@@ -6,7 +6,7 @@ enum class Hy3GroupLayout;
 
 #include <list>
 
-#include <hyprland/src/Window.hpp>
+#include <hyprland/src/desktop/Window.hpp>
 
 #include "Hy3Layout.hpp"
 #include "TabGroup.hpp"
