@@ -1,6 +1,8 @@
 # Changelog
 
 ## Upcoming
+
+- Added `no_gaps_when_only = 2`
 - Fixed fullscreen not working on workspaces with only floating windows
 
 ## hl0.36.0 and before
