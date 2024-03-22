@@ -1,5 +1,8 @@
 # Changelog
 
+## Upcoming
+- Fixed fullscreen not working on workspaces with only floating windows
+
 ## hl0.36.0 and before
 
 - Implement `resizeactivewindow` for floating windows

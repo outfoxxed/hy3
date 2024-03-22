@@ -390,7 +390,7 @@ void Hy3TabBar::updateAnimations(bool warp) {
 	while (entry != this->entries.end()) {
 		if (warp) {
 			if (entry->width.goal() == 0.0) {
-				//this->entries.erase(entry++);
+				// this->entries.erase(entry++);
 				entry = std::next(entry);
 				continue;
 			}
@@ -605,8 +605,8 @@ void Hy3TabGroup::renderTabBar() {
 		Vector2D entry_pos = {
 		    (pos.x + (entry.offset.value() * size.x) + (*padding * 0.5)) * scale,
 		    scaled_pos.y
-		        + ((entry.vertical_pos.value() * (size.y + *padding) * scale) * (*enter_from_top ? -1 : 1)
-		        ),
+		        + ((entry.vertical_pos.value() * (size.y + *padding) * scale)
+		           * (*enter_from_top ? -1 : 1)),
 		};
 		Vector2D entry_size = {((entry.width.value() * size.x) - *padding) * scale, scaled_size.y};
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;

@@ -1092,7 +1092,9 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 				for (auto& tab: tab_bar.bar.entries) {
 					if (child_iter == children.end()) break;
 
-					if (x > tab.offset.value() * size.x && x < (tab.offset.value() + tab.width.value()) * size.x) {
+					if (x > tab.offset.value() * size.x
+					    && x < (tab.offset.value() + tab.width.value()) * size.x)
+					{
 						*focused_node = *child_iter;
 						return &node;
 					}
@@ -1448,7 +1450,6 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	if (node->data.type != Hy3NodeType::Window) return;
 	auto* window = node->data.as_window;
 	auto root_node = this->getWorkspaceRootGroup(window->m_iWorkspaceID);
-	if (root_node == nullptr) return;
 
 	CMonitor* monitor = nullptr;
 
@@ -1496,7 +1497,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	window->m_vSize = node->size;
 	window->m_vPosition = node->position;
 
-	auto only_node = root_node->data.as_group.children.size() == 1
+	auto only_node = root_node != nullptr && root_node->data.as_group.children.size() == 1
 	              && root_node->data.as_group.children.front()->data.type == Hy3NodeType::Window;
 
 	if (!g_pCompositor->isWorkspaceSpecial(window->m_iWorkspaceID)
