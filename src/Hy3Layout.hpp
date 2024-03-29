@@ -89,6 +89,7 @@ public:
 	virtual void replaceWindowDataWith(CWindow* from, CWindow* to);
 	virtual bool isWindowReachable(CWindow*);
 	virtual void bringWindowToTop(CWindow*);
+	virtual Vector2D predictSizeForNewWindowTiled() { return Vector2D(); }
 
 	virtual void onEnable();
 	virtual void onDisable();

@@ -11,47 +11,23 @@
 #include "globals.hpp"
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
-	this->focused.create(
-	    0.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->focused
+	    .create(0.0f, g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"), AVARDAMAGE_NONE);
 
-	this->urgent.create(
-	    0.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->urgent
+	    .create(0.0f, g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"), AVARDAMAGE_NONE);
 
-	this->offset.create(
-	    -1.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->offset
+	    .create(-1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
-	this->width.create(
-	    -1.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->width
+	    .create(-1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
-	this->vertical_pos.create(
-	    1.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsIn"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->vertical_pos
+	    .create(1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), AVARDAMAGE_NONE);
 
-	this->fade_opacity.create(
-	    0.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsIn"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->fade_opacity
+	    .create(0.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), AVARDAMAGE_NONE);
 
 	this->focused.registerVar();
 	this->urgent.registerVar();
@@ -271,12 +247,8 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 }
 
 Hy3TabBar::Hy3TabBar() {
-	this->fade_opacity.create(
-	    1.0f,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->fade_opacity
+	    .create(1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
 	this->fade_opacity.registerVar();
 	this->fade_opacity.setUpdateCallback([this](void*) { this->dirty = true; });
@@ -423,17 +395,9 @@ void Hy3TabBar::setSize(Vector2D size) {
 }
 
 Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
-	this->pos.create(
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->pos.create(g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
-	this->size.create(
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
-	    nullptr,
-	    AVARDAMAGE_NONE
-	);
+	this->size.create(g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
 	this->pos.registerVar();
 	this->size.registerVar();
