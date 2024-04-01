@@ -1476,7 +1476,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		return;
 	}
 
-	const auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(workspace);
+	const auto workspace_rules = g_pConfigManager->getWorkspaceRulesFor(workspace);
 
 	// clang-format off
 	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
@@ -1513,7 +1513,14 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	            && g_pCompositor->getWorkspaceByID(window->m_iWorkspaceID)->m_efFullscreenMode
 	                   == FULLSCREEN_FULL)))
 	{
-		window->m_sSpecialRenderData.border = workspace_rule.border.value_or(*no_gaps_when_only == 2);
+		window->m_sSpecialRenderData.border = *no_gaps_when_only == 2;
+		for (auto& workspace_rule : workspace_rules) {
+			if (workspace_rule.border.has_value()) {
+				//Hyprland src/desktop/Window.cpp, line 1107, SHA 5e8c25d498ed5cb7852ae74a876b0c138a62d59d
+				//does not break the loop, the last value gets to decide
+				window->m_sSpecialRenderData.border = workspace_rule.border.value();
+			}
+		}
 		window->m_sSpecialRenderData.rounding = false;
 		window->m_sSpecialRenderData.shadow = false;
 
