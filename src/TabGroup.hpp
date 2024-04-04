@@ -86,7 +86,7 @@ private:
 class Hy3TabGroup {
 public:
 	CWindow* target_window = nullptr;
-	int workspace_id = -1;
+	PHLWORKSPACE workspace = nullptr;
 	bool hidden = false;
 	Hy3TabBar bar;
 	CAnimatedVariable<Vector2D> pos;

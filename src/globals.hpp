@@ -2,6 +2,7 @@
 
 #include <type_traits>
 
+#include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprlang.hpp>
 

@@ -1,27 +1,26 @@
 #include <optional>
 
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
 #include "dispatchers.hpp"
 #include "globals.hpp"
 
-int workspace_for_action(bool allow_fullscreen = false) {
-	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return -1;
+PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false) {
+	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return nullptr;
 
-	int workspace_id = g_pCompositor->m_pLastMonitor->activeWorkspace;
+	auto workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
 
-	if (workspace_id == -1) return -1;
-	auto* workspace = g_pCompositor->getWorkspaceByID(workspace_id);
-	if (workspace == nullptr) return -1;
-	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return -1;
+	if (!valid(workspace)) return nullptr;
+	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
 
-	return workspace_id;
+	return workspace;
 }
 
 void dispatch_makegroup(std::string value) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	auto args = CVarList(value);
 
@@ -44,8 +43,8 @@ void dispatch_makegroup(std::string value) {
 }
 
 void dispatch_changegroup(std::string value) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	auto args = CVarList(value);
 
@@ -65,8 +64,8 @@ void dispatch_changegroup(std::string value) {
 }
 
 void dispatch_setephemeral(std::string value) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	auto args = CVarList(value);
 
@@ -84,8 +83,8 @@ std::optional<ShiftDirection> parseShiftArg(std::string arg) {
 }
 
 void dispatch_movewindow(std::string value) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	auto args = CVarList(value);
 
@@ -109,8 +108,8 @@ void dispatch_movewindow(std::string value) {
 }
 
 void dispatch_movefocus(std::string value) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	auto args = CVarList(value);
 
@@ -120,8 +119,8 @@ void dispatch_movefocus(std::string value) {
 }
 
 void dispatch_move_to_workspace(std::string value) {
-	int origin_workspace = workspace_for_action(true);
-	if (origin_workspace == -1) return;
+	auto origin_workspace = workspace_for_action(true);
+	if (!valid(origin_workspace)) return;
 
 	auto args = CVarList(value);
 
@@ -134,8 +133,8 @@ void dispatch_move_to_workspace(std::string value) {
 }
 
 void dispatch_changefocus(std::string arg) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	if (arg == "top") g_Hy3Layout->changeFocus(workspace, FocusShift::Top);
 	else if (arg == "bottom") g_Hy3Layout->changeFocus(workspace, FocusShift::Bottom);
@@ -146,8 +145,8 @@ void dispatch_changefocus(std::string arg) {
 }
 
 void dispatch_focustab(std::string value) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	auto i = 0;
 	auto args = CVarList(value);
@@ -186,8 +185,8 @@ void dispatch_focustab(std::string value) {
 }
 
 void dispatch_setswallow(std::string arg) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	SetSwallowOption option;
 	if (arg == "true") {
@@ -202,15 +201,15 @@ void dispatch_setswallow(std::string arg) {
 }
 
 void dispatch_killactive(std::string value) {
-	int workspace = workspace_for_action(true);
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action(true);
+	if (!valid(workspace)) return;
 
 	g_Hy3Layout->killFocusedNode(workspace);
 }
 
 void dispatch_expand(std::string value) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
+	if (!valid(workspace)) return;
 
 	auto args = CVarList(value);
 
@@ -234,11 +233,10 @@ void dispatch_expand(std::string value) {
 }
 
 void dispatch_debug(std::string arg) {
-	int workspace = workspace_for_action();
-	if (workspace == -1) return;
+	auto workspace = workspace_for_action();
 
 	auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace);
-	if (workspace == -1) {
+	if (!valid(workspace)) {
 		hy3_log(LOG, "DEBUG NODES: no nodes on workspace");
 	} else {
 		hy3_log(LOG, "DEBUG NODES\n{}", root->debugNode().c_str());

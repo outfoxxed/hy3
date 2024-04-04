@@ -87,7 +87,7 @@ struct Hy3Node {
 	Vector2D gap_topleft_offset;
 	Vector2D gap_bottomright_offset;
 	float size_ratio = 1.0;
-	int workspace_id = -1;
+	PHLWORKSPACE workspace = nullptr;
 	bool hidden = false;
 	Hy3Layout* layout = nullptr;
 

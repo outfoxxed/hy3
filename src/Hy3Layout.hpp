@@ -1,5 +1,6 @@
 #pragma once
 
+#include <hyprland/src/desktop/DesktopTypes.hpp>
 class Hy3Layout;
 
 enum class GroupEphemeralityOption {
@@ -95,13 +96,13 @@ public:
 	virtual void onDisable();
 
 	void insertNode(Hy3Node& node);
-	void makeGroupOnWorkspace(int workspace, Hy3GroupLayout, GroupEphemeralityOption);
-	void makeOppositeGroupOnWorkspace(int workspace, GroupEphemeralityOption);
-	void changeGroupOnWorkspace(int workspace, Hy3GroupLayout);
-	void untabGroupOnWorkspace(int workspace);
-	void toggleTabGroupOnWorkspace(int workspace);
-	void changeGroupToOppositeOnWorkspace(int workspace);
-	void changeGroupEphemeralityOnWorkspace(int workspace, bool ephemeral);
+	void makeGroupOnWorkspace(const PHLWORKSPACE& workspace, Hy3GroupLayout, GroupEphemeralityOption);
+	void makeOppositeGroupOnWorkspace(const PHLWORKSPACE& workspace, GroupEphemeralityOption);
+	void changeGroupOnWorkspace(const PHLWORKSPACE& workspace, Hy3GroupLayout);
+	void untabGroupOnWorkspace(const PHLWORKSPACE& workspace);
+	void toggleTabGroupOnWorkspace(const PHLWORKSPACE& workspace);
+	void changeGroupToOppositeOnWorkspace(const PHLWORKSPACE& workspace);
+	void changeGroupEphemeralityOnWorkspace(const PHLWORKSPACE& workspace, bool ephemeral);
 	void makeGroupOn(Hy3Node*, Hy3GroupLayout, GroupEphemeralityOption);
 	void makeOppositeGroupOn(Hy3Node*, GroupEphemeralityOption);
 	void changeGroupOn(Hy3Node&, Hy3GroupLayout);
@@ -110,20 +111,20 @@ public:
 	void changeGroupToOppositeOn(Hy3Node&);
 	void changeGroupEphemeralityOn(Hy3Node&, bool ephemeral);
 	void shiftNode(Hy3Node&, ShiftDirection, bool once, bool visible);
-	void shiftWindow(int workspace, ShiftDirection, bool once, bool visible);
-	void shiftFocus(int workspace, ShiftDirection, bool visible);
-	void moveNodeToWorkspace(int origin, std::string wsname, bool follow);
-	void changeFocus(int workspace, FocusShift);
-	void focusTab(int workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
-	void setNodeSwallow(int workspace, SetSwallowOption);
-	void killFocusedNode(int workspace);
-	void expand(int workspace, ExpandOption, ExpandFullscreenOption);
+	void shiftWindow(const PHLWORKSPACE& workspace, ShiftDirection, bool once, bool visible);
+	void shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection, bool visible);
+	void moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow);
+	void changeFocus(const PHLWORKSPACE& workspace, FocusShift);
+	void focusTab(const PHLWORKSPACE& workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
+	void setNodeSwallow(const PHLWORKSPACE& workspace, SetSwallowOption);
+	void killFocusedNode(const PHLWORKSPACE& workspace);
+	void expand(const PHLWORKSPACE& workspace, ExpandOption, ExpandFullscreenOption);
 
 	bool shouldRenderSelected(CWindow*);
 
-	Hy3Node* getWorkspaceRootGroup(const int& workspace);
+	Hy3Node* getWorkspaceRootGroup(const PHLWORKSPACE& workspace);
 	Hy3Node* getWorkspaceFocusedNode(
-	    const int& workspace,
+	    const PHLWORKSPACE& workspace,
 	    bool ignore_group_focus = false,
 	    bool stop_at_expanded = false
 	);
@@ -146,7 +147,7 @@ private:
 	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool shift, bool once, bool visible);
 
 	void updateAutotileWorkspaces();
-	bool shouldAutotileWorkspace(int);
+	bool shouldAutotileWorkspace(const PHLWORKSPACE& workspace);
 	void resizeNode(Hy3Node*, Vector2D, ShiftDirection resize_edge_x, ShiftDirection resize_edge_y);
 
 	struct {

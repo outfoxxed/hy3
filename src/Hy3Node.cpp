@@ -290,10 +290,9 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	// clang-format on
 
 	if (this->data.type == Hy3NodeType::Window && this->data.as_window->m_bIsFullscreen) {
-		auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
-		auto* monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
+		auto* monitor = g_pCompositor->getMonitorFromID(this->workspace->m_iMonitorID);
 
-		if (workspace->m_efFullscreenMode == FULLSCREEN_FULL) {
+		if (this->workspace->m_efFullscreenMode == FULLSCREEN_FULL) {
 			this->data.as_window->m_vRealPosition = monitor->vecPosition;
 			this->data.as_window->m_vRealSize = monitor->vecSize;
 			return;
@@ -305,7 +304,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
 		    .gap_topleft_offset = gap_topleft_offset,
 		    .gap_bottomright_offset = gap_bottomright_offset,
-		    .workspace_id = this->workspace_id,
+		    .workspace = this->workspace,
 		};
 
 		this->layout->applyNodeDataToWindow(&fake_node);
@@ -522,7 +521,7 @@ void Hy3Node::updateTabBar(bool no_animation) {
 			FindTopWindowInNodeResult result;
 			findTopWindowInNode(*this, result);
 			group.tab_bar->target_window = result.window;
-			if (result.window != nullptr) group.tab_bar->workspace_id = result.window->m_iWorkspaceID;
+			if (result.window != nullptr) group.tab_bar->workspace = result.window->m_pWorkspace;
 		} else if (group.tab_bar != nullptr) {
 			group.tab_bar->bar.beginDestroy();
 			group.tab_bar = nullptr;
@@ -771,7 +770,7 @@ Hy3Node* Hy3Node::intoGroup(Hy3GroupLayout layout, GroupEphemeralityOption ephem
 	this->layout->nodes.push_back({
 	    .parent = this,
 	    .data = layout,
-	    .workspace_id = this->workspace_id,
+	    .workspace = this->workspace,
 	    .layout = this->layout,
 	});
 

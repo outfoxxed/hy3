@@ -444,12 +444,11 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 void Hy3TabGroup::tick() {
 	static const auto enter_from_top = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:from_top");
 	static const auto padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
-	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
 
 	this->bar.tick();
 
-	if (workspace != nullptr) {
-		if (workspace->m_bHasFullscreenWindow) {
+	if (valid(this->workspace)) {
+		if (this->workspace->m_bHasFullscreenWindow) {
 			if (this->bar.fade_opacity.goal() != 0.0) this->bar.fade_opacity = 0.0;
 		} else {
 			if (this->bar.fade_opacity.goal() != 1.0) this->bar.fade_opacity = 1.0;
@@ -489,15 +488,14 @@ void Hy3TabGroup::renderTabBar() {
 	static const auto padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 
 	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
-	auto* workspace = g_pCompositor->getWorkspaceByID(this->workspace_id);
 	auto scale = monitor->scale;
 
 	auto monitor_size = monitor->vecSize;
 	auto pos = this->pos.value() - monitor->vecPosition;
 	auto size = this->size.value();
 
-	if (workspace != nullptr) {
-		pos = pos + workspace->m_vRenderOffset.value();
+	if (valid(this->workspace)) {
+		pos = pos + this->workspace->m_vRenderOffset.value();
 	}
 
 	auto scaled_pos = Vector2D(std::round(pos.x * scale), std::round(pos.y * scale));
@@ -563,7 +561,7 @@ void Hy3TabGroup::renderTabBar() {
 	}
 
 	auto fade_opacity =
-	    this->bar.fade_opacity.value() * (workspace == nullptr ? 1.0 : workspace->m_fAlpha.value());
+	  this->bar.fade_opacity.value() * (valid(this->workspace) ? this->workspace->m_fAlpha.value() : 1.0);
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
 		Vector2D entry_pos = {
