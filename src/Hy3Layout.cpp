@@ -499,8 +499,7 @@ void Hy3Layout::fullscreenRequestForWindow(
     bool on
 ) {
 	if (!g_pCompositor->windowValidMapped(window)) return;
-	if (on == window->m_bIsFullscreen || window->m_pWorkspace->m_bIsSpecialWorkspace)
-		return;
+	if (on == window->m_bIsFullscreen || window->m_pWorkspace->m_bIsSpecialWorkspace) return;
 
 	const auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
 	if (window->m_pWorkspace->m_bHasFullscreenWindow && on) return;
@@ -710,7 +709,10 @@ void Hy3Layout::makeGroupOnWorkspace(
 	this->makeGroupOn(node, layout, ephemeral);
 }
 
-void Hy3Layout::makeOppositeGroupOnWorkspace(const PHLWORKSPACE& workspace, GroupEphemeralityOption ephemeral) {
+void Hy3Layout::makeOppositeGroupOnWorkspace(
+    const PHLWORKSPACE& workspace,
+    GroupEphemeralityOption ephemeral
+) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	this->makeOppositeGroupOn(node, ephemeral);
 }
@@ -864,7 +866,12 @@ void Hy3Layout::shiftNode(Hy3Node& node, ShiftDirection direction, bool once, bo
 	}
 }
 
-void Hy3Layout::shiftWindow(const PHLWORKSPACE& workspace, ShiftDirection direction, bool once, bool visible) {
+void Hy3Layout::shiftWindow(
+    const PHLWORKSPACE& workspace,
+    ShiftDirection direction,
+    bool once,
+    bool visible
+) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 
@@ -936,8 +943,8 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 	auto* focused_window_node = this->getNodeFromWindow(focused_window);
 
 	auto origin_ws = node != nullptr           ? node->workspace
-	          : focused_window != nullptr ? focused_window->m_pWorkspace
-	                                      : nullptr;
+	               : focused_window != nullptr ? focused_window->m_pWorkspace
+	                                           : nullptr;
 
 	if (!valid(origin_ws)) return;
 
@@ -1230,7 +1237,11 @@ void Hy3Layout::killFocusedNode(const PHLWORKSPACE& workspace) {
 	}
 }
 
-void Hy3Layout::expand(const PHLWORKSPACE& workspace, ExpandOption option, ExpandFullscreenOption fs_option) {
+void Hy3Layout::expand(
+    const PHLWORKSPACE& workspace,
+    ExpandOption option,
+    ExpandFullscreenOption fs_option
+) {
 	auto* node = this->getWorkspaceFocusedNode(workspace, false, true);
 	if (node == nullptr) return;
 
@@ -1498,15 +1509,14 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 	if (!window->m_pWorkspace->m_bIsSpecialWorkspace
 	    && ((*no_gaps_when_only != 0 && (only_node || window->m_bIsFullscreen))
-	        || (window->m_bIsFullscreen
-	            && window->m_pWorkspace->m_efFullscreenMode
-	                   == FULLSCREEN_FULL)))
+	        || (window->m_bIsFullscreen && window->m_pWorkspace->m_efFullscreenMode == FULLSCREEN_FULL
+	        )))
 	{
 		window->m_sSpecialRenderData.border = *no_gaps_when_only == 2;
-		for (auto& workspace_rule : workspace_rules) {
+		for (auto& workspace_rule: workspace_rules) {
 			if (workspace_rule.border.has_value()) {
-				//Hyprland src/desktop/Window.cpp, line 1107, SHA 5e8c25d498ed5cb7852ae74a876b0c138a62d59d
-				//does not break the loop, the last value gets to decide
+				// Hyprland src/desktop/Window.cpp, line 1107, SHA 5e8c25d498ed5cb7852ae74a876b0c138a62d59d
+				// does not break the loop, the last value gets to decide
 				window->m_sSpecialRenderData.border = workspace_rule.border.value();
 			}
 		}
@@ -1841,6 +1851,7 @@ bool Hy3Layout::shouldAutotileWorkspace(const PHLWORKSPACE& workspace) {
 	if (this->autotile.workspace_blacklist) {
 		return !this->autotile.workspaces.contains(workspace->m_iID);
 	} else {
-		return this->autotile.workspaces.empty() || this->autotile.workspaces.contains(workspace->m_iID);
+		return this->autotile.workspaces.empty()
+		    || this->autotile.workspaces.contains(workspace->m_iID);
 	}
 }

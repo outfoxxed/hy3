@@ -560,8 +560,8 @@ void Hy3TabGroup::renderTabBar() {
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	}
 
-	auto fade_opacity =
-	  this->bar.fade_opacity.value() * (valid(this->workspace) ? this->workspace->m_fAlpha.value() : 1.0);
+	auto fade_opacity = this->bar.fade_opacity.value()
+	                  * (valid(this->workspace) ? this->workspace->m_fAlpha.value() : 1.0);
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
 		Vector2D entry_pos = {

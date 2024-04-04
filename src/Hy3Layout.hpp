@@ -115,7 +115,13 @@ public:
 	void shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection, bool visible);
 	void moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow);
 	void changeFocus(const PHLWORKSPACE& workspace, FocusShift);
-	void focusTab(const PHLWORKSPACE& workspace, TabFocus target, TabFocusMousePriority, bool wrap_scroll, int index);
+	void focusTab(
+	    const PHLWORKSPACE& workspace,
+	    TabFocus target,
+	    TabFocusMousePriority,
+	    bool wrap_scroll,
+	    int index
+	);
 	void setNodeSwallow(const PHLWORKSPACE& workspace, SetSwallowOption);
 	void killFocusedNode(const PHLWORKSPACE& workspace);
 	void expand(const PHLWORKSPACE& workspace, ExpandOption, ExpandFullscreenOption);
