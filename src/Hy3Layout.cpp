@@ -10,14 +10,10 @@
 #include "SelectionHook.hpp"
 #include "globals.hpp"
 
-std::unique_ptr<HOOK_CALLBACK_FN> renderHookPtr =
-    std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::renderHook);
-std::unique_ptr<HOOK_CALLBACK_FN> windowTitleHookPtr =
-    std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::windowGroupUpdateRecursiveHook);
-std::unique_ptr<HOOK_CALLBACK_FN> urgentHookPtr =
-    std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::windowGroupUrgentHook);
-std::unique_ptr<HOOK_CALLBACK_FN> tickHookPtr =
-    std::make_unique<HOOK_CALLBACK_FN>(Hy3Layout::tickHook);
+std::shared_ptr<HOOK_CALLBACK_FN> renderHookPtr;
+std::shared_ptr<HOOK_CALLBACK_FN> windowTitleHookPtr;
+std::shared_ptr<HOOK_CALLBACK_FN> urgentHookPtr;
+std::shared_ptr<HOOK_CALLBACK_FN> tickHookPtr;
 
 bool performContainment(Hy3Node& node, bool contained, CWindow* window) {
 	if (node.data.type == Hy3NodeType::Group) {
@@ -604,7 +600,8 @@ void Hy3Layout::switchWindows(CWindow* pWindowA, CWindow* pWindowB) {
 	// todo
 }
 
-void Hy3Layout::moveWindowTo(CWindow* window, const std::string& direction) {
+void Hy3Layout::moveWindowTo(CWindow* window, const std::string& direction, bool silent) {
+	// todo: support silent
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
 
@@ -677,18 +674,18 @@ void Hy3Layout::onEnable() {
 		this->onWindowCreatedTiling(window.get());
 	}
 
-	HyprlandAPI::registerCallbackStatic(PHANDLE, "render", renderHookPtr.get());
-	HyprlandAPI::registerCallbackStatic(PHANDLE, "windowTitle", windowTitleHookPtr.get());
-	HyprlandAPI::registerCallbackStatic(PHANDLE, "urgent", urgentHookPtr.get());
-	HyprlandAPI::registerCallbackStatic(PHANDLE, "tick", tickHookPtr.get());
+	renderHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", &Hy3Layout::renderHook);
+	windowTitleHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "windowTitle", &Hy3Layout::windowGroupUpdateRecursiveHook);
+	urgentHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "urgent", &Hy3Layout::windowGroupUrgentHook);
+	tickHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", &Hy3Layout::tickHook);
 	selection_hook::enable();
 }
 
 void Hy3Layout::onDisable() {
-	HyprlandAPI::unregisterCallback(PHANDLE, renderHookPtr.get());
-	HyprlandAPI::unregisterCallback(PHANDLE, windowTitleHookPtr.get());
-	HyprlandAPI::unregisterCallback(PHANDLE, urgentHookPtr.get());
-	HyprlandAPI::unregisterCallback(PHANDLE, tickHookPtr.get());
+	renderHookPtr.reset();
+	windowTitleHookPtr.reset();
+	urgentHookPtr.reset();
+	tickHookPtr.reset();
 	selection_hook::disable();
 
 	for (auto& node: this->nodes) {
