@@ -2,6 +2,8 @@
 
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/helpers/Box.hpp>
 #include <hyprland/src/helpers/Color.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
@@ -328,7 +330,7 @@ exitloop:
 
 		// set stats from node data
 		auto* parent = (*node)->parent;
-		auto& parent_group = parent->data.as_group;
+		auto& parent_group = parent->data.as_group();
 
 		entry->setFocused(
 		    parent_group.focused_child == *node
@@ -433,11 +435,11 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 		if (warp) this->size.warp();
 	}
 
-	this->bar.updateNodeList(node.data.as_group.children);
+	this->bar.updateNodeList(node.data.as_group().children);
 	this->bar.updateAnimations(warp);
 
-	if (node.data.as_group.focused_child != nullptr) {
-		this->updateStencilWindows(*node.data.as_group.focused_child);
+	if (node.data.as_group().focused_child != nullptr) {
+		this->updateStencilWindows(*node.data.as_group().focused_child);
 	}
 }
 
@@ -539,8 +541,9 @@ void Hy3TabGroup::renderTabBar() {
 
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-		for (auto* window: this->stencil_windows) {
-			if (!g_pCompositor->windowExists(window)) continue;
+		for (auto windowref: this->stencil_windows) {
+			if (!valid(windowref)) continue;
+			auto window = windowref.lock();
 
 			auto wpos = window->m_vRealPosition.value() - monitor->vecPosition;
 			auto wsize = window->m_vRealSize.value();
@@ -603,11 +606,11 @@ void Hy3TabGroup::renderTabBar() {
 	}
 }
 
-void findOverlappingWindows(Hy3Node& node, float height, std::vector<CWindow*>& windows) {
-	switch (node.data.type) {
-	case Hy3NodeType::Window: windows.push_back(node.data.as_window); break;
+void findOverlappingWindows(Hy3Node& node, float height, std::vector<PHLWINDOWREF>& windows) {
+	switch (node.data.type()) {
+	case Hy3NodeType::Window: windows.push_back(node.data.as_window()); break;
 	case Hy3NodeType::Group:
-		auto& group = node.data.as_group;
+		auto& group = node.data.as_group();
 
 		switch (group.layout) {
 		case Hy3GroupLayout::SplitH:

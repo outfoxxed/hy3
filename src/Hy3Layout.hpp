@@ -70,30 +70,30 @@ enum class ExpandFullscreenOption {
 
 class Hy3Layout: public IHyprLayout {
 public:
-	virtual void onWindowCreated(CWindow*, eDirection = DIRECTION_DEFAULT);
-	virtual void onWindowCreatedTiling(CWindow*, eDirection = DIRECTION_DEFAULT);
-	virtual void onWindowRemovedTiling(CWindow*);
-	virtual void onWindowFocusChange(CWindow*);
-	virtual bool isWindowTiled(CWindow*);
-	virtual void recalculateMonitor(const int& monitor_id);
-	virtual void recalculateWindow(CWindow*);
-	virtual void
-	resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow = nullptr);
-	virtual void fullscreenRequestForWindow(CWindow*, eFullscreenMode, bool enable_fullscreen);
-	virtual std::any layoutMessage(SLayoutMessageHeader header, std::string content);
-	virtual SWindowRenderLayoutHints requestRenderHints(CWindow*);
-	virtual void switchWindows(CWindow*, CWindow*);
-	virtual void moveWindowTo(CWindow*, const std::string& direction, bool silent);
-	virtual void alterSplitRatio(CWindow*, float, bool);
-	virtual std::string getLayoutName();
-	virtual CWindow* getNextWindowCandidate(CWindow*);
-	virtual void replaceWindowDataWith(CWindow* from, CWindow* to);
-	virtual bool isWindowReachable(CWindow*);
-	virtual void bringWindowToTop(CWindow*);
-	virtual Vector2D predictSizeForNewWindowTiled() { return Vector2D(); }
+	void onWindowCreated(PHLWINDOW, eDirection = DIRECTION_DEFAULT) override;
+	void onWindowCreatedTiling(PHLWINDOW, eDirection = DIRECTION_DEFAULT) override;
+	void onWindowRemovedTiling(PHLWINDOW) override;
+	void onWindowFocusChange(PHLWINDOW) override;
+	bool isWindowTiled(PHLWINDOW) override;
+	void recalculateMonitor(const int& monitor_id) override;
+	void recalculateWindow(PHLWINDOW) override;
+	void resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PHLWINDOW pWindow = nullptr)
+	    override;
+	void fullscreenRequestForWindow(PHLWINDOW, eFullscreenMode, bool enable_fullscreen) override;
+	std::any layoutMessage(SLayoutMessageHeader header, std::string content) override;
+	SWindowRenderLayoutHints requestRenderHints(PHLWINDOW) override;
+	void switchWindows(PHLWINDOW, PHLWINDOW) override;
+	void moveWindowTo(PHLWINDOW, const std::string& direction, bool silent) override;
+	void alterSplitRatio(PHLWINDOW, float, bool) override;
+	std::string getLayoutName() override;
+	PHLWINDOW getNextWindowCandidate(PHLWINDOW) override;
+	void replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) override;
+	bool isWindowReachable(PHLWINDOW) override;
+	void bringWindowToTop(PHLWINDOW) override;
+	Vector2D predictSizeForNewWindowTiled() override { return Vector2D(); }
 
-	virtual void onEnable();
-	virtual void onDisable();
+	void onEnable() override;
+	void onDisable() override;
 
 	void insertNode(Hy3Node& node);
 	void makeGroupOnWorkspace(const PHLWORKSPACE& workspace, Hy3GroupLayout, GroupEphemeralityOption);
@@ -126,7 +126,7 @@ public:
 	void killFocusedNode(const PHLWORKSPACE& workspace);
 	void expand(const PHLWORKSPACE& workspace, ExpandOption, ExpandFullscreenOption);
 
-	bool shouldRenderSelected(CWindow*);
+	bool shouldRenderSelected(const PHLWINDOW&);
 
 	Hy3Node* getWorkspaceRootGroup(const PHLWORKSPACE& workspace);
 	Hy3Node* getWorkspaceFocusedNode(
@@ -144,7 +144,7 @@ public:
 	std::list<Hy3TabGroup> tab_groups;
 
 private:
-	Hy3Node* getNodeFromWindow(CWindow*);
+	Hy3Node* getNodeFromWindow(const PHLWINDOW&);
 	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
 
 	// if shift is true, shift the window in the given direction, returning

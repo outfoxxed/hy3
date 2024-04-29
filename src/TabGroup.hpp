@@ -85,7 +85,7 @@ private:
 
 class Hy3TabGroup {
 public:
-	CWindow* target_window = nullptr;
+	PHLWINDOW target_window = nullptr;
 	PHLWORKSPACE workspace = nullptr;
 	bool hidden = false;
 	Hy3TabBar bar;
@@ -102,7 +102,7 @@ public:
 	void renderTabBar();
 
 private:
-	std::vector<CWindow*> stencil_windows;
+	std::vector<PHLWINDOWREF> stencil_windows;
 	Vector2D last_pos;
 	Vector2D last_size;
 

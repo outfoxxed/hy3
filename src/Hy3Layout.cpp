@@ -3,6 +3,7 @@
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <ranges>
 
@@ -15,18 +16,18 @@ std::shared_ptr<HOOK_CALLBACK_FN> windowTitleHookPtr;
 std::shared_ptr<HOOK_CALLBACK_FN> urgentHookPtr;
 std::shared_ptr<HOOK_CALLBACK_FN> tickHookPtr;
 
-bool performContainment(Hy3Node& node, bool contained, CWindow* window) {
-	if (node.data.type == Hy3NodeType::Group) {
-		auto& group = node.data.as_group;
+bool performContainment(Hy3Node& node, bool contained, PHLWINDOW& window) {
+	if (node.data.is_group()) {
+		auto& group = node.data.as_group();
 		contained |= group.containment;
 
-		auto iter = node.data.as_group.children.begin();
-		while (iter != node.data.as_group.children.end()) {
-			switch ((*iter)->data.type) {
+		auto iter = group.children.begin();
+		while (iter != group.children.end()) {
+			switch ((*iter)->data.type()) {
 			case Hy3NodeType::Group: return performContainment(**iter, contained, window);
 			case Hy3NodeType::Window:
 				if (contained) {
-					auto wpid = (*iter)->data.as_window->getPID();
+					auto wpid = (*iter)->data.as_window()->getPID();
 					auto ppid = getPPIDof(window->getPID());
 					while (ppid > 10) { // `> 10` yoinked from HL swallow
 						if (ppid == wpid) {
@@ -58,7 +59,7 @@ bool performContainment(Hy3Node& node, bool contained, CWindow* window) {
 	return false;
 }
 
-void Hy3Layout::onWindowCreated(CWindow* window, eDirection direction) {
+void Hy3Layout::onWindowCreated(PHLWINDOW window, eDirection direction) {
 	for (auto& node: this->nodes) {
 		if (node.parent == nullptr && performContainment(node, false, window)) {
 			return;
@@ -68,11 +69,11 @@ void Hy3Layout::onWindowCreated(CWindow* window, eDirection direction) {
 	IHyprLayout::onWindowCreated(window, direction);
 }
 
-void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
+void Hy3Layout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 	hy3_log(
 	    LOG,
 	    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
-	    (uintptr_t) window,
+	    (uintptr_t) window.get(),
 	    window->m_bIsFloating,
 	    window->m_iMonitorID,
 	    window->m_pWorkspace->m_iID
@@ -85,7 +86,7 @@ void Hy3Layout::onWindowCreatedTiling(CWindow* window, eDirection) {
 		hy3_log(
 		    ERR,
 		    "onWindowCreatedTiling called with a window ({:x}) that is already tiled (node: {:x})",
-		    (uintptr_t) window,
+		    (uintptr_t) window.get(),
 		    (uintptr_t) existing
 		);
 		return;
@@ -142,16 +143,15 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	}
 
 	if (opening_after == nullptr) {
-		if (g_pCompositor->m_pLastWindow != nullptr
-		    && g_pCompositor->m_pLastWindow->m_pWorkspace == node.workspace
-		    && !g_pCompositor->m_pLastWindow->m_bIsFloating
-		    && (node.data.type == Hy3NodeType::Window
-		        || g_pCompositor->m_pLastWindow != node.data.as_window)
-		    && g_pCompositor->m_pLastWindow->m_bIsMapped)
+		auto last_window = g_pCompositor->m_pLastWindow.lock();
+		if (last_window != nullptr && last_window->m_pWorkspace == node.workspace
+		    && !last_window->m_bIsFloating
+		    && (node.data.is_window() || last_window != node.data.as_window())
+		    && last_window->m_bIsMapped)
 		{
-			opening_after = this->getNodeFromWindow(g_pCompositor->m_pLastWindow);
+			opening_after = this->getNodeFromWindow(last_window);
 		} else {
-			auto* mouse_window = g_pCompositor->vectorToWindowUnified(
+			auto mouse_window = g_pCompositor->vectorToWindowUnified(
 			    g_pInputManager->getMouseCoordsInternal(),
 			    RESERVED_EXTENTS | INPUT_EXTENTS
 			);
@@ -163,8 +163,8 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	}
 
 	if (opening_after != nullptr
-	    && ((node.data.type == Hy3NodeType::Group
-	         && (opening_after == &node || node.data.as_group.hasChild(opening_after)))
+	    && ((node.data.is_group()
+	         && (opening_after == &node || node.data.as_group().hasChild(opening_after)))
 	        || opening_after->reparenting))
 	{
 		opening_after = nullptr;
@@ -202,14 +202,14 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 				    .layout = this,
 				});
 
-				parent.data.as_group.children.push_back(&this->nodes.back());
+				parent.data.as_group().children.push_back(&this->nodes.back());
 			}
 
 			opening_into = &this->nodes.back();
 		}
 	}
 
-	if (opening_into->data.type != Hy3NodeType::Group) {
+	if (opening_into->data.is_window()) {
 		hy3_log(ERR, "opening_into node ({:x}) was not a group node", (uintptr_t) opening_into);
 		errorNotif();
 		return;
@@ -236,7 +236,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 
 		this->updateAutotileWorkspaces();
 
-		auto& target_group = opening_into->data.as_group;
+		auto& target_group = opening_into->data.as_group();
 		if (*at_enable && opening_after != nullptr && target_group.children.size() > 1
 		    && target_group.layout != Hy3GroupLayout::Tabbed
 		    && this->shouldAutotileWorkspace(opening_into->workspace))
@@ -261,9 +261,9 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	node.reparenting = false;
 
 	if (opening_after == nullptr) {
-		opening_into->data.as_group.children.push_back(&node);
+		opening_into->data.as_group().children.push_back(&node);
 	} else {
-		auto& children = opening_into->data.as_group.children;
+		auto& children = opening_into->data.as_group().children;
 		auto iter = std::find(children.begin(), children.end(), opening_after);
 		auto iter2 = std::next(iter);
 		children.insert(iter2, &node);
@@ -281,7 +281,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	opening_into->recalcSizePosRecursive();
 }
 
-void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
+void Hy3Layout::onWindowRemovedTiling(PHLWINDOW window) {
 	static const auto node_collapse_policy =
 	    ConfigValue<Hyprlang::INT>("plugin:hy3:node_collapse_policy");
 
@@ -292,7 +292,7 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	hy3_log(
 	    LOG,
 	    "removing window ({:x} as node {:x}) from node {:x}",
-	    (uintptr_t) window,
+	    (uintptr_t) window.get(),
 	    (uintptr_t) node,
 	    (uintptr_t) node->parent
 	);
@@ -310,17 +310,16 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	this->nodes.remove(*node);
 	if (expand_actor != nullptr) expand_actor->recalcSizePosRecursive();
 
-	auto& group = parent->data.as_group;
-
 	if (parent != nullptr) {
+		auto& group = parent->data.as_group();
 		parent->recalcSizePosRecursive();
 
 		// returns if a given node is a group that can be collapsed given the current config
 		auto node_is_collapsible = [](Hy3Node* node) {
-			if (node->data.type != Hy3NodeType::Group) return false;
+			if (node->data.is_window()) return false;
 			if (*node_collapse_policy == 0) return true;
 			else if (*node_collapse_policy == 1) return false;
-			return node->parent->data.as_group.layout != Hy3GroupLayout::Tabbed;
+			return node->parent->data.as_group().layout != Hy3GroupLayout::Tabbed;
 		};
 
 		if (group.children.size() == 1
@@ -337,14 +336,14 @@ void Hy3Layout::onWindowRemovedTiling(CWindow* window) {
 	}
 }
 
-void Hy3Layout::onWindowFocusChange(CWindow* window) {
+void Hy3Layout::onWindowFocusChange(PHLWINDOW window) {
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
 
 	hy3_log(
 	    TRACE,
 	    "changing window focus to window {:x} as node {:x}",
-	    (uintptr_t) window,
+	    (uintptr_t) window.get(),
 	    (uintptr_t) node
 	);
 
@@ -353,7 +352,7 @@ void Hy3Layout::onWindowFocusChange(CWindow* window) {
 	node->recalcSizePosRecursive();
 }
 
-bool Hy3Layout::isWindowTiled(CWindow* window) {
+bool Hy3Layout::isWindowTiled(PHLWINDOW window) {
 	return this->getNodeFromWindow(window) != nullptr;
 }
 
@@ -386,7 +385,7 @@ void Hy3Layout::recalculateMonitor(const int& monitor_id) {
 	}
 }
 
-void Hy3Layout::recalculateWindow(CWindow* window) {
+void Hy3Layout::recalculateWindow(PHLWINDOW window) {
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
 	node->recalcSizePosRecursive();
@@ -402,9 +401,9 @@ ShiftDirection reverse(ShiftDirection direction) {
 	}
 }
 
-void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CWindow* pWindow) {
-	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow;
-	if (!g_pCompositor->windowValidMapped(window)) return;
+void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PHLWINDOW pWindow) {
+	auto window = pWindow ? pWindow : g_pCompositor->m_pLastWindow.lock();
+	if (!valid(window)) return;
 
 	auto* node = this->getNodeFromWindow(window);
 
@@ -427,9 +426,9 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 		);
 
 		Vector2D resize_delta = delta;
-		bool node_is_root = (node->data.type == Hy3NodeType::Group && node->parent == nullptr)
-		                 || (node->data.type == Hy3NodeType::Window
-		                     && (node->parent == nullptr || node->parent->parent == nullptr));
+		bool node_is_root =
+		    (node->data.is_group() && node->parent == nullptr)
+		    || (node->data.is_window() && (node->parent == nullptr || node->parent->parent == nullptr));
 
 		if (node_is_root) {
 			if (display_left && display_right) resize_delta.x = 0;
@@ -490,11 +489,10 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, CW
 }
 
 void Hy3Layout::fullscreenRequestForWindow(
-    CWindow* window,
+    PHLWINDOW window,
     eFullscreenMode fullscreen_mode,
     bool on
 ) {
-	if (!g_pCompositor->windowValidMapped(window)) return;
 	if (on == window->m_bIsFullscreen || window->m_pWorkspace->m_bIsSpecialWorkspace) return;
 
 	const auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
@@ -575,7 +573,7 @@ std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string conte
 	if (content == "togglesplit") {
 		auto* node = this->getNodeFromWindow(header.pWindow);
 		if (node != nullptr && node->parent != nullptr) {
-			auto& layout = node->parent->data.as_group.layout;
+			auto& layout = node->parent->data.as_group().layout;
 
 			switch (layout) {
 			case Hy3GroupLayout::SplitH:
@@ -594,13 +592,13 @@ std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string conte
 	return "";
 }
 
-SWindowRenderLayoutHints Hy3Layout::requestRenderHints(CWindow* window) { return {}; }
+SWindowRenderLayoutHints Hy3Layout::requestRenderHints(PHLWINDOW window) { return {}; }
 
-void Hy3Layout::switchWindows(CWindow* pWindowA, CWindow* pWindowB) {
+void Hy3Layout::switchWindows(PHLWINDOW pWindowA, PHLWINDOW pWindowB) {
 	// todo
 }
 
-void Hy3Layout::moveWindowTo(CWindow* window, const std::string& direction, bool silent) {
+void Hy3Layout::moveWindowTo(PHLWINDOW window, const std::string& direction, bool silent) {
 	// todo: support silent
 	auto* node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
@@ -615,13 +613,13 @@ void Hy3Layout::moveWindowTo(CWindow* window, const std::string& direction, bool
 	this->shiftNode(*node, shift, false, false);
 }
 
-void Hy3Layout::alterSplitRatio(CWindow* pWindow, float delta, bool exact) {
+void Hy3Layout::alterSplitRatio(PHLWINDOW pWindow, float delta, bool exact) {
 	// todo
 }
 
 std::string Hy3Layout::getLayoutName() { return "hy3"; }
 
-CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
+PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 	if (window->m_pWorkspace->m_bHasFullscreenWindow) {
 		return g_pCompositor->getFullscreenWindowOnWorkspace(window->m_pWorkspace->m_iID);
 	}
@@ -631,9 +629,9 @@ CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 		for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
 			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && w->m_iX11Type != 2
 			    && w->m_pWorkspace == window->m_pWorkspace && !w->m_bX11ShouldntFocus
-			    && !w->m_sAdditionalConfigData.noFocus && w.get() != window)
+			    && !w->m_sAdditionalConfigData.noFocus && w != window)
 			{
-				return w.get();
+				return w;
 			}
 		}
 	}
@@ -641,26 +639,26 @@ CWindow* Hy3Layout::getNextWindowCandidate(CWindow* window) {
 	auto* node = this->getWorkspaceFocusedNode(window->m_pWorkspace, true);
 	if (node == nullptr) return nullptr;
 
-	switch (node->data.type) {
-	case Hy3NodeType::Window: return node->data.as_window;
-	case Hy3NodeType::Group: return nullptr;
-	default: return nullptr;
+	if (node->data.is_window()) {
+		return node->data.as_window();
+	} else {
+		return nullptr;
 	}
 }
 
-void Hy3Layout::replaceWindowDataWith(CWindow* from, CWindow* to) {
+void Hy3Layout::replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) {
 	auto* node = this->getNodeFromWindow(from);
 	if (node == nullptr) return;
 
-	node->data.as_window = to;
+	node->data.as_window() = to;
 	this->applyNodeDataToWindow(node);
 }
 
-bool Hy3Layout::isWindowReachable(CWindow* window) {
+bool Hy3Layout::isWindowReachable(PHLWINDOW window) {
 	return this->getNodeFromWindow(window) != nullptr || IHyprLayout::isWindowReachable(window);
 }
 
-void Hy3Layout::bringWindowToTop(CWindow* window) {
+void Hy3Layout::bringWindowToTop(PHLWINDOW window) {
 	auto node = this->getNodeFromWindow(window);
 	if (node == nullptr) return;
 	node->bringToTop();
@@ -671,12 +669,17 @@ void Hy3Layout::onEnable() {
 		if (window->isHidden() || !window->m_bIsMapped || window->m_bFadingOut || window->m_bIsFloating)
 			continue;
 
-		this->onWindowCreatedTiling(window.get());
+		this->onWindowCreatedTiling(window);
 	}
 
 	renderHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", &Hy3Layout::renderHook);
-	windowTitleHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "windowTitle", &Hy3Layout::windowGroupUpdateRecursiveHook);
-	urgentHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "urgent", &Hy3Layout::windowGroupUrgentHook);
+	windowTitleHookPtr = HyprlandAPI::registerCallbackDynamic(
+	    PHANDLE,
+	    "windowTitle",
+	    &Hy3Layout::windowGroupUpdateRecursiveHook
+	);
+	urgentHookPtr =
+	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "urgent", &Hy3Layout::windowGroupUrgentHook);
 	tickHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", &Hy3Layout::tickHook);
 	selection_hook::enable();
 }
@@ -689,8 +692,8 @@ void Hy3Layout::onDisable() {
 	selection_hook::disable();
 
 	for (auto& node: this->nodes) {
-		if (node.data.type == Hy3NodeType::Window) {
-			node.data.as_window->setHidden(false);
+		if (node.data.is_window()) {
+			node.data.as_window()->setHidden(false);
 		}
 	}
 
@@ -757,7 +760,7 @@ void Hy3Layout::makeGroupOn(
 	if (node == nullptr) return;
 
 	if (node->parent != nullptr) {
-		auto& group = node->parent->data.as_group;
+		auto& group = node->parent->data.as_group();
 		if (group.children.size() == 1) {
 			group.setLayout(layout);
 			group.setEphemeral(ephemeral);
@@ -778,7 +781,7 @@ void Hy3Layout::makeOppositeGroupOn(Hy3Node* node, GroupEphemeralityOption ephem
 		return;
 	}
 
-	auto& group = node->parent->data.as_group;
+	auto& group = node->parent->data.as_group();
 	auto layout =
 	    group.layout == Hy3GroupLayout::SplitH ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
 
@@ -798,7 +801,7 @@ void Hy3Layout::changeGroupOn(Hy3Node& node, Hy3GroupLayout layout) {
 		return;
 	}
 
-	auto& group = node.parent->data.as_group;
+	auto& group = node.parent->data.as_group();
 	group.setLayout(layout);
 	node.parent->updateTabBarRecursive();
 	node.parent->recalcSizePosRecursive();
@@ -807,7 +810,7 @@ void Hy3Layout::changeGroupOn(Hy3Node& node, Hy3GroupLayout layout) {
 void Hy3Layout::untabGroupOn(Hy3Node& node) {
 	if (node.parent == nullptr) return;
 
-	auto& group = node.parent->data.as_group;
+	auto& group = node.parent->data.as_group();
 	if (group.layout != Hy3GroupLayout::Tabbed) return;
 
 	changeGroupOn(node, group.previous_nontab_layout);
@@ -816,7 +819,7 @@ void Hy3Layout::untabGroupOn(Hy3Node& node) {
 void Hy3Layout::toggleTabGroupOn(Hy3Node& node) {
 	if (node.parent == nullptr) return;
 
-	auto& group = node.parent->data.as_group;
+	auto& group = node.parent->data.as_group();
 	if (group.layout != Hy3GroupLayout::Tabbed) changeGroupOn(node, Hy3GroupLayout::Tabbed);
 	else changeGroupOn(node, group.previous_nontab_layout);
 }
@@ -824,7 +827,7 @@ void Hy3Layout::toggleTabGroupOn(Hy3Node& node) {
 void Hy3Layout::changeGroupToOppositeOn(Hy3Node& node) {
 	if (node.parent == nullptr) return;
 
-	auto& group = node.parent->data.as_group;
+	auto& group = node.parent->data.as_group();
 
 	if (group.layout == Hy3GroupLayout::Tabbed) {
 		group.setLayout(group.previous_nontab_layout);
@@ -840,16 +843,16 @@ void Hy3Layout::changeGroupToOppositeOn(Hy3Node& node) {
 void Hy3Layout::changeGroupEphemeralityOn(Hy3Node& node, bool ephemeral) {
 	if (node.parent == nullptr) return;
 
-	auto& group = node.parent->data.as_group;
+	auto& group = node.parent->data.as_group();
 	group.setEphemeral(
 	    ephemeral ? GroupEphemeralityOption::ForceEphemeral : GroupEphemeralityOption::Standard
 	);
 }
 
 void Hy3Layout::shiftNode(Hy3Node& node, ShiftDirection direction, bool once, bool visible) {
-	if (once && node.parent != nullptr && node.parent->data.as_group.children.size() == 1) {
+	if (once && node.parent != nullptr && node.parent->data.as_group().children.size() == 1) {
 		if (node.parent->parent == nullptr) {
-			node.parent->data.as_group.setLayout(Hy3GroupLayout::SplitH);
+			node.parent->data.as_group().setLayout(Hy3GroupLayout::SplitH);
 			node.parent->recalcSizePosRecursive();
 		} else {
 			auto* node2 = node.parent;
@@ -876,13 +879,13 @@ void Hy3Layout::shiftWindow(
 }
 
 void Hy3Layout::shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection direction, bool visible) {
-	auto* current_window = g_pCompositor->m_pLastWindow;
+	auto current_window = g_pCompositor->m_pLastWindow.lock();
 
 	if (current_window != nullptr) {
 		if (current_window->m_pWorkspace->m_bHasFullscreenWindow) return;
 
 		if (current_window->m_bIsFloating) {
-			auto* next_window = g_pCompositor->getWindowInDirection(
+			auto next_window = g_pCompositor->getWindowInDirection(
 			    current_window,
 			    direction == ShiftDirection::Left   ? 'l'
 			    : direction == ShiftDirection::Up   ? 'u'
@@ -910,13 +913,13 @@ void Hy3Layout::shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection directi
 void changeNodeWorkspaceRecursive(Hy3Node& node, const PHLWORKSPACE& workspace) {
 	node.workspace = workspace;
 
-	if (node.data.type == Hy3NodeType::Window) {
-		auto* window = node.data.as_window;
+	if (node.data.is_window()) {
+		auto window = node.data.as_window();
 		window->moveToWorkspace(workspace);
 		window->updateToplevel();
 		window->updateDynamicRules();
 	} else {
-		for (auto* child: node.data.as_group.children) {
+		for (auto* child: node.data.as_group().children) {
 			changeNodeWorkspaceRecursive(*child, workspace);
 		}
 	}
@@ -936,7 +939,7 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 	if (origin == workspace) return;
 
 	auto* node = this->getWorkspaceFocusedNode(origin);
-	auto* focused_window = g_pCompositor->m_pLastWindow;
+	auto focused_window = g_pCompositor->m_pLastWindow.lock();
 	auto* focused_window_node = this->getNodeFromWindow(focused_window);
 
 	auto origin_ws = node != nullptr           ? node->workspace
@@ -1013,14 +1016,14 @@ void Hy3Layout::changeFocus(const PHLWORKSPACE& workspace, FocusShift shift) {
 		}
 		return;
 	case FocusShift::Lower:
-		if (node->data.type == Hy3NodeType::Group && node->data.as_group.focused_child != nullptr)
-			node->data.as_group.focused_child->focus();
+		if (node->data.is_group() && node->data.as_group().focused_child != nullptr)
+			node->data.as_group().focused_child->focus();
 		return;
 	case FocusShift::Tab:
 		// make sure we go up at least one level
 		if (node->parent != nullptr) node = node->parent;
 		while (node->parent != nullptr) {
-			if (node->data.as_group.layout == Hy3GroupLayout::Tabbed) {
+			if (node->data.as_group().layout == Hy3GroupLayout::Tabbed) {
 				node->focus();
 				return;
 			}
@@ -1032,7 +1035,7 @@ void Hy3Layout::changeFocus(const PHLWORKSPACE& workspace, FocusShift shift) {
 		// make sure we go up at least one level
 		if (node->parent != nullptr) node = node->parent;
 		while (node->parent != nullptr) {
-			if (node->parent->data.as_group.layout == Hy3GroupLayout::Tabbed) {
+			if (node->parent->data.as_group().layout == Hy3GroupLayout::Tabbed) {
 				node->focus();
 				return;
 			}
@@ -1043,8 +1046,8 @@ void Hy3Layout::changeFocus(const PHLWORKSPACE& workspace, FocusShift shift) {
 	}
 
 bottom:
-	while (node->data.type == Hy3NodeType::Group && node->data.as_group.focused_child != nullptr) {
-		node = node->data.as_group.focused_child;
+	while (node->data.is_group() && node->data.as_group().focused_child != nullptr) {
+		node = node->data.as_group().focused_child;
 	}
 
 	node->focus();
@@ -1067,19 +1070,19 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 		inset += gaps_in->left;
 	}
 
-	if (node.data.type == Hy3NodeType::Group) {
+	if (node.data.is_group()) {
 		if (node.hidden) return nullptr;
 		// note: tab bar clicks ignore animations
 		if (node.position.x > pos.x || node.position.y > pos.y || node.position.x + node.size.x < pos.x
 		    || node.position.y + node.size.y < pos.y)
 			return nullptr;
 
-		if (node.data.as_group.layout == Hy3GroupLayout::Tabbed
-		    && node.data.as_group.tab_bar != nullptr)
-		{
+		auto& group = node.data.as_group();
+
+		if (group.layout == Hy3GroupLayout::Tabbed && node.data.as_group().tab_bar != nullptr) {
 			if (pos.y < node.position.y + node.gap_topleft_offset.y + inset) {
-				auto& children = node.data.as_group.children;
-				auto& tab_bar = *node.data.as_group.tab_bar;
+				auto& children = group.children;
+				auto& tab_bar = *group.tab_bar;
 
 				auto size = tab_bar.size.value();
 				auto x = pos.x - tab_bar.pos.value().x;
@@ -1099,11 +1102,11 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 				}
 			}
 
-			if (node.data.as_group.focused_child != nullptr) {
-				return findTabBarAt(*node.data.as_group.focused_child, pos, focused_node);
+			if (group.focused_child != nullptr) {
+				return findTabBarAt(*group.focused_child, pos, focused_node);
 			}
 		} else {
-			for (auto child: node.data.as_group.children) {
+			for (auto child: group.children) {
 				if (findTabBarAt(*child, pos, focused_node)) return child;
 			}
 		}
@@ -1144,22 +1147,21 @@ void Hy3Layout::focusTab(
 		tab_node = this->getWorkspaceFocusedNode(workspace);
 		if (tab_node == nullptr) return;
 
-		while (tab_node != nullptr && tab_node->data.as_group.layout != Hy3GroupLayout::Tabbed
+		while (tab_node != nullptr && tab_node->data.as_group().layout != Hy3GroupLayout::Tabbed
 		       && tab_node->parent != nullptr)
 			tab_node = tab_node->parent;
 
-		if (tab_node == nullptr || tab_node->data.type != Hy3NodeType::Group
-		    || tab_node->data.as_group.layout != Hy3GroupLayout::Tabbed)
+		if (tab_node == nullptr || tab_node->data.is_window()
+		    || tab_node->data.as_group().layout != Hy3GroupLayout::Tabbed)
 			return;
 	}
 
 hastab:
 	if (target != TabFocus::MouseLocation) {
-		if (tab_node->data.as_group.focused_child == nullptr
-		    || tab_node->data.as_group.children.size() < 2)
-			return;
+		auto& group = tab_node->data.as_group();
+		if (group.focused_child == nullptr || group.children.size() < 2) return;
 
-		auto& children = tab_node->data.as_group.children;
+		auto& children = group.children;
 		if (target == TabFocus::Index) {
 			int i = 1;
 
@@ -1175,8 +1177,7 @@ hastab:
 			return;
 		cont:;
 		} else {
-			auto node_iter =
-			    std::find(children.begin(), children.end(), tab_node->data.as_group.focused_child);
+			auto node_iter = std::find(children.begin(), children.end(), group.focused_child);
 			if (node_iter == children.end()) return;
 			if (target == TabFocus::Left) {
 				if (node_iter == children.begin()) {
@@ -1197,9 +1198,9 @@ hastab:
 	}
 
 	auto* focus = tab_focused_node;
-	while (focus->data.type == Hy3NodeType::Group && !focus->data.as_group.group_focused
-	       && focus->data.as_group.focused_child != nullptr)
-		focus = focus->data.as_group.focused_child;
+	while (focus->data.is_group() && !focus->data.as_group().group_focused
+	       && focus->data.as_group().focused_child != nullptr)
+		focus = focus->data.as_group().focused_child;
 
 	focus->focus();
 	tab_node->recalcSizePosRecursive();
@@ -1209,7 +1210,7 @@ void Hy3Layout::setNodeSwallow(const PHLWORKSPACE& workspace, SetSwallowOption o
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr || node->parent == nullptr) return;
 
-	auto* containment = &node->parent->data.as_group.containment;
+	auto* containment = &node->parent->data.as_group().containment;
 	switch (option) {
 	case SetSwallowOption::NoSwallow: *containment = false; break;
 	case SetSwallowOption::Swallow: *containment = true; break;
@@ -1218,16 +1219,17 @@ void Hy3Layout::setNodeSwallow(const PHLWORKSPACE& workspace, SetSwallowOption o
 }
 
 void Hy3Layout::killFocusedNode(const PHLWORKSPACE& workspace) {
-	if (g_pCompositor->m_pLastWindow != nullptr && g_pCompositor->m_pLastWindow->m_bIsFloating) {
-		g_pCompositor->closeWindow(g_pCompositor->m_pLastWindow);
+	auto last_window = g_pCompositor->m_pLastWindow.lock();
+	if (last_window != nullptr && last_window->m_bIsFloating) {
+		g_pCompositor->closeWindow(last_window);
 	} else {
 		auto* node = this->getWorkspaceFocusedNode(workspace);
 		if (node == nullptr) return;
 
-		std::vector<CWindow*> windows;
+		std::vector<PHLWINDOW> windows;
 		node->appendAllWindows(windows);
 
-		for (auto* window: windows) {
+		for (auto& window: windows) {
 			window->setHidden(false);
 			g_pCompositor->closeWindow(window);
 		}
@@ -1241,6 +1243,7 @@ void Hy3Layout::expand(
 ) {
 	auto* node = this->getWorkspaceFocusedNode(workspace, false, true);
 	if (node == nullptr) return;
+	PHLWINDOW window;
 
 	const auto monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
 
@@ -1254,10 +1257,10 @@ void Hy3Layout::expand(
 			}
 		}
 
-		if (node->data.type == Hy3NodeType::Group && !node->data.as_group.group_focused)
-			node->data.as_group.expand_focused = ExpandFocusType::Stack;
+		if (node->data.is_group() && !node->data.as_group().group_focused)
+			node->data.as_group().expand_focused = ExpandFocusType::Stack;
 
-		auto& group = node->parent->data.as_group;
+		auto& group = node->parent->data.as_group();
 		group.focused_child = node;
 		group.expand_focused = ExpandFocusType::Latch;
 
@@ -1272,19 +1275,19 @@ void Hy3Layout::expand(
 		}
 	} break;
 	case ExpandOption::Shrink:
-		if (node->data.type == Hy3NodeType::Group) {
-			auto& group = node->data.as_group;
+		if (node->data.is_group()) {
+			auto& group = node->data.as_group();
 
 			group.expand_focused = ExpandFocusType::NotExpanded;
-			if (group.focused_child->data.type == Hy3NodeType::Group)
-				group.focused_child->data.as_group.expand_focused = ExpandFocusType::Latch;
+			if (group.focused_child->data.is_group())
+				group.focused_child->data.as_group().expand_focused = ExpandFocusType::Latch;
 
 			node->recalcSizePosRecursive();
 		}
 		break;
 	case ExpandOption::Base: {
-		if (node->data.type == Hy3NodeType::Group) {
-			node->data.as_group.collapseExpansions();
+		if (node->data.is_group()) {
+			node->data.as_group().collapseExpansions();
 			node->recalcSizePosRecursive();
 		}
 		break;
@@ -1295,10 +1298,9 @@ void Hy3Layout::expand(
 
 	return;
 
-	CWindow* window;
 fullscreen:
-	if (node->data.type != Hy3NodeType::Window) return;
-	window = node->data.as_window;
+	if (node->data.is_group()) return;
+	window = node->data.as_window();
 	if (!window->m_bIsFullscreen || window->m_pWorkspace->m_bIsSpecialWorkspace) return;
 
 	if (workspace->m_bHasFullscreenWindow) return;
@@ -1322,31 +1324,30 @@ fsupdate:
 	this->recalculateMonitor(monitor->ID);
 }
 
-bool Hy3Layout::shouldRenderSelected(CWindow* window) {
+bool Hy3Layout::shouldRenderSelected(const PHLWINDOW& window) {
 	if (window == nullptr) return false;
 	auto* root = this->getWorkspaceRootGroup(window->m_pWorkspace);
-	if (root == nullptr || root->data.as_group.focused_child == nullptr) return false;
+	if (root == nullptr || root->data.as_group().focused_child == nullptr) return false;
 	auto* focused = root->getFocusedNode();
 	if (focused == nullptr
-	    || (focused->data.type == Hy3NodeType::Window
-	        && focused->data.as_window != g_pCompositor->m_pLastWindow))
+	    || (focused->data.is_window()
+	        && focused->data.as_window() != g_pCompositor->m_pLastWindow.lock()))
 		return false;
 
-	switch (focused->data.type) {
-	case Hy3NodeType::Window: return focused->data.as_window == window;
+	switch (focused->data.type()) {
+	case Hy3NodeType::Window: return focused->data.as_window() == window;
 	case Hy3NodeType::Group: {
 		auto* node = this->getNodeFromWindow(window);
 		if (node == nullptr) return false;
-		return focused->data.as_group.hasChild(node);
+		return focused->data.as_group().hasChild(node);
 	}
-	default: return false;
 	}
 }
 
 Hy3Node* Hy3Layout::getWorkspaceRootGroup(const PHLWORKSPACE& workspace) {
 	for (auto& node: this->nodes) {
-		if (node.workspace == workspace && node.parent == nullptr
-		    && node.data.type == Hy3NodeType::Group && !node.reparenting)
+		if (node.workspace == workspace && node.parent == nullptr && node.data.is_group()
+		    && !node.reparenting)
 		{
 			return &node;
 		}
@@ -1380,7 +1381,7 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 		if (!rendering_normally) break;
 
 		for (auto& entry: g_Hy3Layout->tab_groups) {
-			if (!entry.hidden && entry.target_window == g_pHyprOpenGL->m_pCurrentWindow
+			if (!entry.hidden && entry.target_window == g_pHyprOpenGL->m_pCurrentWindow.lock()
 			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
 			           == rendered_groups.end())
 			{
@@ -1409,18 +1410,17 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 }
 
 void Hy3Layout::windowGroupUrgentHook(void* p, SCallbackInfo& callback_info, std::any data) {
-	CWindow* window = std::any_cast<CWindow*>(data);
+	auto window = std::any_cast<PHLWINDOW>(data);
 	if (window == nullptr) return;
 	window->m_bIsUrgent = true;
 	Hy3Layout::windowGroupUpdateRecursiveHook(p, callback_info, data);
 }
 
 void Hy3Layout::windowGroupUpdateRecursiveHook(void*, SCallbackInfo&, std::any data) {
-	CWindow* window = std::any_cast<CWindow*>(data);
+	auto window = std::any_cast<PHLWINDOW>(data);
 	if (window == nullptr) return;
 	auto* node = g_Hy3Layout->getNodeFromWindow(window);
 
-	// it is UB for `this` to be null
 	if (node == nullptr) return;
 	node->updateTabBarRecursive();
 }
@@ -1435,9 +1435,9 @@ void Hy3Layout::tickHook(void*, SCallbackInfo&, std::any) {
 	}
 }
 
-Hy3Node* Hy3Layout::getNodeFromWindow(CWindow* window) {
+Hy3Node* Hy3Layout::getNodeFromWindow(const PHLWINDOW& window) {
 	for (auto& node: this->nodes) {
-		if (node.data.type == Hy3NodeType::Window && node.data.as_window == window) {
+		if (node.data.is_window() && node.data.as_window() == window) {
 			return &node;
 		}
 	}
@@ -1446,8 +1446,8 @@ Hy3Node* Hy3Layout::getNodeFromWindow(CWindow* window) {
 }
 
 void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
-	if (node->data.type != Hy3NodeType::Window) return;
-	auto* window = node->data.as_window;
+	if (node->data.is_group()) return;
+	auto window = node->data.as_window();
 	auto root_node = this->getWorkspaceRootGroup(window->m_pWorkspace);
 
 	CMonitor* monitor = nullptr;
@@ -1480,13 +1480,13 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	static const auto no_gaps_when_only = ConfigValue<Hyprlang::INT>("plugin:hy3:no_gaps_when_only");
 	// clang-format on
 
-	if (!g_pCompositor->windowExists(window) || !window->m_bIsMapped) {
+	if (!valid(window) || !window->m_bIsMapped) {
 		hy3_log(
 		    ERR,
 		    "node {:x} is an unmapped window ({:x}), cannot apply node data, removing from tiled "
 		    "layout",
 		    (uintptr_t) node,
-		    (uintptr_t) window
+		    (uintptr_t) window.get()
 		);
 		errorNotif();
 		this->onWindowRemovedTiling(window);
@@ -1501,8 +1501,8 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	window->m_vSize = nodeBox.size();
 	window->m_vPosition = nodeBox.pos();
 
-	auto only_node = root_node != nullptr && root_node->data.as_group.children.size() == 1
-	              && root_node->data.as_group.children.front()->data.type == Hy3NodeType::Window;
+	auto only_node = root_node != nullptr && root_node->data.as_group().children.size() == 1
+	              && root_node->data.as_group().children.front()->data.is_window();
 
 	if (!window->m_pWorkspace->m_bIsSpecialWorkspace
 	    && ((*no_gaps_when_only != 0 && (only_node || window->m_bIsFullscreen))
@@ -1589,7 +1589,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 	while (true) {
 		if (break_parent == nullptr) return nullptr;
 
-		auto& group = break_parent->data.as_group; // must be a group in order to be a parent
+		auto& group = break_parent->data.as_group(); // must be a group in order to be a parent
 
 		if (shiftMatchesLayout(group.layout, direction)
 		    && (!visible || group.layout != Hy3GroupLayout::Tabbed))
@@ -1636,9 +1636,10 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 
 				auto* newChild = &this->nodes.back();
 				Hy3Node::swapData(*break_parent, *newChild);
-				break_parent->data.as_group.children.push_back(newChild);
-				break_parent->data.as_group.group_focused = false;
-				break_parent->data.as_group.focused_child = newChild;
+				auto& group = break_parent->data.as_group();
+				group.children.push_back(newChild);
+				group.group_focused = false;
+				group.focused_child = newChild;
 				break_origin = newChild;
 			}
 
@@ -1649,7 +1650,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		}
 	}
 
-	auto& parent_group = break_parent->data.as_group;
+	auto& parent_group = break_parent->data.as_group();
 	Hy3Node* target_group = break_parent;
 	std::list<Hy3Node*>::iterator insert;
 
@@ -1660,15 +1661,15 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		if (!shift) return nullptr;
 		insert = parent_group.children.end();
 	} else {
-		auto& group_data = target_group->data.as_group;
+		auto& group_data = target_group->data.as_group();
 
 		auto iter = std::find(group_data.children.begin(), group_data.children.end(), break_origin);
 		if (shiftIsForward(direction)) iter = std::next(iter);
 		else iter = std::prev(iter);
 
-		if ((*iter)->data.type == Hy3NodeType::Window
-		    || ((*iter)->data.type == Hy3NodeType::Group
-		        && (*iter)->data.as_group.expand_focused != ExpandFocusType::NotExpanded)
+		if ((*iter)->data.is_window()
+		    || ((*iter)->data.is_group()
+		        && (*iter)->data.as_group().expand_focused != ExpandFocusType::NotExpanded)
 		    || (shift && once && has_broken_once))
 		{
 			if (shift) {
@@ -1684,7 +1685,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			// break into neighboring groups until we hit a window
 			while (true) {
 				target_group = *iter;
-				auto& group_data = target_group->data.as_group;
+				auto& group_data = target_group->data.as_group();
 
 				if (group_data.children.empty()) return nullptr; // in theory this would never happen
 
@@ -1735,9 +1736,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 					break;
 				}
 
-				if ((*iter)->data.type == Hy3NodeType::Window
-				    || ((*iter)->data.type == Hy3NodeType::Group
-				        && (*iter)->data.as_group.expand_focused != ExpandFocusType::NotExpanded))
+				if ((*iter)->data.is_window()
+				    || ((*iter)->data.is_group()
+				        && (*iter)->data.as_group().expand_focused != ExpandFocusType::NotExpanded))
 				{
 					if (shift) {
 						if (shift_after) insert = std::next(iter);
@@ -1751,18 +1752,19 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		}
 	}
 
-	auto& group_data = target_group->data.as_group;
+	auto& group_data = target_group->data.as_group();
 
 	if (target_group == node.parent) {
 		// nullptr is used as a signal value instead of removing it first to avoid
 		// iterator invalidation.
 		auto iter = std::find(group_data.children.begin(), group_data.children.end(), &node);
 		*iter = nullptr;
-		target_group->data.as_group.children.insert(insert, &node);
-		target_group->data.as_group.children.remove(nullptr);
+		auto& group = target_group->data.as_group();
+		group.children.insert(insert, &node);
+		group.children.remove(nullptr);
 		target_group->recalcSizePosRecursive();
 	} else {
-		target_group->data.as_group.children.insert(insert, &node);
+		target_group->data.as_group().children.insert(insert, &node);
 
 		// must happen AFTER `insert` is used
 		auto* old_parent = node.removeFromParentRecursive(nullptr);
@@ -1770,7 +1772,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		node.size_ratio = 1.0;
 
 		if (old_parent != nullptr) {
-			auto& group = old_parent->data.as_group;
+			auto& group = old_parent->data.as_group();
 			if (old_parent->parent != nullptr && group.ephemeral && group.children.size() == 1
 			    && !group.hasChild(&node))
 			{
