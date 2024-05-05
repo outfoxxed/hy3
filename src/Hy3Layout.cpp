@@ -11,10 +11,10 @@
 #include "SelectionHook.hpp"
 #include "globals.hpp"
 
-std::shared_ptr<HOOK_CALLBACK_FN> renderHookPtr;
-std::shared_ptr<HOOK_CALLBACK_FN> windowTitleHookPtr;
-std::shared_ptr<HOOK_CALLBACK_FN> urgentHookPtr;
-std::shared_ptr<HOOK_CALLBACK_FN> tickHookPtr;
+SP<HOOK_CALLBACK_FN> renderHookPtr;
+SP<HOOK_CALLBACK_FN> windowTitleHookPtr;
+SP<HOOK_CALLBACK_FN> urgentHookPtr;
+SP<HOOK_CALLBACK_FN> tickHookPtr;
 
 bool performContainment(Hy3Node& node, bool contained, PHLWINDOW& window) {
 	if (node.data.is_group()) {
