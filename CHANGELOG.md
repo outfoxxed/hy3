@@ -2,6 +2,7 @@
 
 ## Upcoming
 
+- Added `hy3:warpcursor` dispatcher to warp cursor to current node.
 - Added cursor warping options for `hy3:movefocus`.
 
 ## hl0.37.1 and before

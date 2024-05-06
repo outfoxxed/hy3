@@ -129,6 +129,10 @@ void dispatch_movefocus(std::string value) {
 	g_Hy3Layout->shiftFocus(workspace, shift.value(), visible, warp_cursor);
 }
 
+void dispatch_warpcursor(std::string value) {
+	g_Hy3Layout->warpCursor();
+}
+
 void dispatch_move_to_workspace(std::string value) {
 	auto origin_workspace = workspace_for_action(true);
 	if (!valid(origin_workspace)) return;
@@ -259,6 +263,7 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changegroup", dispatch_changegroup);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:setephemeral", dispatch_setephemeral);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movefocus", dispatch_movefocus);
+	HyprlandAPI::addDispatcher(PHANDLE, "hy3:warpcursor", dispatch_warpcursor);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movewindow", dispatch_movewindow);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:movetoworkspace", dispatch_move_to_workspace);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:changefocus", dispatch_changefocus);

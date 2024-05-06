@@ -321,6 +321,7 @@ plugin {
    - `visible` - only move between visible nodes, not hidden tabs
    - `warp` - warp the mouse to the selected window, even if `general:no_cursor_warps` is true.
    - `nowarp` - does not warp the mouse to the selected window, even if `general:no_cursor_warps` is false.
+ - `hy3:warpcursor` - warp the cursor to the center of the focused node
  - `hy3:movewindow, <l | u | d | r | left | down | up | right>, [once], [visible]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
    - `visible` - only move between visible nodes, not hidden tabs

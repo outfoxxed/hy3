@@ -925,6 +925,22 @@ void Hy3Layout::shiftFocus(
 	}
 }
 
+void Hy3Layout::warpCursor() {
+	auto current_window = g_pCompositor->m_pLastWindow.lock();
+
+	if (current_window != nullptr) {
+		if (current_window != nullptr) {
+			g_pCompositor->warpCursorTo(current_window->middle(), true);
+		}
+	} else {
+		auto* node = this->getWorkspaceFocusedNode(g_pCompositor->m_pLastMonitor->activeWorkspace);
+
+		if (node != nullptr) {
+			g_pCompositor->warpCursorTo(node->position + node->size / 2);
+		}
+	}
+}
+
 void changeNodeWorkspaceRecursive(Hy3Node& node, const PHLWORKSPACE& workspace) {
 	node.workspace = workspace;
 
