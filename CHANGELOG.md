@@ -1,5 +1,9 @@
 # Changelog
 
+## Upcoming
+
+- Added cursor warping options for `hy3:movefocus`.
+
 ## hl0.37.1 and before
 
 - Added `no_gaps_when_only = 2`

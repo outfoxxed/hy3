@@ -113,9 +113,20 @@ void dispatch_movefocus(std::string value) {
 
 	auto args = CVarList(value);
 
-	if (auto shift = parseShiftArg(args[0])) {
-		g_Hy3Layout->shiftFocus(workspace, shift.value(), args[1] == "visible");
-	}
+	static const auto no_cursor_warps = ConfigValue<Hyprlang::INT>("general:no_cursor_warps");
+	auto warp_cursor = !*no_cursor_warps;
+
+	int argi = 0;
+	auto shift = parseShiftArg(args[argi++]);
+	if (!shift) return;
+
+	auto visible = args[argi] == "visible";
+	if (visible) argi++;
+
+	if (args[argi] == "nowarp") warp_cursor = false;
+	else if (args[argi] == "warp") warp_cursor = true;
+
+	g_Hy3Layout->shiftFocus(workspace, shift.value(), visible, warp_cursor);
 }
 
 void dispatch_move_to_workspace(std::string value) {

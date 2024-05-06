@@ -8,6 +8,7 @@
 #include <ranges>
 
 #include "Hy3Layout.hpp"
+#include "Hy3Node.hpp"
 #include "SelectionHook.hpp"
 #include "globals.hpp"
 
@@ -878,7 +879,12 @@ void Hy3Layout::shiftWindow(
 	this->shiftNode(*node, direction, once, visible);
 }
 
-void Hy3Layout::shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection direction, bool visible) {
+void Hy3Layout::shiftFocus(
+    const PHLWORKSPACE& workspace,
+    ShiftDirection direction,
+    bool visible,
+    bool warp
+) {
 	auto current_window = g_pCompositor->m_pLastWindow.lock();
 
 	if (current_window != nullptr) {
@@ -893,7 +899,10 @@ void Hy3Layout::shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection directi
 			                                        : 'r'
 			);
 
-			if (next_window != nullptr) g_pCompositor->focusWindow(next_window);
+			if (next_window != nullptr) {
+				g_pCompositor->focusWindow(next_window);
+				if (warp) Hy3Layout::warpCursorToBox(next_window->m_vPosition, next_window->m_vSize);
+			}
 			return;
 		}
 	}
@@ -904,7 +913,13 @@ void Hy3Layout::shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection directi
 	auto* target = this->shiftOrGetFocus(*node, direction, false, false, visible);
 
 	if (target != nullptr) {
-		target->focus();
+		if (warp) {
+			// don't warp for nodes in the same tab
+			warp = node->parent == nullptr || target->parent == nullptr || node->parent != target->parent
+			    || node->parent->data.as_group().layout != Hy3GroupLayout::Tabbed;
+		}
+
+		target->focus(warp);
 		while (target->parent != nullptr) target = target->parent;
 		target->recalcSizePosRecursive();
 	}
@@ -1007,24 +1022,24 @@ void Hy3Layout::changeFocus(const PHLWORKSPACE& workspace, FocusShift shift) {
 			node = node->parent;
 		}
 
-		node->focus();
+		node->focus(false);
 		return;
 	case FocusShift::Raise:
 		if (node->parent == nullptr) goto bottom;
 		else {
-			node->parent->focus();
+			node->parent->focus(false);
 		}
 		return;
 	case FocusShift::Lower:
 		if (node->data.is_group() && node->data.as_group().focused_child != nullptr)
-			node->data.as_group().focused_child->focus();
+			node->data.as_group().focused_child->focus(false);
 		return;
 	case FocusShift::Tab:
 		// make sure we go up at least one level
 		if (node->parent != nullptr) node = node->parent;
 		while (node->parent != nullptr) {
 			if (node->data.as_group().layout == Hy3GroupLayout::Tabbed) {
-				node->focus();
+				node->focus(false);
 				return;
 			}
 
@@ -1036,7 +1051,7 @@ void Hy3Layout::changeFocus(const PHLWORKSPACE& workspace, FocusShift shift) {
 		if (node->parent != nullptr) node = node->parent;
 		while (node->parent != nullptr) {
 			if (node->parent->data.as_group().layout == Hy3GroupLayout::Tabbed) {
-				node->focus();
+				node->focus(false);
 				return;
 			}
 
@@ -1050,7 +1065,7 @@ bottom:
 		node = node->data.as_group().focused_child;
 	}
 
-	node->focus();
+	node->focus(false);
 	return;
 }
 
@@ -1202,7 +1217,7 @@ hastab:
 	       && focus->data.as_group().focused_child != nullptr)
 		focus = focus->data.as_group().focused_child;
 
-	focus->focus();
+	focus->focus(false);
 	tab_node->recalcSizePosRecursive();
 }
 
@@ -1322,6 +1337,16 @@ fsupdate:
 	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
 	g_pCompositor->changeWindowZOrder(window, true);
 	this->recalculateMonitor(monitor->ID);
+}
+
+void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
+	auto cursorpos = Vector2D(g_pCompositor->m_sWLRCursor->x, g_pCompositor->m_sWLRCursor->y);
+
+	if (cursorpos.x < pos.x || cursorpos.x >= pos.x + size.x || cursorpos.y < pos.y
+	    || cursorpos.y >= pos.y + size.y)
+	{
+		g_pCompositor->warpCursorTo(pos + size / 2, true);
+	}
 }
 
 bool Hy3Layout::shouldRenderSelected(const PHLWINDOW& window) {
@@ -1791,7 +1816,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		}
 
 		node.updateTabBarRecursive();
-		node.focus();
+		node.focus(false);
 
 		if (target_parent != target_group && target_parent != nullptr)
 			target_parent->recalcSizePosRecursive();

@@ -8,6 +8,7 @@
 #include <hyprland/src/helpers/Box.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 
+#include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
 #include "globals.hpp"
 
@@ -163,18 +164,24 @@ PHLWINDOW Hy3NodeData::as_window() {
 
 bool Hy3Node::operator==(const Hy3Node& rhs) const { return this->data == rhs.data; }
 
-void Hy3Node::focus() {
+void Hy3Node::focus(bool warp) {
 	this->markFocused();
 
 	switch (this->data.type()) {
-	case Hy3NodeType::Window:
-		this->data.as_window()->setHidden(false);
-		g_pCompositor->focusWindow(this->data.as_window());
+	case Hy3NodeType::Window: {
+		auto window = this->data.as_window();
+		window->setHidden(false);
+		g_pCompositor->focusWindow(window);
+		if (warp) Hy3Layout::warpCursorToBox(window->m_vPosition, window->m_vSize);
 		break;
-	case Hy3NodeType::Group:
+	}
+	case Hy3NodeType::Group: {
 		g_pCompositor->focusWindow(nullptr);
 		this->raiseToTop();
+
+		if (warp) Hy3Layout::warpCursorToBox(this->position, this->size);
 		break;
+	}
 	}
 }
 

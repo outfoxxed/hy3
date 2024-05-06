@@ -95,7 +95,7 @@ struct Hy3Node {
 
 	bool operator==(const Hy3Node&) const;
 
-	void focus();
+	void focus(bool warp);
 	void focusWindow();
 	PHLWINDOW bringToTop();
 	void markFocused();

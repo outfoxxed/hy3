@@ -317,8 +317,10 @@ plugin {
    - `toggletab` will untab if group is tabbed, and tab if group is untabbed
    - `opposite` will toggle between horizontal and vertical layouts if the group is not tabbed.
  - `hy3:setephemeral, <true | false>` - change the ephemerality of the group the node belongs to
- - `hy3:movefocus, <l | u | d | r | left | down | up | right>, [visible]` - move the focus left, up, down, or right
+ - `hy3:movefocus, <l | u | d | r | left | down | up | right>, [visible], [warp | nowarp]` - move the focus left, up, down, or right
    - `visible` - only move between visible nodes, not hidden tabs
+   - `warp` - warp the mouse to the selected window, even if `general:no_cursor_warps` is true.
+   - `nowarp` - does not warp the mouse to the selected window, even if `general:no_cursor_warps` is false.
  - `hy3:movewindow, <l | u | d | r | left | down | up | right>, [once], [visible]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
    - `visible` - only move between visible nodes, not hidden tabs
