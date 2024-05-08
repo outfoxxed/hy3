@@ -1178,7 +1178,9 @@ void Hy3Layout::focusTab(
 		tab_node = this->getWorkspaceFocusedNode(workspace);
 		if (tab_node == nullptr) return;
 
-		while (tab_node != nullptr && tab_node->data.as_group().layout != Hy3GroupLayout::Tabbed
+		while (tab_node != nullptr
+		       && (tab_node->data.is_window()
+		           || tab_node->data.as_group().layout != Hy3GroupLayout::Tabbed)
 		       && tab_node->parent != nullptr)
 			tab_node = tab_node->parent;
 

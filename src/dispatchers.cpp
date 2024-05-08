@@ -129,9 +129,7 @@ void dispatch_movefocus(std::string value) {
 	g_Hy3Layout->shiftFocus(workspace, shift.value(), visible, warp_cursor);
 }
 
-void dispatch_warpcursor(std::string value) {
-	g_Hy3Layout->warpCursor();
-}
+void dispatch_warpcursor(std::string value) { g_Hy3Layout->warpCursor(); }
 
 void dispatch_move_to_workspace(std::string value) {
 	auto origin_workspace = workspace_for_action(true);
