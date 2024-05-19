@@ -5,6 +5,7 @@
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/managers/PointerManager.hpp>
 #include <ranges>
 
 #include "Hy3Layout.hpp"
@@ -1358,7 +1359,7 @@ fsupdate:
 }
 
 void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
-	auto cursorpos = Vector2D(g_pCompositor->m_sWLRCursor->x, g_pCompositor->m_sWLRCursor->y);
+	auto cursorpos = g_pPointerManager->position();
 
 	if (cursorpos.x < pos.x || cursorpos.x >= pos.x + size.x || cursorpos.y < pos.y
 	    || cursorpos.y >= pos.y + size.y)

@@ -113,7 +113,7 @@ void dispatch_movefocus(std::string value) {
 
 	auto args = CVarList(value);
 
-	static const auto no_cursor_warps = ConfigValue<Hyprlang::INT>("general:no_cursor_warps");
+	static const auto no_cursor_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
 	auto warp_cursor = !*no_cursor_warps;
 
 	int argi = 0;

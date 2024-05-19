@@ -30,7 +30,9 @@
       impure = import ./shell.nix {
         pkgs = import <nixpkgs> {};
         hlversion = props.version;
-        hyprland = (pkgs.appendOverlays [ hyprland.overlays.hyprland-packages ]).hyprland-debug;
+        hyprland = (pkgs.appendOverlays [ hyprland.overlays.hyprland-packages ]).hyprland-debug.overrideAttrs {
+          dontStrip = true;
+        };
       };
     });
   };
