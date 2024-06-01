@@ -271,6 +271,14 @@ void Hy3TabBar::tick() {
 	}
 
 	if (this->entries.empty()) this->destroy = true;
+
+	damage();
+}
+
+void Hy3TabBar::damage() {
+	auto pos = this->entries.front().node.position;
+	auto box = CBox {pos.x, pos.y, this->size.x, this->size.y};
+	g_pHyprRenderer->damageBox(&box);
 }
 
 void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {

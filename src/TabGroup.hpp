@@ -67,6 +67,7 @@ public:
 	Hy3TabBar();
 	void beginDestroy();
 
+	void damage();
 	void tick();
 	void updateNodeList(std::list<Hy3Node*>& nodes);
 	void updateAnimations(bool warp = false);
