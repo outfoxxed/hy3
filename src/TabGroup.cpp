@@ -271,8 +271,6 @@ void Hy3TabBar::tick() {
 	}
 
 	if (this->entries.empty()) this->destroy = true;
-
-	damage();
 }
 
 void Hy3TabBar::damage() {
@@ -462,6 +460,10 @@ void Hy3TabGroup::tick() {
 			if (this->bar.fade_opacity.goal() != 0.0) this->bar.fade_opacity = 0.0;
 		} else {
 			if (this->bar.fade_opacity.goal() != 1.0) this->bar.fade_opacity = 1.0;
+		}
+
+		if (this->workspace->m_vRenderOffset.isBeingAnimated()) {
+			this->bar.damage();
 		}
 	}
 
