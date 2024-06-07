@@ -1,5 +1,8 @@
 # Changelog
 
+# Upcoming
+- Fixed IPC and wlr-foreign-toplevel not getting fullscreen and maximize events.
+
 ## hl0.40.0 and before
 
 - Added `hy3:warpcursor` dispatcher to warp cursor to current node.

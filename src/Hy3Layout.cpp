@@ -503,6 +503,12 @@ void Hy3Layout::fullscreenRequestForWindow(
 	window->m_bIsFullscreen = on;
 	window->m_pWorkspace->m_bHasFullscreenWindow = !window->m_pWorkspace->m_bHasFullscreenWindow;
 
+	window->updateDynamicRules();
+	window->updateWindowDecos();
+
+	g_pEventManager->postEvent(SHyprIPCEvent {"fullscreen", std::to_string((int) on)});
+	EMIT_HOOK_EVENT("fullscreen", window);
+
 	if (!window->m_bIsFullscreen) {
 		auto* node = this->getNodeFromWindow(window);
 
