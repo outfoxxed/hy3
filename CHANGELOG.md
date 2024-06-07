@@ -2,6 +2,7 @@
 
 # Upcoming
 - Fixed IPC and wlr-foreign-toplevel not getting fullscreen and maximize events.
+- Fixed glitches when moving nodes between monitors with hy3 dispatchers.
 
 ## hl0.40.0 and before
 
