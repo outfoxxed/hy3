@@ -136,6 +136,12 @@ To update hy3 (and all other plugins), run
 hyprpm update
 ```
 
+Sometimes the headers from hyprland are not updated, if this happens run (See [issue #109](https://github.com/outfoxxed/hy3/issues/109) for an example of where this happened)
+
+```sh 
+hyprpm update -f
+```
+
 (See [the wiki](https://wiki.hyprland.org/Plugins/Using-Plugins/) for details.)
 
 > [!WARNING]
