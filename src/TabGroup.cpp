@@ -273,12 +273,6 @@ void Hy3TabBar::tick() {
 	if (this->entries.empty()) this->destroy = true;
 }
 
-void Hy3TabBar::damage() {
-	auto pos = this->entries.front().node.position;
-	auto box = CBox {pos.x, pos.y, this->size.x, this->size.y};
-	g_pHyprRenderer->damageBox(&box);
-}
-
 void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
 	std::list<std::list<Hy3TabBarEntry>::iterator> removed_entries;
 
@@ -415,7 +409,17 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	this->size.warp();
 }
 
+void Hy3TabGroup::damage() {
+	auto pos = this->node->position;
+	auto size = this->node->size;
+	auto box = CBox {pos.x, pos.y, size.x, size.y};
+
+	g_pHyprRenderer->damageBox(&box);
+}
+
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
+	this->node = &node;
+
 	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 	static const auto gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
 	static const auto bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
@@ -463,7 +467,7 @@ void Hy3TabGroup::tick() {
 		}
 
 		if (this->workspace->m_vRenderOffset.isBeingAnimated()) {
-			this->bar.damage();
+			this->damage();
 		}
 	}
 

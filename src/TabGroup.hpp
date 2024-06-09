@@ -67,7 +67,6 @@ public:
 	Hy3TabBar();
 	void beginDestroy();
 
-	void damage();
 	void tick();
 	void updateNodeList(std::list<Hy3Node*>& nodes);
 	void updateAnimations(bool warp = false);
@@ -106,6 +105,7 @@ private:
 	std::vector<PHLWINDOWREF> stencil_windows;
 	Vector2D last_pos;
 	Vector2D last_size;
+	Hy3Node* node;
 
 	Hy3TabGroup();
 
@@ -114,4 +114,6 @@ private:
 
 	// UB if node is not a group.
 	void updateStencilWindows(Hy3Node&);
+
+	void damage();
 };
