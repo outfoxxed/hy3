@@ -11,6 +11,8 @@
 #include <pixman.h>
 
 #include "globals.hpp"
+#include "src/helpers/memory/SharedPtr.hpp"
+#include "src/render/Texture.hpp"
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->focused
@@ -52,6 +54,8 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 
 	this->vertical_pos = 0.0;
 	this->fade_opacity = 1.0;
+
+	this->texture = makeShared<CTexture>();
 }
 
 bool Hy3TabBarEntry::operator==(const Hy3Node& node) const { return this->node == node; }
@@ -117,7 +121,7 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 
 	auto rounding = std::min((double) *s_rounding * scale, std::min(width * 0.5, height * 0.5));
 
-	if (this->texture.m_iTexID == 0
+	if (this->texture->m_iTexID == 0
 	    // clang-format off
 			|| this->last_render.x != box.x
 			|| this->last_render.y != box.y
@@ -228,9 +232,9 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 		cairo_surface_flush(cairo_surface);
 
 		auto data = cairo_image_surface_get_data(cairo_surface);
-		this->texture.allocate();
+		this->texture->allocate();
 
-		glBindTexture(GL_TEXTURE_2D, this->texture.m_iTexID);
+		glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -244,7 +248,7 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 		cairo_destroy(cairo);
 		cairo_surface_destroy(cairo_surface);
 	} else {
-		glBindTexture(GL_TEXTURE_2D, this->texture.m_iTexID);
+		glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
 	}
 }
 

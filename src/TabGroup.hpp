@@ -15,7 +15,7 @@ class Hy3TabBar;
 struct Hy3TabBarEntry {
 	std::string window_title;
 	bool destroying = false;
-	CTexture texture;
+	SP<CTexture> texture;
 	CAnimatedVariable<float> focused;
 	CAnimatedVariable<float> urgent;
 	CAnimatedVariable<float> offset;       // 0.0-1.0 of total bar

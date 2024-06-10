@@ -503,6 +503,12 @@ void Hy3Layout::fullscreenRequestForWindow(
 	window->m_bIsFullscreen = on;
 	window->m_pWorkspace->m_bHasFullscreenWindow = !window->m_pWorkspace->m_bHasFullscreenWindow;
 
+	window->updateDynamicRules();
+	window->updateWindowDecos();
+
+	g_pEventManager->postEvent(SHyprIPCEvent {"fullscreen", std::to_string((int) on)});
+	EMIT_HOOK_EVENT("fullscreen", window);
+
 	if (!window->m_bIsFullscreen) {
 		auto* node = this->getNodeFromWindow(window);
 
@@ -947,9 +953,12 @@ void changeNodeWorkspaceRecursive(Hy3Node& node, const PHLWORKSPACE& workspace) 
 
 	if (node.data.is_window()) {
 		auto window = node.data.as_window();
+		g_pHyprRenderer->damageWindow(window);
 		window->moveToWorkspace(workspace);
+		window->m_iMonitorID = workspace->m_iMonitorID;
 		window->updateToplevel();
 		window->updateDynamicRules();
+		window->uncacheWindowDecos();
 	} else {
 		for (auto* child: node.data.as_group().children) {
 			changeNodeWorkspaceRecursive(*child, workspace);
@@ -990,6 +999,7 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 	if (focused_window != nullptr
 	    && (focused_window_node == nullptr || focused_window->m_bIsFullscreen))
 	{
+		g_pHyprRenderer->damageWindow(focused_window);
 		g_pCompositor->moveWindowToWorkspaceSafe(focused_window, workspace);
 	} else {
 		if (node == nullptr) return;
@@ -1009,6 +1019,8 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 
 		changeNodeWorkspaceRecursive(*node, workspace);
 		this->insertNode(*node);
+		g_pCompositor->updateWorkspaceWindows(origin->m_iID);
+		g_pCompositor->updateWorkspaceWindows(workspace->m_iID);
 	}
 
 	if (follow) {
