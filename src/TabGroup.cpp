@@ -11,6 +11,8 @@
 #include <pixman.h>
 
 #include "globals.hpp"
+#include "src/helpers/memory/SharedPtr.hpp"
+#include "src/render/Texture.hpp"
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->focused
@@ -52,6 +54,8 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 
 	this->vertical_pos = 0.0;
 	this->fade_opacity = 1.0;
+
+	this->texture = makeShared<CTexture>();
 }
 
 bool Hy3TabBarEntry::operator==(const Hy3Node& node) const { return this->node == node; }
