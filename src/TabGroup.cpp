@@ -447,6 +447,11 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	}
 }
 
+void damageBox(const Vector2D* position, const Vector2D* size) {
+	auto box = CBox {position->x, position->y, size->x, size->y};
+	g_pHyprRenderer->damageBox(&box);
+}
+
 void Hy3TabGroup::tick() {
 	static const auto enter_from_top = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:from_top");
 	static const auto padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
@@ -459,14 +464,31 @@ void Hy3TabGroup::tick() {
 		} else {
 			if (this->bar.fade_opacity.goal() != 1.0) this->bar.fade_opacity = 1.0;
 		}
+
+		auto workspaceOffset = this->workspace->m_vRenderOffset.value();
+		if (this->last_workspace_offset != workspaceOffset) {
+			// First we damage the area where the bar was during the previous
+			// tick, cleaning up after ourselves
+			auto pos = this->last_pos + this->last_workspace_offset;
+			auto size = this->last_size;
+			damageBox(&pos, &size);
+
+			// Then we damage the current position of the bar, to avoid seeing
+			// glitches with animations disabled
+			pos = this->pos.value() + workspaceOffset;
+			size = this->size.value();
+			damageBox(&pos, &size);
+
+			this->bar.damaged = true;
+			this->last_workspace_offset = workspaceOffset;
+		}
 	}
 
 	auto pos = this->pos.value();
 	auto size = this->size.value();
 
 	if (this->last_pos != pos || this->last_size != size) {
-		CBox damage_box = {this->last_pos.x, this->last_pos.y, this->last_size.x, this->last_size.y};
-		g_pHyprRenderer->damageBox(&damage_box);
+		damageBox(&this->last_pos, &this->last_size);
 
 		this->bar.damaged = true;
 		this->last_pos = pos;
@@ -480,8 +502,7 @@ void Hy3TabGroup::tick() {
 			pos.y -= *padding;
 		}
 
-		CBox damage_box = {pos.x, pos.y, size.x, size.y};
-		g_pHyprRenderer->damageBox(&damage_box);
+		damageBox(&pos, &size);
 
 		this->bar.damaged = true;
 		this->bar.dirty = false;
