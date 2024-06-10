@@ -103,6 +103,7 @@ public:
 
 private:
 	std::vector<PHLWINDOWREF> stencil_windows;
+	Vector2D last_workspace_offset;
 	Vector2D last_pos;
 	Vector2D last_size;
 	Hy3Node* node;
@@ -114,6 +115,4 @@ private:
 
 	// UB if node is not a group.
 	void updateStencilWindows(Hy3Node&);
-
-	void damage();
 };
