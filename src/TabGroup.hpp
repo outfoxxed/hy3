@@ -106,7 +106,6 @@ private:
 	Vector2D last_workspace_offset;
 	Vector2D last_pos;
 	Vector2D last_size;
-	Hy3Node* node;
 
 	Hy3TabGroup();
 
