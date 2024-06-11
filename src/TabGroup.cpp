@@ -482,6 +482,12 @@ void Hy3TabGroup::tick() {
 			this->bar.damaged = true;
 			this->last_workspace_offset = workspaceOffset;
 		}
+
+		if (this->workspace->m_fAlpha.isBeingAnimated()) {
+			auto pos = this->pos.value();
+			auto size = this->size.value();
+			damageBox(&pos, &size);
+		}
 	}
 
 	auto pos = this->pos.value();
