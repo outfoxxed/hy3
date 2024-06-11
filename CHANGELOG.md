@@ -1,8 +1,10 @@
 # Changelog
 
-# Upcoming
+# hl0.41.0 and before
+
 - Fixed IPC and wlr-foreign-toplevel not getting fullscreen and maximize events.
 - Fixed glitches when moving nodes between monitors with hy3 dispatchers.
+- Fixed glitchy tab bar effects when switching workspaces
 
 ## hl0.40.0 and before
 
