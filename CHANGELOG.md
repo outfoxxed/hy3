@@ -1,5 +1,9 @@
 # Changelog
 
+# Upcoming
+
+- Fixed glitchy tab bar effects when switching workspaces with fade effect.
+
 # hl0.41.0 and before
 
 - Fixed IPC and wlr-foreign-toplevel not getting fullscreen and maximize events.
