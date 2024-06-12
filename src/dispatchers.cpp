@@ -3,6 +3,7 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprutils/string/String.hpp>
 
 #include "dispatchers.hpp"
 #include "globals.hpp"

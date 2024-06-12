@@ -7,11 +7,11 @@
 #include <hyprland/src/helpers/Box.hpp>
 #include <hyprland/src/helpers/Color.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
+#include <hyprutils/memory/SharedPtr.hpp>
 #include <pango/pangocairo.h>
 #include <pixman.h>
 
 #include "globals.hpp"
-#include "src/helpers/memory/SharedPtr.hpp"
 #include "src/render/Texture.hpp"
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
