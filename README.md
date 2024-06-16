@@ -67,7 +67,8 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3 by
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    hyprland.url = "github:hyprwm/Hyprland?ref=v{version}"; # where {version} is the hyprland release version
+    hyprland.url = "git+https://github.com/hyprwm/Hyprland?submodules=1&ref={version}";
+    # where {version} is the hyprland release version
     # or "github:hyprwm/Hyprland" to follow the development branch
 
     hy3 = {
@@ -138,7 +139,7 @@ hyprpm update
 
 Sometimes the headers from hyprland are not updated, if this happens run (See [issue #109](https://github.com/outfoxxed/hy3/issues/109) for an example of where this happened)
 
-```sh 
+```sh
 hyprpm update -f
 ```
 
