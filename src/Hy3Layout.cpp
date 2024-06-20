@@ -126,6 +126,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	}
 
 	node.reparenting = true;
+	node.size_ratio = 1.0;
 
 	auto* monitor = g_pCompositor->getMonitorFromID(node.workspace->m_iMonitorID);
 
