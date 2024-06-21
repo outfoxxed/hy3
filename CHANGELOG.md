@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# hl0.41.1 and before
 
 - Fixed glitchy tab bar effects when switching workspaces with fade effect.
 - Fixed wrongly sized layout when moving resized nodes between workspaces.
