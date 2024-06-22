@@ -1667,7 +1667,31 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		}
 
 		if (break_parent->parent == nullptr) {
-			if (!shift) return nullptr;
+			auto direction_char = direction == ShiftDirection::Left ? 'l'
+			                    : direction == ShiftDirection::Up   ? 'u'
+			                    : direction == ShiftDirection::Down ? 'd'
+			                                                        : 'r';
+			auto* next_monitor = g_pCompositor->getMonitorInDirection(direction_char);
+			if (next_monitor) {
+				g_pCompositor->setActiveMonitor(next_monitor);
+				auto next_workspace = next_monitor->activeWorkspace;
+				if (next_workspace) {
+					if (shift) {
+						moveNodeToWorkspace(node.workspace, next_workspace->m_szName, true);
+					} else {
+						auto target_window = next_workspace->getLastFocusedWindow();
+
+						if (target_window) {
+							// Move the cursor to the window we selected
+							g_pCompositor->warpCursorTo(target_window->m_vPosition + target_window->m_vSize / 2);
+							return getNodeFromWindow(target_window);
+						}
+					}
+				}
+				// If window wasnt found, then select middle of the monitor
+				g_pCompositor->warpCursorTo(next_monitor->vecPosition + next_monitor->vecSize / 2);
+				return nullptr;
+			}
 
 			// if we haven't gone up any levels and the group is in the same direction
 			// there's no reason to wrap the root group.
