@@ -549,14 +549,14 @@ void Hy3Layout::fullscreenRequestForWindow(
 
 			// clang-format off
 			auto gap_pos_offset = Vector2D(
-			    -(gaps_in->left - gaps_out->left),
-			    -(gaps_in->top - gaps_out->top)
+					(int) -(gaps_in->left - gaps_out->left),
+					(int) -(gaps_in->top - gaps_out->top)
 			);
 			// clang-format on
 
 			auto gap_size_offset = Vector2D(
-			    -(gaps_in->left - gaps_out->left) + -(gaps_in->right - gaps_out->right),
-			    -(gaps_in->top - gaps_out->top) + -(gaps_in->bottom - gaps_out->bottom)
+					(int) (-(gaps_in->left - gaps_out->left) + -(gaps_in->right - gaps_out->right)),
+					(int) (-(gaps_in->top - gaps_out->top) + -(gaps_in->bottom - gaps_out->bottom))
 			);
 
 			Hy3Node fakeNode = {
@@ -968,15 +968,14 @@ void changeNodeWorkspaceRecursive(Hy3Node& node, const PHLWORKSPACE& workspace) 
 }
 
 void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow) {
-	std::string target_name;
-	auto target_id = getWorkspaceIDFromString(wsname, target_name);
+	auto target = getWorkspaceIDNameFromString(wsname);
 
-	if (target_id == WORKSPACE_INVALID) {
+	if (target.id == WORKSPACE_INVALID) {
 		hy3_log(ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
 		return;
 	}
 
-	auto workspace = g_pCompositor->getWorkspaceByID(target_id);
+	auto workspace = g_pCompositor->getWorkspaceByID(target.id);
 
 	if (origin == workspace) return;
 
@@ -991,9 +990,9 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 	if (!valid(origin_ws)) return;
 
 	if (workspace == nullptr) {
-		hy3_log(LOG, "creating target workspace {} for node move", target_id);
+		hy3_log(LOG, "creating target workspace {} for node move", target.id);
 
-		workspace = g_pCompositor->createNewWorkspace(target_id, origin_ws->m_iMonitorID, target_name);
+		workspace = g_pCompositor->createNewWorkspace(target.id, origin_ws->m_iMonitorID, target.name);
 	}
 
 	// floating or fullscreen
@@ -1583,10 +1582,12 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		auto calcPos = window->m_vPosition;
 		auto calcSize = window->m_vSize;
 
-		auto gaps_offset_topleft = Vector2D(gaps_in->left, gaps_in->top) + node->gap_topleft_offset;
+		auto gaps_offset_topleft =
+				Vector2D((int) gaps_in->left, (int) gaps_in->top) + node->gap_topleft_offset;
+
 		auto gaps_offset_bottomright =
-		    Vector2D(gaps_in->left + gaps_in->right, gaps_in->top + gaps_in->bottom)
-		    + node->gap_bottomright_offset + node->gap_topleft_offset;
+				Vector2D((int) (gaps_in->left + gaps_in->right), (int) (gaps_in->top + gaps_in->bottom))
+				+ node->gap_bottomright_offset + node->gap_topleft_offset;
 
 		calcPos = calcPos + gaps_offset_topleft;
 		calcSize = calcSize - gaps_offset_bottomright;
