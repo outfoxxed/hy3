@@ -899,14 +899,11 @@ void Hy3Layout::shiftFocus(
 		if (current_window->m_pWorkspace->m_bHasFullscreenWindow) return;
 
 		if (current_window->m_bIsFloating) {
-			auto next_window = g_pCompositor->getWindowInDirection(
-			    current_window,
-			    direction == ShiftDirection::Left   ? 'l'
-			    : direction == ShiftDirection::Up   ? 'u'
-			    : direction == ShiftDirection::Down ? 'd'
-			                                        : 'r'
-			);
-
+			auto direction_char = direction == ShiftDirection::Left ? 'l'
+			                    : direction == ShiftDirection::Up   ? 'u'
+			                    : direction == ShiftDirection::Down ? 'd'
+			                                                        : 'r';
+			auto next_window = g_pCompositor->getWindowInDirection(current_window, direction_char);
 			if (next_window != nullptr) {
 				g_pCompositor->focusWindow(next_window);
 				if (warp) Hy3Layout::warpCursorToBox(next_window->m_vPosition, next_window->m_vSize);
@@ -916,7 +913,18 @@ void Hy3Layout::shiftFocus(
 	}
 
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-	if (node == nullptr) return;
+	if (node == nullptr) {
+		auto direction_char = direction == ShiftDirection::Left ? 'l'
+		                    : direction == ShiftDirection::Up   ? 'u'
+		                    : direction == ShiftDirection::Down ? 'd'
+		                                                        : 'r';
+		auto* next_monitor = g_pCompositor->getMonitorInDirection(direction_char);
+		if (next_monitor) {
+			g_pCompositor->setActiveMonitor(next_monitor);
+			g_pCompositor->warpCursorTo(next_monitor->vecPosition + next_monitor->vecSize / 2);
+		}
+		return;
+	}
 
 	auto* target = this->shiftOrGetFocus(*node, direction, false, false, visible);
 
