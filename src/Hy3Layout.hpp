@@ -10,6 +10,7 @@ enum class GroupEphemeralityOption {
 };
 
 #include <list>
+#include <optional>
 #include <set>
 
 #include <hyprland/src/layout/IHyprLayout.hpp>
@@ -20,6 +21,12 @@ enum class ShiftDirection {
 	Down,
 	Right,
 };
+inline static constexpr char getShiftDirectionChar(ShiftDirection direction) {
+	return direction == ShiftDirection::Left ? 'l'
+	     : direction == ShiftDirection::Up   ? 'u'
+	     : direction == ShiftDirection::Down ? 'd'
+	                                         : 'r';
+}
 
 enum class Axis { None, Horizontal, Vertical };
 
@@ -113,6 +120,9 @@ public:
 	void shiftNode(Hy3Node&, ShiftDirection, bool once, bool visible);
 	void shiftWindow(const PHLWORKSPACE& workspace, ShiftDirection, bool once, bool visible);
 	void shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection, bool visible, bool warp);
+	bool shiftMonitor(Hy3Node&, ShiftDirection, bool follow);
+	std::optional<Hy3Node*> focusMonitor(ShiftDirection);
+
 	void warpCursor();
 	void moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow);
 	void changeFocus(const PHLWORKSPACE& workspace, FocusShift);

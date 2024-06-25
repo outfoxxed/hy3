@@ -109,7 +109,7 @@ void dispatch_movewindow(std::string value) {
 }
 
 void dispatch_movefocus(std::string value) {
-	auto workspace = workspace_for_action();
+	auto workspace = workspace_for_action(true);
 	if (!valid(workspace)) return;
 
 	auto args = CVarList(value);
@@ -120,6 +120,10 @@ void dispatch_movefocus(std::string value) {
 	int argi = 0;
 	auto shift = parseShiftArg(args[argi++]);
 	if (!shift) return;
+	if (workspace->m_bHasFullscreenWindow) {
+		g_Hy3Layout->focusMonitor(shift.value());
+		return;
+	}
 
 	auto visible = args[argi] == "visible";
 	if (visible) argi++;
