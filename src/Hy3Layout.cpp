@@ -1704,11 +1704,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			if (!shift) {
 				auto node_opt = focusMonitor(direction);
 				return node_opt.value_or(nullptr);
-			} else {
-				shiftMonitor(node, direction, true);
-				return nullptr;
 			}
-
 			// if we haven't gone up any levels and the group is in the same direction
 			// there's no reason to wrap the root group.
 			if (group.layout != Hy3GroupLayout::Tabbed && shiftMatchesLayout(group.layout, direction)) {
