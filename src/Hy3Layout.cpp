@@ -12,6 +12,7 @@
 #include "Hy3Node.hpp"
 #include "SelectionHook.hpp"
 #include "globals.hpp"
+#include "src/desktop/Window.hpp"
 
 SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> windowTitleHookPtr;
@@ -300,9 +301,7 @@ void Hy3Layout::onWindowRemovedTiling(PHLWINDOW window) {
 	    (uintptr_t) node->parent
 	);
 
-	window->m_sSpecialRenderData.rounding = true;
-	window->m_sSpecialRenderData.border = true;
-	window->m_sSpecialRenderData.decorate = true;
+	window->unsetWindowData(PRIORITY_LAYOUT);
 
 	if (window->m_bIsFullscreen) {
 		g_pCompositor->setWindowFullscreen(window, false, FULLSCREEN_FULL);
@@ -521,9 +520,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 			window->m_vRealPosition = window->m_vLastFloatingPosition;
 			window->m_vRealSize = window->m_vLastFloatingSize;
 
-			window->m_sSpecialRenderData.rounding = true;
-			window->m_sSpecialRenderData.border = true;
-			window->m_sSpecialRenderData.decorate = true;
+			window->unsetWindowData(PRIORITY_LAYOUT);
 		}
 	} else {
 		window->m_pWorkspace->m_efFullscreenMode = fullscreen_mode;
@@ -638,7 +635,7 @@ PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 		for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
 			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && w->m_iX11Type != 2
 			    && w->m_pWorkspace == window->m_pWorkspace && !w->m_bX11ShouldntFocus
-			    && !w->m_sAdditionalConfigData.noFocus && w != window)
+			    && !w->m_sWindowData.noFocus.valueOrDefault() && w != window)
 			{
 				return w;
 			}
@@ -1529,8 +1526,6 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		return;
 	}
 
-	const auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(node->workspace);
-
 	// clang-format off
 	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 	static const auto no_gaps_when_only = ConfigValue<Hyprlang::INT>("plugin:hy3:no_gaps_when_only");
@@ -1549,7 +1544,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		return;
 	}
 
-	window->updateSpecialRenderData();
+	window->unsetWindowData(PRIORITY_LAYOUT);
 
 	auto nodeBox = CBox(node->position, node->size);
 	nodeBox.round();
@@ -1565,10 +1560,10 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	        || (window->m_bIsFullscreen && window->m_pWorkspace->m_efFullscreenMode == FULLSCREEN_FULL
 	        )))
 	{
-		window->m_sSpecialRenderData.border = workspace_rule.border.value_or(*no_gaps_when_only == 2);
-
-		window->m_sSpecialRenderData.rounding = false;
-		window->m_sSpecialRenderData.shadow = false;
+		window->m_sWindowData.decorate = CWindowOverridableVar(true, PRIORITY_LAYOUT); // a little curious but copying what dwindle does
+		window->m_sWindowData.noBorder = CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
+		window->m_sWindowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
+		window->m_sWindowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
 
 		window->updateWindowDecos();
 
