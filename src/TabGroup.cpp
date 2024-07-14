@@ -533,7 +533,7 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto scaled_pos = Vector2D(std::round(pos.x * scale), std::round(pos.y * scale));
 	auto scaled_size = Vector2D(std::round(size.x * scale), std::round(size.y * scale));
-	wlr_box box = {scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y};
+	CBox box = {scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y};
 
 	// monitor size is not scaled
 	if (pos.x > monitor_size.x || pos.y > monitor_size.y || scaled_pos.x + scaled_size.x < 0
