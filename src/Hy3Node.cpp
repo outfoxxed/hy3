@@ -316,11 +316,11 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	);
 	// clang-format on
 
-	if (this->data.is_window() && this->data.as_window()->m_bIsFullscreen) {
+	if (this->data.is_window() && this->data.as_window()->isFullscreen()) {
 		auto window = this->data.as_window();
 		auto* monitor = g_pCompositor->getMonitorFromID(this->workspace->m_iMonitorID);
 
-		if (this->workspace->m_efFullscreenMode == FULLSCREEN_FULL) {
+		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
 			window->m_vRealPosition = monitor->vecPosition;
 			window->m_vRealSize = monitor->vecSize;
 			return;

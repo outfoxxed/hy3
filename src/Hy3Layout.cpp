@@ -303,8 +303,8 @@ void Hy3Layout::onWindowRemovedTiling(PHLWINDOW window) {
 
 	window->unsetWindowData(PRIORITY_LAYOUT);
 
-	if (window->m_bIsFullscreen) {
-		g_pCompositor->setWindowFullscreen(window, false, FULLSCREEN_FULL);
+	if (window->isFullscreen()) {
+		g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
 	}
 
 	Hy3Node* expand_actor = nullptr;
@@ -492,24 +492,17 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PH
 
 void Hy3Layout::fullscreenRequestForWindow(
     PHLWINDOW window,
-    eFullscreenMode fullscreen_mode,
-    bool on
+    eFullscreenMode current_mode,
+    eFullscreenMode target_mode
 ) {
-	if (on == window->m_bIsFullscreen || window->m_pWorkspace->m_bIsSpecialWorkspace) return;
+	if (current_mode == target_mode || window->m_pWorkspace->m_bIsSpecialWorkspace) return;
 
 	const auto monitor = g_pCompositor->getMonitorFromID(window->m_iMonitorID);
-	if (window->m_pWorkspace->m_bHasFullscreenWindow && on) return;
-
-	window->m_bIsFullscreen = on;
-	window->m_pWorkspace->m_bHasFullscreenWindow = !window->m_pWorkspace->m_bHasFullscreenWindow;
 
 	window->updateDynamicRules();
 	window->updateWindowDecos();
 
-	g_pEventManager->postEvent(SHyprIPCEvent {"fullscreen", std::to_string((int) on)});
-	EMIT_HOOK_EVENT("fullscreen", window);
-
-	if (!window->m_bIsFullscreen) {
+	if (target_mode == FSMODE_NONE) {
 		auto* node = this->getNodeFromWindow(window);
 
 		if (node) {
@@ -523,8 +516,6 @@ void Hy3Layout::fullscreenRequestForWindow(
 			window->unsetWindowData(PRIORITY_LAYOUT);
 		}
 	} else {
-		window->m_pWorkspace->m_efFullscreenMode = fullscreen_mode;
-
 		// save position and size if floating
 		if (window->m_bIsFloating) {
 			window->m_vLastFloatingPosition = window->m_vRealPosition.goal();
@@ -533,7 +524,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 			window->m_vSize = window->m_vRealSize.goal();
 		}
 
-		if (fullscreen_mode == FULLSCREEN_FULL) {
+		if (target_mode == FSMODE_FULLSCREEN) {
 			window->m_vRealPosition = monitor->vecPosition;
 			window->m_vRealSize = monitor->vecSize;
 		} else {
@@ -569,10 +560,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 		}
 	}
 
-	g_pCompositor->updateWindowAnimatedDecorationValues(window);
-	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
 	g_pCompositor->changeWindowZOrder(window, true);
-	this->recalculateMonitor(monitor->ID);
 }
 
 std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string content) {
@@ -994,7 +982,7 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 
 	// floating or fullscreen
 	if (focused_window != nullptr
-	    && (focused_window_node == nullptr || focused_window->m_bIsFullscreen))
+	    && (focused_window_node == nullptr || focused_window->isFullscreen()))
 	{
 		g_pHyprRenderer->damageWindow(focused_window);
 		g_pCompositor->moveWindowToWorkspaceSafe(focused_window, workspace);
@@ -1288,14 +1276,14 @@ void Hy3Layout::expand(
 	if (node == nullptr) return;
 	PHLWINDOW window;
 
-	const auto monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
+	//const auto monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
 
 	switch (option) {
 	case ExpandOption::Expand: {
 		if (node->parent == nullptr) {
 			switch (fs_option) {
 			case ExpandFullscreenOption::MaximizeAsFullscreen:
-			case ExpandFullscreenOption::MaximizeIntermediate: goto fullscreen;
+			case ExpandFullscreenOption::MaximizeIntermediate:// goto fullscreen;
 			case ExpandFullscreenOption::MaximizeOnly: return;
 			}
 		}
@@ -1311,7 +1299,7 @@ void Hy3Layout::expand(
 
 		if (node->parent->parent == nullptr) {
 			switch (fs_option) {
-			case ExpandFullscreenOption::MaximizeAsFullscreen: goto fullscreen;
+			case ExpandFullscreenOption::MaximizeAsFullscreen:// goto fullscreen;
 			case ExpandFullscreenOption::MaximizeIntermediate:
 			case ExpandFullscreenOption::MaximizeOnly: return;
 			}
@@ -1340,7 +1328,7 @@ void Hy3Layout::expand(
 	}
 
 	return;
-
+/*
 fullscreen:
 	if (node->data.is_group()) return;
 	window = node->data.as_window();
@@ -1364,7 +1352,7 @@ fsupdate:
 	g_pCompositor->updateWindowAnimatedDecorationValues(window);
 	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
 	g_pCompositor->changeWindowZOrder(window, true);
-	this->recalculateMonitor(monitor->ID);
+	this->recalculateMonitor(monitor->ID);*/
 }
 
 void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
@@ -1556,11 +1544,13 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	              && root_node->data.as_group().children.front()->data.is_window();
 
 	if (!window->m_pWorkspace->m_bIsSpecialWorkspace
-	    && ((*no_gaps_when_only != 0 && (only_node || window->m_bIsFullscreen))
-	        || (window->m_bIsFullscreen && window->m_pWorkspace->m_efFullscreenMode == FULLSCREEN_FULL
-	        )))
+			&& ((*no_gaps_when_only != 0 && (only_node || window->isFullscreen()))
+					|| window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)))
 	{
-		window->m_sWindowData.decorate = CWindowOverridableVar(true, PRIORITY_LAYOUT); // a little curious but copying what dwindle does
+		window->m_sWindowData.decorate = CWindowOverridableVar(
+		    true,
+		    PRIORITY_LAYOUT
+		); // a little curious but copying what dwindle does
 		window->m_sWindowData.noBorder = CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
 		window->m_sWindowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
 		window->m_sWindowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
