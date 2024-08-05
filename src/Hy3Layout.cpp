@@ -881,17 +881,13 @@ void Hy3Layout::shiftFocus(
 	auto current_window = g_pCompositor->m_pLastWindow.lock();
 
 	if (current_window != nullptr) {
-		if (current_window->m_pWorkspace->m_bHasFullscreenWindow) return;
+		if (current_window->m_pWorkspace->m_bHasFullscreenWindow) {
+			return;
+		}
 
 		if (current_window->m_bIsFloating) {
-			auto next_window = g_pCompositor->getWindowInDirection(
-			    current_window,
-			    direction == ShiftDirection::Left   ? 'l'
-			    : direction == ShiftDirection::Up   ? 'u'
-			    : direction == ShiftDirection::Down ? 'd'
-			                                        : 'r'
-			);
-
+			auto next_window =
+			    g_pCompositor->getWindowInDirection(current_window, getShiftDirectionChar(direction));
 			if (next_window != nullptr) {
 				g_pCompositor->focusWindow(next_window);
 				if (warp) Hy3Layout::warpCursorToBox(next_window->m_vPosition, next_window->m_vSize);
@@ -901,7 +897,10 @@ void Hy3Layout::shiftFocus(
 	}
 
 	auto* node = this->getWorkspaceFocusedNode(workspace);
-	if (node == nullptr) return;
+	if (node == nullptr) {
+		focusMonitor(direction);
+		return;
+	}
 
 	auto* target = this->shiftOrGetFocus(*node, direction, false, false, visible);
 
@@ -916,6 +915,42 @@ void Hy3Layout::shiftFocus(
 		while (target->parent != nullptr) target = target->parent;
 		target->recalcSizePosRecursive();
 	}
+}
+std::optional<Hy3Node*> Hy3Layout::focusMonitor(ShiftDirection direction) {
+	auto* next_monitor = g_pCompositor->getMonitorInDirection(getShiftDirectionChar(direction));
+	if (next_monitor) {
+		bool found = false;
+		g_pCompositor->setActiveMonitor(next_monitor);
+		auto next_workspace = next_monitor->activeWorkspace;
+
+		if (next_workspace) {
+			auto target_window = next_workspace->getLastFocusedWindow();
+			if (target_window) {
+				found = true;
+
+				// Move the cursor to the window we selected
+				auto found_node = getNodeFromWindow(target_window);
+				found_node->focus(true);
+				return found_node;
+			}
+		}
+		if (!found) {
+			g_pCompositor->warpCursorTo(next_monitor->vecPosition + next_monitor->vecSize / 2);
+		}
+	}
+	return std::nullopt;
+}
+bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follow) {
+	auto* next_monitor = g_pCompositor->getMonitorInDirection(getShiftDirectionChar(direction));
+	if (next_monitor) {
+		g_pCompositor->setActiveMonitor(next_monitor);
+		auto next_workspace = next_monitor->activeWorkspace;
+		if (next_workspace) {
+			moveNodeToWorkspace(node.workspace, next_workspace->m_szName, follow);
+			return true;
+		}
+	}
+	return false;
 }
 
 void Hy3Layout::warpCursor() {
@@ -1651,14 +1686,16 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			    ))
 				break;
 		}
-
 		if (break_parent->parent == nullptr) {
-			if (!shift) return nullptr;
-
+			if (!shift) {
+				auto node_opt = focusMonitor(direction);
+				return node_opt.value_or(nullptr);
+			}
 			// if we haven't gone up any levels and the group is in the same direction
 			// there's no reason to wrap the root group.
-			if (group.layout != Hy3GroupLayout::Tabbed && shiftMatchesLayout(group.layout, direction))
+			if (group.layout != Hy3GroupLayout::Tabbed && shiftMatchesLayout(group.layout, direction)) {
 				break;
+			}
 
 			if (group.layout != Hy3GroupLayout::Tabbed && group.children.size() == 2
 			    && std::find(group.children.begin(), group.children.end(), &node) != group.children.end())
