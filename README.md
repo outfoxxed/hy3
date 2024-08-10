@@ -69,7 +69,7 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3 by
 
     hyprland.url = "git+https://github.com/hyprwm/Hyprland?submodules=1&ref={version}";
     # where {version} is the hyprland release version
-    # or "github:hyprwm/Hyprland" to follow the development branch
+    # or "github:hyprwm/Hyprland?submodules=1" to follow the development branch
 
     hy3 = {
       url = "github:outfoxxed/hy3?ref=hl{version}"; # where {version} is the hyprland release version
