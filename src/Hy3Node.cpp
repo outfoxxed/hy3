@@ -5,8 +5,8 @@
 #include <bits/ranges_util.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/defines.hpp>
-#include <hyprland/src/helpers/Box.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprutils/math/Box.hpp>
 
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
@@ -304,25 +304,23 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	static const auto group_inset = ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
-	// clang-format on
 
-	// clang-format off
 	auto gap_topleft_offset = Vector2D(
-	    -(gaps_in->left - gaps_out->left),
-	    -(gaps_in->top - gaps_out->top)
+	    (int) -(gaps_in->left - gaps_out->left),
+	    (int) -(gaps_in->top - gaps_out->top)
 	);
 
 	auto gap_bottomright_offset = Vector2D(
-	    -(gaps_in->right - gaps_out->right),
-	    -(gaps_in->bottom - gaps_out->bottom)
+			(int) -(gaps_in->right - gaps_out->right),
+			(int) -(gaps_in->bottom - gaps_out->bottom)
 	);
 	// clang-format on
 
-	if (this->data.is_window() && this->data.as_window()->m_bIsFullscreen) {
+	if (this->data.is_window() && this->data.as_window()->isFullscreen()) {
 		auto window = this->data.as_window();
 		auto* monitor = g_pCompositor->getMonitorFromID(this->workspace->m_iMonitorID);
 
-		if (this->workspace->m_efFullscreenMode == FULLSCREEN_FULL) {
+		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
 			window->m_vRealPosition = monitor->vecPosition;
 			window->m_vRealSize = monitor->vecSize;
 			return;
@@ -447,16 +445,16 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 				if (this->parent != nullptr) child->gap_bottomright_offset.x += *group_inset;
 			} else if (child == group.children.front()) {
 				child->gap_topleft_offset = gap_topleft_offset;
-				child->gap_bottomright_offset = Vector2D(0, gap_bottomright_offset.y);
+				child->gap_bottomright_offset = Vector2D(0.0, gap_bottomright_offset.y);
 				child->size.x += gap_topleft_offset.x;
 				offset += gap_topleft_offset.x;
 			} else if (child == group.children.back()) {
-				child->gap_topleft_offset = Vector2D(0, gap_topleft_offset.y);
+				child->gap_topleft_offset = Vector2D(0.0, gap_topleft_offset.y);
 				child->gap_bottomright_offset = gap_bottomright_offset;
 				child->size.x += gap_bottomright_offset.x;
 			} else {
-				child->gap_topleft_offset = Vector2D(0, gap_topleft_offset.y);
-				child->gap_bottomright_offset = Vector2D(0, gap_bottomright_offset.y);
+				child->gap_topleft_offset = Vector2D(0.0, gap_topleft_offset.y);
+				child->gap_bottomright_offset = Vector2D(0.0, gap_bottomright_offset.y);
 			}
 
 			child->recalcSizePosRecursive(no_animation);
@@ -476,16 +474,16 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 				if (this->parent != nullptr) child->gap_bottomright_offset.y += *group_inset;
 			} else if (child == group.children.front()) {
 				child->gap_topleft_offset = gap_topleft_offset;
-				child->gap_bottomright_offset = Vector2D(gap_bottomright_offset.x, 0);
+				child->gap_bottomright_offset = Vector2D(gap_bottomright_offset.x, 0.0);
 				child->size.y += gap_topleft_offset.y;
 				offset += gap_topleft_offset.y;
 			} else if (child == group.children.back()) {
-				child->gap_topleft_offset = Vector2D(gap_topleft_offset.x, 0);
+				child->gap_topleft_offset = Vector2D(gap_topleft_offset.x, 0.0);
 				child->gap_bottomright_offset = gap_bottomright_offset;
 				child->size.y += gap_bottomright_offset.y;
 			} else {
-				child->gap_topleft_offset = Vector2D(gap_topleft_offset.x, 0);
-				child->gap_bottomright_offset = Vector2D(gap_bottomright_offset.x, 0);
+				child->gap_topleft_offset = Vector2D(gap_topleft_offset.x, 0.0);
+				child->gap_bottomright_offset = Vector2D(gap_bottomright_offset.x, 0.0);
 			}
 
 			child->recalcSizePosRecursive(no_animation);

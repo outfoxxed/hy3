@@ -4,15 +4,15 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/helpers/Box.hpp>
 #include <hyprland/src/helpers/Color.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
+#include <hyprland/src/render/Texture.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
+#include <hyprutils/math/Box.hpp>
 #include <pango/pangocairo.h>
 #include <pixman.h>
 
 #include "globals.hpp"
-#include "src/render/Texture.hpp"
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->focused
@@ -419,7 +419,7 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	static const auto bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 
 	auto& gaps = node.parent == nullptr ? gaps_out : gaps_in;
-	auto tpos = node.position + Vector2D(gaps->left, gaps->top) + node.gap_topleft_offset;
+	auto tpos = node.position + Vector2D((int) gaps->left, (int) gaps->top) + node.gap_topleft_offset;
 
 	// clang-format off
 	auto tsize = Vector2D(
@@ -533,7 +533,7 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto scaled_pos = Vector2D(std::round(pos.x * scale), std::round(pos.y * scale));
 	auto scaled_size = Vector2D(std::round(size.x * scale), std::round(size.y * scale));
-	wlr_box box = {scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y};
+	CBox box = {scaled_pos.x, scaled_pos.y, scaled_size.x, scaled_size.y};
 
 	// monitor size is not scaled
 	if (pos.x > monitor_size.x || pos.y > monitor_size.y || scaled_pos.x + scaled_size.x < 0

@@ -11,7 +11,7 @@ if(CMAKE_EXPORT_COMPILE_COMMANDS)
 endif()
 
 find_package(PkgConfig REQUIRED)
-pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm pango pangocairo)
+pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm pango pangocairo libinput wayland-client xkbcommon)
 
 add_library(hy3 SHARED
 	src/main.cpp

@@ -1,6 +1,6 @@
 {
   inputs = {
-    hyprland.url = "git+https://github.com/hyprwm/Hyprland?submodules=1&rev=9e781040d9067c2711ec2e9f5b47b76ef70762b3";
+    hyprland.url = "git+https://github.com/hyprwm/Hyprland?submodules=1&rev=9a09eac79b85c846e3a865a9078a3f8ff65a9259";
   };
 
   outputs = { self, hyprland, ... }: let
@@ -10,12 +10,12 @@
       (builtins.attrNames hyprland.packages)
       (system: fn system nixpkgs.legacyPackages.${system});
 
-    props = builtins.fromJSON (builtins.readFile "${hyprland}/props.json");
+    hyprlandVersion = nixpkgs.lib.removeSuffix "\n" (builtins.readFile "${hyprland}/VERSION");
   in {
     packages = hyprlandSystems (system: pkgs: rec {
       hy3 = pkgs.callPackage ./default.nix {
         hyprland = hyprland.packages.${system}.hyprland;
-        hlversion = props.version;
+        hlversion = hyprlandVersion;
       };
       default = hy3;
     });
@@ -23,13 +23,13 @@
     devShells = hyprlandSystems (system: pkgs: {
       default = import ./shell.nix {
         inherit pkgs;
-        hlversion = props.version;
+        hlversion = hyprlandVersion;
         hyprland = hyprland.packages.${system}.hyprland-debug;
       };
 
       impure = import ./shell.nix {
         pkgs = import <nixpkgs> {};
-        hlversion = props.version;
+        hlversion = hyprlandVersion;
         hyprland = (pkgs.appendOverlays [ hyprland.overlays.hyprland-packages ]).hyprland-debug.overrideAttrs {
           dontStrip = true;
         };
