@@ -945,8 +945,10 @@ std::optional<Hy3Node*> Hy3Layout::focusMonitor(ShiftDirection direction) {
 
 				// Move the cursor to the window we selected
 				auto found_node = getNodeFromWindow(target_window);
-				found_node->focus(true);
-				return found_node;
+				if (found_node) {
+					found_node->focus(true);
+					return found_node;
+				}
 			}
 		}
 		if (!found) {
