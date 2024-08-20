@@ -75,7 +75,7 @@ public:
 	void onWindowRemovedTiling(PHLWINDOW) override;
 	void onWindowFocusChange(PHLWINDOW) override;
 	bool isWindowTiled(PHLWINDOW) override;
-	void recalculateMonitor(const int& monitor_id) override;
+	void recalculateMonitor(const MONITORID& monitor_id) override;
 	void recalculateWindow(PHLWINDOW) override;
 	void resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PHLWINDOW pWindow = nullptr)
 	    override;

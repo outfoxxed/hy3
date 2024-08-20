@@ -358,7 +358,7 @@ bool Hy3Layout::isWindowTiled(PHLWINDOW window) {
 	return this->getNodeFromWindow(window) != nullptr;
 }
 
-void Hy3Layout::recalculateMonitor(const int& monitor_id) {
+void Hy3Layout::recalculateMonitor(const MONITORID& monitor_id) {
 	hy3_log(LOG, "recalculating monitor {}", monitor_id);
 	const auto monitor = g_pCompositor->getMonitorFromID(monitor_id);
 	if (monitor == nullptr) return;
