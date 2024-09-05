@@ -607,6 +607,7 @@ void Hy3TabGroup::renderTabBar() {
 		    entry_size.y,
 		};
 
+		box.round();
 		entry.prepareTexture(scale, box);
 		g_pHyprOpenGL->renderTexture(entry.texture, &box, fade_opacity * entry.fade_opacity.value());
 	};
