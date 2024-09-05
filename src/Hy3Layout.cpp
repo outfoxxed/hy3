@@ -621,7 +621,7 @@ PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 	// return the first floating window on the same workspace that has not asked not to be focused
 	if (window->m_bIsFloating) {
 		for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
-			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && w->m_iX11Type != 2
+			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && !w->isX11OverrideRedirect()
 			    && w->m_pWorkspace == window->m_pWorkspace && !w->m_bX11ShouldntFocus
 			    && !w->m_sWindowData.noFocus.valueOrDefault() && w != window)
 			{
