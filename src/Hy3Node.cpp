@@ -627,6 +627,26 @@ void Hy3Node::setHidden(bool hidden) {
 	}
 }
 
+CBox Hy3Node::getStandardWindowArea(SBoxExtents extents) {
+	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+
+	SBoxExtents inner_gap_extents;
+	inner_gap_extents.topLeft = {(int) -gaps_in->left, (int) -gaps_in->top};
+	inner_gap_extents.bottomRight = {(int) -gaps_in->right, (int) -gaps_in->bottom};
+
+	SBoxExtents combined_outer_extents;
+	combined_outer_extents.topLeft = -this->gap_topleft_offset;
+	combined_outer_extents.bottomRight = -this->gap_bottomright_offset;
+
+	auto area = CBox(this->position, this->size);
+	area.addExtents(inner_gap_extents);
+	area.addExtents(combined_outer_extents);
+	area.addExtents(extents);
+
+	area.round();
+	return area;
+}
+
 Hy3Node* Hy3Node::findNodeForTabGroup(Hy3TabGroup& tab_group) {
 	if (this->data.is_group()) {
 		if (this->hidden) return nullptr;

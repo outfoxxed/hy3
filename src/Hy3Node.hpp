@@ -115,6 +115,7 @@ struct Hy3Node {
 	std::string getTitle();
 	bool isUrgent();
 	void setHidden(bool);
+	CBox getStandardWindowArea(SBoxExtents extents = SBoxExtents());
 
 	Hy3Node* findNodeForTabGroup(Hy3TabGroup&);
 	void appendAllWindows(std::vector<PHLWINDOW>&);

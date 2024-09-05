@@ -414,19 +414,12 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
-	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
-	static const auto gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
 	static const auto bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 
-	auto& gaps = node.parent == nullptr ? gaps_out : gaps_in;
-	auto tpos = node.position + Vector2D((int) gaps->left, (int) gaps->top) + node.gap_topleft_offset;
+	auto windowBox = node.getStandardWindowArea();
 
-	// clang-format off
-	auto tsize = Vector2D(
-			node.size.x - node.gap_bottomright_offset.x - node.gap_topleft_offset.x - (gaps->left + gaps->right),
-			*bar_height
-	);
-	// clang-format on
+	auto tpos = windowBox.pos();
+	auto tsize = Vector2D(windowBox.size().x, *bar_height);
 
 	this->hidden = node.hidden;
 	if (this->pos.goal() != tpos) {

@@ -1514,10 +1514,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		return;
 	}
 
-	// clang-format off
-	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
 	static const auto no_gaps_when_only = ConfigValue<Hyprlang::INT>("plugin:hy3:no_gaps_when_only");
-	// clang-format on
 
 	if (!valid(window) || !window->m_bIsMapped) {
 		hy3_log(
@@ -1544,14 +1541,15 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	              && root_node->data.as_group().children.front()->data.is_window();
 
 	if (!window->m_pWorkspace->m_bIsSpecialWorkspace
-			&& ((*no_gaps_when_only != 0 && (only_node || window->isFullscreen()))
-					|| window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)))
+	    && ((*no_gaps_when_only != 0 && (only_node || window->isFullscreen()))
+	        || window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)))
 	{
 		window->m_sWindowData.decorate = CWindowOverridableVar(
 		    true,
 		    PRIORITY_LAYOUT
 		); // a little curious but copying what dwindle does
-		window->m_sWindowData.noBorder = CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
+		window->m_sWindowData.noBorder =
+		    CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
 		window->m_sWindowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
 		window->m_sWindowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
 
@@ -1564,25 +1562,8 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 		g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
 	} else {
-		auto calcPos = window->m_vPosition;
-		auto calcSize = window->m_vSize;
-
-		auto gaps_offset_topleft =
-				Vector2D((int) gaps_in->left, (int) gaps_in->top) + node->gap_topleft_offset;
-
-		auto gaps_offset_bottomright =
-				Vector2D((int) (gaps_in->left + gaps_in->right), (int) (gaps_in->top + gaps_in->bottom))
-				+ node->gap_bottomright_offset + node->gap_topleft_offset;
-
-		calcPos = calcPos + gaps_offset_topleft;
-		calcSize = calcSize - gaps_offset_bottomright;
-
-		const auto reserved_area = window->getFullWindowReservedArea();
-		calcPos = calcPos + reserved_area.topLeft;
-		calcSize = calcSize - (reserved_area.topLeft + reserved_area.bottomRight);
-
-		CBox wb = {calcPos, calcSize};
-		wb.round();
+		auto reserved = window->getFullWindowReservedArea();
+		auto wb = node->getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight});
 
 		window->m_vRealPosition = wb.pos();
 		window->m_vRealSize = wb.size();
