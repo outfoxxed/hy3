@@ -1,5 +1,9 @@
 # Changelog
 
+# hl0.43.0 and before
+
+- Fixed blurry tab bar text
+
 # hl0.41.1 and before
 
 - Fixed glitchy tab bar effects when switching workspaces with fade effect.
