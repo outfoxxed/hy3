@@ -98,6 +98,7 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3 by
 }
 ```
 
+
 #### Manual (Nix)
 hy3's binary is availible as `${hy3.packages.<system>.hy3}/lib/libhy3.so`, so you can also
 directly use it in your hyprland config like so:
@@ -111,7 +112,19 @@ wayland.windowManager.hyprland = {
   '';
 };
 ```
-
+Or use the nixpkgs version
+'''nix
+# ...
+wayland.windowManager.hyprland = {
+	#...
+ 	plugins = with pkgs.hyprlanPlugins; [
+		hy3
+	];
+ #...
+ 	settings = {
+ 		layout = "hy3"; # If you don't change the layout, hyprland won't load the plugin.
+ 	};
+'''
 ### hyprpm
 Hyprland now has a dedicated plugin manager, which should be used when your package manager
 isn't capable of locking hy3 builds to the correct hyprland version.
