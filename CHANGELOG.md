@@ -1,5 +1,9 @@
 # Changelog
 
+# Upcoming
+
+- Fixed tab bars on root node not respecting outer gaps
+
 # hl0.43.0 and before
 
 - Fixed blurry tab bar text

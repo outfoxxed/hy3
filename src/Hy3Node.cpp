@@ -339,7 +339,10 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		return;
 	}
 
-	if (this->parent != nullptr) {
+	if (this->parent == nullptr) {
+		this->gap_topleft_offset = gap_topleft_offset;
+		this->gap_bottomright_offset = gap_bottomright_offset;
+	} else {
 		gap_topleft_offset = this->gap_topleft_offset;
 		gap_bottomright_offset = this->gap_bottomright_offset;
 	}
