@@ -618,8 +618,10 @@ PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 		return g_pCompositor->getFullscreenWindowOnWorkspace(window->m_pWorkspace->m_iID);
 	}
 
-	// return the first floating window on the same workspace that has not asked not to be focused
-	if (window->m_bIsFloating) {
+	PHLWINDOW selection;
+
+	auto findFloating = [&]() {
+		// return the first floating window on the same workspace that has not asked not to be focused
 		for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
 			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && !w->isX11OverrideRedirect()
 			    && w->m_pWorkspace == window->m_pWorkspace && !w->m_bX11ShouldntFocus
@@ -628,15 +630,25 @@ PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 				return w;
 			}
 		}
-	}
 
-	auto* node = this->getWorkspaceFocusedNode(window->m_pWorkspace, true);
-	if (node == nullptr) return nullptr;
+		return PHLWINDOW();
+	};
 
-	if (node->data.is_window()) {
-		return node->data.as_window();
+	auto findTiled = [&]() {
+		auto* node = this->getWorkspaceFocusedNode(window->m_pWorkspace, true);
+		if (node != nullptr && node->data.is_window()) {
+			return node->data.as_window();
+		}
+
+		return PHLWINDOW();
+	};
+
+	if (window->m_bIsFloating) {
+		if (auto floating = findFloating()) return floating;
+		return findTiled();
 	} else {
-		return nullptr;
+		if (auto tiled = findTiled()) return tiled;
+		return findFloating();
 	}
 }
 
