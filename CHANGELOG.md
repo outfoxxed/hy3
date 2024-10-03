@@ -6,6 +6,7 @@
 - Fixed tab bars clipping when switching workspaces with slidevert
 - Improved performance of tab bars
 - Tab bars now use windowsMove for all animations
+- Fixed tab bars rendering in the wrong workspace
 
 # hl0.43.0 and before
 

@@ -1438,6 +1438,7 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 		for (auto& entry: g_Hy3Layout->tab_groups) {
 			if (!entry.hidden
 			    && entry.target_window->m_iMonitorID == g_pHyprOpenGL->m_RenderData.pMonitor->ID
+					&& entry.target_window->m_pWorkspace->m_bVisible
 			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
 			           == rendered_groups.end())
 			{
