@@ -555,7 +555,18 @@ void Hy3TabGroup::renderTabBar() {
 
 	this->bar.setSize(scaled_size);
 
-	{
+	auto render_stencil = this->bar.fade_opacity.isBeingAnimated();
+
+	if (!render_stencil) {
+		for (auto& entry: this->bar.entries) {
+			if (entry.vertical_pos.isBeingAnimated()) {
+				render_stencil = true;
+				break;
+			}
+		}
+	}
+
+	if (render_stencil) {
 		glEnable(GL_STENCIL_TEST);
 		glClearStencil(0);
 		glClear(GL_STENCIL_BUFFER_BIT);
@@ -624,7 +635,7 @@ void Hy3TabGroup::renderTabBar() {
 		render_entry(entry);
 	}
 
-	{
+	if (render_stencil) {
 		glClearStencil(0);
 		glClear(GL_STENCIL_BUFFER_BIT);
 		glDisable(GL_STENCIL_TEST);
