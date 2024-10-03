@@ -8,6 +8,7 @@
 - Tab bars now use windowsMove for all animations
 - Fixed tab bars rendering in the wrong workspace
 - Floating windows will now be focused when all tiled windows are closed
+- Added `hy3:togglefocuslayer`
 
 # hl0.43.0 and before
 

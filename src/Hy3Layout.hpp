@@ -113,6 +113,7 @@ public:
 	void shiftNode(Hy3Node&, ShiftDirection, bool once, bool visible);
 	void shiftWindow(const PHLWORKSPACE& workspace, ShiftDirection, bool once, bool visible);
 	void shiftFocus(const PHLWORKSPACE& workspace, ShiftDirection, bool visible, bool warp);
+	void toggleFocusLayer(const PHLWORKSPACE& workspace, bool warp);
 	void warpCursor();
 	void moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow);
 	void changeFocus(const PHLWORKSPACE& workspace, FocusShift);
@@ -129,6 +130,8 @@ public:
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
 
 	bool shouldRenderSelected(const PHLWINDOW&);
+	PHLWINDOW findTiledWindowCandidate(const PHLWINDOW& from);
+	PHLWINDOW findFloatingWindowCandidate(const PHLWINDOW& from);
 
 	Hy3Node* getWorkspaceRootGroup(const PHLWORKSPACE& workspace);
 	Hy3Node* getWorkspaceFocusedNode(

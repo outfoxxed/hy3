@@ -620,36 +620,36 @@ PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 
 	PHLWINDOW selection;
 
-	auto findFloating = [&]() {
-		// return the first floating window on the same workspace that has not asked not to be focused
-		for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
-			if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && !w->isX11OverrideRedirect()
-			    && w->m_pWorkspace == window->m_pWorkspace && !w->m_bX11ShouldntFocus
-			    && !w->m_sWindowData.noFocus.valueOrDefault() && w != window)
-			{
-				return w;
-			}
-		}
-
-		return PHLWINDOW();
-	};
-
-	auto findTiled = [&]() {
-		auto* node = this->getWorkspaceFocusedNode(window->m_pWorkspace, true);
-		if (node != nullptr && node->data.is_window()) {
-			return node->data.as_window();
-		}
-
-		return PHLWINDOW();
-	};
-
 	if (window->m_bIsFloating) {
-		if (auto floating = findFloating()) return floating;
-		return findTiled();
+		if (auto floating = this->findFloatingWindowCandidate(window)) return floating;
+		return this->findTiledWindowCandidate(window);
 	} else {
-		if (auto tiled = findTiled()) return tiled;
-		return findFloating();
+		if (auto tiled = this->findTiledWindowCandidate(window)) return tiled;
+		return this->findFloatingWindowCandidate(window);
 	}
+}
+
+PHLWINDOW Hy3Layout::findTiledWindowCandidate(const PHLWINDOW& from) {
+	auto* node = this->getWorkspaceFocusedNode(from->m_pWorkspace, true);
+	if (node != nullptr && node->data.is_window()) {
+		return node->data.as_window();
+	}
+
+	return PHLWINDOW();
+}
+
+PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const PHLWINDOW& from) {
+	// return the first floating window on the same workspace that has not asked not to be focused
+	for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
+		if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && !w->isX11OverrideRedirect()
+				&& w->m_pWorkspace == from->m_pWorkspace && !w->m_bX11ShouldntFocus
+				&& !w->m_sWindowData.noFocus.valueOrDefault() && w != from)
+		{
+			return w;
+		}
+	}
+
+	return nullptr;
 }
 
 void Hy3Layout::replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) {
@@ -927,6 +927,26 @@ void Hy3Layout::shiftFocus(
 		target->focus(warp);
 		while (target->parent != nullptr) target = target->parent;
 		target->recalcSizePosRecursive();
+	}
+}
+
+void Hy3Layout::toggleFocusLayer(const PHLWORKSPACE& workspace, bool warp) {
+	auto current_window = g_pCompositor->m_pLastWindow.lock();
+	if (!current_window) return;
+
+	PHLWINDOW target;
+	if (current_window->m_bIsFloating) {
+		target = this->findTiledWindowCandidate(current_window);
+	} else {
+		target = this->findFloatingWindowCandidate(current_window);
+	}
+
+	if (!target) return;
+
+	g_pCompositor->focusWindow(target);
+
+	if (warp) {
+		g_pCompositor->warpCursorTo(target->middle());
 	}
 }
 

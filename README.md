@@ -342,6 +342,8 @@ plugin {
    - `lower` - lower focus one level
    - `tab` - raise focus to the nearest tab
    - `tabnode` - raise focus to the nearest node under the tab
+ - `hy3:togglefocuslayer, [nowarp]` - toggle focus between tiled and floating layers
+   - `nowarp` - do not warp the mouse to the newly focused window
  - `hy3:focustab <mouse | [l | r | left | right | index, <index>], [prioritize_hovered | require_hovered], [wrap]>`
    - `mouse` - focus the tab under the mouse, works well with a non consuming bind, e.g.
      ```conf
