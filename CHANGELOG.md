@@ -5,6 +5,7 @@
 - Fixed tab bars on root node not respecting outer gaps
 - Fixed tab bars clipping when switching workspaces with slidevert
 - Improved performance of tab bars
+- Tab bars now use windowsMove for all animations
 
 # hl0.43.0 and before
 

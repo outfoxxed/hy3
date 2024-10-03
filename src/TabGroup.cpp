@@ -28,10 +28,10 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	    .create(-1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
 	this->vertical_pos
-	    .create(1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), AVARDAMAGE_NONE);
+	    .create(1.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
 	this->fade_opacity
-	    .create(0.0f, g_pConfigManager->getAnimationPropertyConfig("windowsIn"), AVARDAMAGE_NONE);
+	    .create(0.0f, g_pConfigManager->getAnimationPropertyConfig("windowsMove"), AVARDAMAGE_NONE);
 
 	this->focused.registerVar();
 	this->urgent.registerVar();
