@@ -580,8 +580,9 @@ void Hy3TabGroup::renderTabBar() {
 			if (!valid(windowref)) continue;
 			auto window = windowref.lock();
 
-			auto wpos = window->m_vRealPosition.value() - monitor->vecPosition
-								+ window->m_pWorkspace->m_vRenderOffset.value();
+			auto wpos =
+					window->m_vRealPosition.value() - monitor->vecPosition
+					+ (window->m_pWorkspace ? window->m_pWorkspace->m_vRenderOffset.value() : Vector2D());
 
 			auto wsize = window->m_vRealSize.value();
 
