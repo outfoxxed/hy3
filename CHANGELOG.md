@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# hl0.44.0 and before
 
 - Fixed tab bars on root node not respecting outer gaps
 - Fixed tab bars clipping when switching workspaces with slidevert
