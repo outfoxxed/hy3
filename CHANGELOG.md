@@ -1,5 +1,9 @@
 # Changelog
 
+# Upcoming
+
+- Added hyprsplit compatibility for hy3:movetoworkspace
+
 # hl0.44.0 and before
 
 - Fixed tab bars on root node not respecting outer gaps

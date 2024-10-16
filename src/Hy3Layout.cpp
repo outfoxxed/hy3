@@ -1,5 +1,6 @@
 #include <regex>
 #include <set>
+#include <dlfcn.h>
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
@@ -13,6 +14,25 @@
 #include "SelectionHook.hpp"
 #include "globals.hpp"
 #include "src/desktop/Window.hpp"
+
+std::string operationWorkspaceForName(const std::string& workspace) {
+	typedef std::string (*PHYPRSPLIT_GET_WORKSPACE_FN)(const std::string& workspace);
+
+	static auto* hyprsplitTransformer = []() {
+		for (auto& p: g_pPluginSystem->getAllPlugins()) {
+			if (p->name == "hyprsplit") {
+				return reinterpret_cast<PHYPRSPLIT_GET_WORKSPACE_FN>(
+				    dlsym(p->m_pHandle, "hyprsplitGetWorkspace")
+				);
+			}
+		}
+
+		return reinterpret_cast<PHYPRSPLIT_GET_WORKSPACE_FN>(0);
+	}();
+
+	if (hyprsplitTransformer != 0) return hyprsplitTransformer(workspace);
+	return workspace;
+}
 
 SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> windowTitleHookPtr;
@@ -985,7 +1005,7 @@ void changeNodeWorkspaceRecursive(Hy3Node& node, const PHLWORKSPACE& workspace) 
 }
 
 void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow) {
-	auto target = getWorkspaceIDNameFromString(wsname);
+	auto target = getWorkspaceIDNameFromString(operationWorkspaceForName(wsname));
 
 	if (target.id == WORKSPACE_INVALID) {
 		hy3_log(ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
