@@ -1,5 +1,6 @@
 #include <optional>
 
+#include <dlfcn.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -7,6 +8,8 @@
 
 #include "dispatchers.hpp"
 #include "globals.hpp"
+
+typedef std::string (*PHYPRSPLIT_GET_WORKSPACE_FN)(const std::string& workspace);
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false) {
 	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return nullptr;
@@ -147,6 +150,15 @@ void dispatch_move_to_workspace(std::string value) {
 
 	auto workspace = args[0];
 	if (workspace == "") return;
+
+	for (auto& p: g_pPluginSystem->getAllPlugins()) {
+		if (p->name == "hyprsplit") {
+			PHYPRSPLIT_GET_WORKSPACE_FN hyprsplitGetWorkspace =
+			    (PHYPRSPLIT_GET_WORKSPACE_FN) dlsym(p->m_pHandle, "hyprsplitGetWorkspace");
+			if (hyprsplitGetWorkspace) workspace = hyprsplitGetWorkspace(workspace);
+			break;
+		}
+	}
 
 	bool follow = args[1] == "follow";
 
