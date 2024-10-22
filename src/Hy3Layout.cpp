@@ -149,7 +149,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	node.reparenting = true;
 	node.size_ratio = 1.0;
 
-	auto* monitor = g_pCompositor->getMonitorFromID(node.workspace->m_iMonitorID);
+	PHLMONITOR monitor = g_pCompositor->getMonitorFromID(node.workspace->m_iMonitorID);
 
 	Hy3Node* opening_into;
 	Hy3Node* opening_after = nullptr;
@@ -1061,7 +1061,7 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 	}
 
 	if (follow) {
-		auto* monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
+		PHLMONITOR monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
 
 		if (workspace->m_bIsSpecialWorkspace) {
 			monitor->setSpecialWorkspace(workspace);
@@ -1544,12 +1544,12 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	auto window = node->data.as_window();
 	auto root_node = this->getWorkspaceRootGroup(window->m_pWorkspace);
 
-	CMonitor* monitor = nullptr;
+	PHLMONITOR monitor;
 
 	if (node->workspace->m_bIsSpecialWorkspace) {
 		for (auto& m: g_pCompositor->m_vMonitors) {
 			if (m->activeSpecialWorkspace == node->workspace) {
-				monitor = m.get();
+				monitor = m;
 				break;
 			}
 		}

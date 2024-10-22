@@ -513,7 +513,7 @@ void Hy3TabGroup::renderTabBar() {
 	static const auto enter_from_top = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:from_top");
 	static const auto padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 
-	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
+	PHLMONITORREF monitor = g_pHyprOpenGL->m_RenderData.pMonitor;
 	auto scale = monitor->scale;
 
 	auto monitor_size = monitor->vecSize;
