@@ -11,7 +11,8 @@
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false) {
 	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return nullptr;
 
-	auto workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
+	if (!valid(workspace)) workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
 
 	if (!valid(workspace)) return nullptr;
 	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
