@@ -299,20 +299,24 @@ Hy3Node& Hy3Node::getExpandActor() {
 
 void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	// clang-format off
-	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
-	static const auto gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
+	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	static const auto p_gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
 	static const auto group_inset = ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 
+	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(this->workspace);
+	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
+	auto gaps_out = workspace_rule.gapsOut.value_or(*p_gaps_out);
+
 	auto gap_topleft_offset = Vector2D(
-	    (int) -(gaps_in->left - gaps_out->left),
-	    (int) -(gaps_in->top - gaps_out->top)
+	    (int) -(gaps_in.left - gaps_out.left),
+	    (int) -(gaps_in.top - gaps_out.top)
 	);
 
 	auto gap_bottomright_offset = Vector2D(
-			(int) -(gaps_in->right - gaps_out->right),
-			(int) -(gaps_in->bottom - gaps_out->bottom)
+			(int) -(gaps_in.right - gaps_out.right),
+			(int) -(gaps_in.bottom - gaps_out.bottom)
 	);
 	// clang-format on
 
@@ -631,11 +635,14 @@ void Hy3Node::setHidden(bool hidden) {
 }
 
 CBox Hy3Node::getStandardWindowArea(SBoxExtents extents) {
-	static const auto gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+
+	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(this->workspace);
+	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
 
 	SBoxExtents inner_gap_extents;
-	inner_gap_extents.topLeft = {(int) -gaps_in->left, (int) -gaps_in->top};
-	inner_gap_extents.bottomRight = {(int) -gaps_in->right, (int) -gaps_in->bottom};
+	inner_gap_extents.topLeft = {(int) -gaps_in.left, (int) -gaps_in.top};
+	inner_gap_extents.bottomRight = {(int) -gaps_in.right, (int) -gaps_in.bottom};
 
 	SBoxExtents combined_outer_extents;
 	combined_outer_extents.topLeft = -this->gap_topleft_offset;
