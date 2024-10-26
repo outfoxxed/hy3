@@ -3,6 +3,8 @@
 # Upcoming
 
 - Added hyprsplit compatibility for hy3:movetoworkspace
+- Added support for special workspaces
+- Added monitor switching support to hy3:movefocus
 
 # hl0.44.0 and before
 
