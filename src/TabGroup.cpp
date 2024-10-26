@@ -448,11 +448,20 @@ void damageBox(const Vector2D* position, const Vector2D* size) {
 void Hy3TabGroup::tick() {
 	static const auto enter_from_top = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:from_top");
 	static const auto padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
+	static const auto no_gaps_when_only = ConfigValue<Hyprlang::INT>("plugin:hy3:no_gaps_when_only");
 
 	this->bar.tick();
 
 	if (valid(this->workspace)) {
-		if (this->workspace->m_bHasFullscreenWindow) {
+		auto has_fullscreen = this->workspace->m_bHasFullscreenWindow;
+
+		if (!has_fullscreen && *no_gaps_when_only) {
+			auto root_node = g_Hy3Layout->getWorkspaceRootGroup(this->workspace);
+			has_fullscreen = root_node != nullptr && root_node->data.as_group().children.size() == 1
+										&& root_node->data.as_group().children.front()->data.is_window();
+		}
+
+		if (has_fullscreen) {
 			if (this->bar.fade_opacity.goal() != 0.0) this->bar.fade_opacity = 0.0;
 		} else {
 			if (this->bar.fade_opacity.goal() != 1.0) this->bar.fade_opacity = 1.0;

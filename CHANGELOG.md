@@ -6,6 +6,7 @@
 - Added support for special workspaces
 - Added monitor switching support to hy3:movefocus
 - Added support for gapsin and gapsout workspace rules
+- Fixed tab bars with no_gaps_when_only
 
 # hl0.44.0 and before
 
