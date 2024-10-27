@@ -322,7 +322,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 	if (this->data.is_window() && this->data.as_window()->isFullscreen()) {
 		auto window = this->data.as_window();
-		PHLMONITOR monitor = g_pCompositor->getMonitorFromID(this->workspace->m_iMonitorID);
+		auto monitor = this->workspace->m_pMonitor.lock();
 
 		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
 			window->m_vRealPosition = monitor->vecPosition;
