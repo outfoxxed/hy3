@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# hl0.45.0 and before
 
 - Added hyprsplit compatibility for hy3:movetoworkspace
 - Added support for special workspaces
