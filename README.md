@@ -296,7 +296,7 @@ plugin {
       # if a window would be squished smaller than this width, a vertical split will be created
       # -1 = never automatically split vertically
       # 0 = always automatically split vertically
-      # <number> = pixel height to split at
+      # <number> = pixel width to split at
       trigger_width = <int> # default: 0
 
       # if a window would be squished smaller than this height, a horizontal split will be created
