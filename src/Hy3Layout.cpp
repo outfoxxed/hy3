@@ -635,7 +635,7 @@ std::string Hy3Layout::getLayoutName() { return "hy3"; }
 
 PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 	if (window->m_pWorkspace->m_bHasFullscreenWindow) {
-		return g_pCompositor->getFullscreenWindowOnWorkspace(window->m_pWorkspace->m_iID);
+		return window->m_pWorkspace->getFullscreenWindow();
 	}
 
 	PHLWINDOW selection;
@@ -1098,8 +1098,8 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 
 		changeNodeWorkspaceRecursive(*node, workspace);
 		this->insertNode(*node);
-		g_pCompositor->updateWorkspaceWindows(origin->m_iID);
-		g_pCompositor->updateWorkspaceWindows(workspace->m_iID);
+		origin->updateWindows();
+		workspace->updateWindows();
 	}
 
 	if (follow) {
