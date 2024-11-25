@@ -7,8 +7,8 @@
 #include <hyprland/src/helpers/Color.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Texture.hpp>
-#include <hyprutils/memory/SharedPtr.hpp>
 #include <hyprutils/math/Box.hpp>
+#include <hyprutils/memory/SharedPtr.hpp>
 #include <pango/pangocairo.h>
 #include <pixman.h>
 
@@ -458,7 +458,7 @@ void Hy3TabGroup::tick() {
 		if (!has_fullscreen && *no_gaps_when_only) {
 			auto root_node = g_Hy3Layout->getWorkspaceRootGroup(this->workspace);
 			has_fullscreen = root_node != nullptr && root_node->data.as_group().children.size() == 1
-										&& root_node->data.as_group().children.front()->data.is_window();
+			              && root_node->data.as_group().children.front()->data.is_window();
 		}
 
 		if (has_fullscreen) {
@@ -590,8 +590,8 @@ void Hy3TabGroup::renderTabBar() {
 			auto window = windowref.lock();
 
 			auto wpos =
-					window->m_vRealPosition.value() - monitor->vecPosition
-					+ (window->m_pWorkspace ? window->m_pWorkspace->m_vRenderOffset.value() : Vector2D());
+			    window->m_vRealPosition.value() - monitor->vecPosition
+			    + (window->m_pWorkspace ? window->m_pWorkspace->m_vRenderOffset.value() : Vector2D());
 
 			auto wsize = window->m_vRealSize.value();
 

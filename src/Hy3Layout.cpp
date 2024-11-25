@@ -1,12 +1,12 @@
 #include <regex>
 #include <set>
-#include <dlfcn.h>
 
+#include <dlfcn.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
+#include <hyprland/src/plugins/PluginAPI.hpp>
 #include <ranges>
 
 #include "Hy3Layout.hpp"
@@ -98,7 +98,7 @@ void Hy3Layout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 	    "onWindowCreatedTiling called with window {:x} (floating: {}, monitor: {}, workspace: {})",
 	    (uintptr_t) window.get(),
 	    window->m_bIsFloating,
-			window->monitorID(),
+	    window->monitorID(),
 	    window->m_pWorkspace->m_iID
 	);
 
@@ -563,8 +563,8 @@ void Hy3Layout::fullscreenRequestForWindow(
 			// clang-format on
 
 			auto gap_size_offset = Vector2D(
-					(int) (-(gaps_in->left - gaps_out->left) + -(gaps_in->right - gaps_out->right)),
-					(int) (-(gaps_in->top - gaps_out->top) + -(gaps_in->bottom - gaps_out->bottom))
+			    (int) (-(gaps_in->left - gaps_out->left) + -(gaps_in->right - gaps_out->right)),
+			    (int) (-(gaps_in->top - gaps_out->top) + -(gaps_in->bottom - gaps_out->bottom))
 			);
 
 			Hy3Node fakeNode = {
@@ -662,8 +662,8 @@ PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const PHLWINDOW& from) {
 	// return the first floating window on the same workspace that has not asked not to be focused
 	for (auto& w: g_pCompositor->m_vWindows | std::views::reverse) {
 		if (w->m_bIsMapped && !w->isHidden() && w->m_bIsFloating && !w->isX11OverrideRedirect()
-				&& w->m_pWorkspace == from->m_pWorkspace && !w->m_bX11ShouldntFocus
-				&& !w->m_sWindowData.noFocus.valueOrDefault() && w != from)
+		    && w->m_pWorkspace == from->m_pWorkspace && !w->m_bX11ShouldntFocus
+		    && !w->m_sWindowData.noFocus.valueOrDefault() && w != from)
 		{
 			return w;
 		}
@@ -1374,14 +1374,14 @@ void Hy3Layout::expand(
 	if (node == nullptr) return;
 	PHLWINDOW window;
 
-	//const auto monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
+	// const auto monitor = g_pCompositor->getMonitorFromID(workspace->m_iMonitorID);
 
 	switch (option) {
 	case ExpandOption::Expand: {
 		if (node->parent == nullptr) {
 			switch (fs_option) {
 			case ExpandFullscreenOption::MaximizeAsFullscreen:
-			case ExpandFullscreenOption::MaximizeIntermediate:// goto fullscreen;
+			case ExpandFullscreenOption::MaximizeIntermediate: // goto fullscreen;
 			case ExpandFullscreenOption::MaximizeOnly: return;
 			}
 		}
@@ -1397,7 +1397,7 @@ void Hy3Layout::expand(
 
 		if (node->parent->parent == nullptr) {
 			switch (fs_option) {
-			case ExpandFullscreenOption::MaximizeAsFullscreen:// goto fullscreen;
+			case ExpandFullscreenOption::MaximizeAsFullscreen: // goto fullscreen;
 			case ExpandFullscreenOption::MaximizeIntermediate:
 			case ExpandFullscreenOption::MaximizeOnly: return;
 			}
@@ -1426,31 +1426,31 @@ void Hy3Layout::expand(
 	}
 
 	return;
-/*
-fullscreen:
-	if (node->data.is_group()) return;
-	window = node->data.as_window();
-	if (!window->m_bIsFullscreen || window->m_pWorkspace->m_bIsSpecialWorkspace) return;
+	/*
+	fullscreen:
+	  if (node->data.is_group()) return;
+	  window = node->data.as_window();
+	  if (!window->m_bIsFullscreen || window->m_pWorkspace->m_bIsSpecialWorkspace) return;
 
-	if (workspace->m_bHasFullscreenWindow) return;
+	  if (workspace->m_bHasFullscreenWindow) return;
 
-	window->m_bIsFullscreen = true;
-	workspace->m_bHasFullscreenWindow = true;
-	workspace->m_efFullscreenMode = FULLSCREEN_FULL;
-	window->m_vRealPosition = monitor->vecPosition;
-	window->m_vRealSize = monitor->vecSize;
-	goto fsupdate;
-// unfullscreen:
-// 	if (node->data.type != Hy3NodeType::Window) return;
-// 	window = node->data.as_window;
-// 	window->m_bIsFullscreen = false;
-// 	workspace->m_bHasFullscreenWindow = false;
-// 	goto fsupdate;
-fsupdate:
-	g_pCompositor->updateWindowAnimatedDecorationValues(window);
-	g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
-	g_pCompositor->changeWindowZOrder(window, true);
-	this->recalculateMonitor(monitor->ID);*/
+	  window->m_bIsFullscreen = true;
+	  workspace->m_bHasFullscreenWindow = true;
+	  workspace->m_efFullscreenMode = FULLSCREEN_FULL;
+	  window->m_vRealPosition = monitor->vecPosition;
+	  window->m_vRealSize = monitor->vecSize;
+	  goto fsupdate;
+	// unfullscreen:
+	// 	if (node->data.type != Hy3NodeType::Window) return;
+	// 	window = node->data.as_window;
+	// 	window->m_bIsFullscreen = false;
+	// 	workspace->m_bHasFullscreenWindow = false;
+	// 	goto fsupdate;
+	fsupdate:
+	  g_pCompositor->updateWindowAnimatedDecorationValues(window);
+	  g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
+	  g_pCompositor->changeWindowZOrder(window, true);
+	  this->recalculateMonitor(monitor->ID);*/
 }
 
 void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
@@ -1534,9 +1534,8 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 		rendering_normally = false;
 
 		for (auto& entry: g_Hy3Layout->tab_groups) {
-			if (!entry.hidden
-			    && entry.target_window->m_pMonitor == g_pHyprOpenGL->m_RenderData.pMonitor
-					&& (!entry.target_window->m_pWorkspace || entry.target_window->m_pWorkspace->m_bVisible)
+			if (!entry.hidden && entry.target_window->m_pMonitor == g_pHyprOpenGL->m_RenderData.pMonitor
+			    && (!entry.target_window->m_pWorkspace || entry.target_window->m_pWorkspace->m_bVisible)
 			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
 			           == rendered_groups.end())
 			{
@@ -1811,7 +1810,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 					    group_data.children.end(),
 					    group_data.focused_child
 					);
-				} else if (visible && group_data.layout == Hy3GroupLayout::Tabbed && group_data.focused_child != nullptr)
+				} else if (visible && group_data.layout == Hy3GroupLayout::Tabbed
+				           && group_data.focused_child != nullptr)
 				{
 					// if the group is tabbed and we're going by visible nodes, jump to the current entry
 					iter = std::find(
@@ -1820,7 +1820,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 					    group_data.focused_child
 					);
 					shift_after = true;
-				} else if (shiftMatchesLayout(group_data.layout, direction) || (visible && group_data.layout == Hy3GroupLayout::Tabbed))
+				} else if (shiftMatchesLayout(group_data.layout, direction)
+				           || (visible && group_data.layout == Hy3GroupLayout::Tabbed))
 				{
 					// if the group has the same orientation as movement pick the
 					// last/first child based on movement direction

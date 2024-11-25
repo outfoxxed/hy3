@@ -85,7 +85,9 @@ public:
 	void recalculateWindow(PHLWINDOW) override;
 	void resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PHLWINDOW pWindow = nullptr)
 	    override;
-	void fullscreenRequestForWindow(PHLWINDOW, eFullscreenMode current_mode, eFullscreenMode target_mode) override;
+	void
+	fullscreenRequestForWindow(PHLWINDOW, eFullscreenMode current_mode, eFullscreenMode target_mode)
+	    override;
 	std::any layoutMessage(SLayoutMessageHeader header, std::string content) override;
 	SWindowRenderLayoutHints requestRenderHints(PHLWINDOW) override;
 	void switchWindows(PHLWINDOW, PHLWINDOW) override;
