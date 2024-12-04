@@ -42,7 +42,7 @@ void init() {
 		         "Failed to load function hooks: "
 		         "\"updateWindowAnimatedDecorationValues\""},
 		        {"time", (uint64_t) 10000},
-		        {"color", CColor(1.0, 0.0, 0.0, 1.0)},
+		        {"color", CHyprColor(1.0, 0.0, 0.0, 1.0)},
 		        {"icon", ICON_ERROR},
 		    }
 		);

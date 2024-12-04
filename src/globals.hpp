@@ -18,7 +18,7 @@ inline void errorNotif() {
 	    {
 	        {"text", "Something has gone very wrong. Check the log for details."},
 	        {"time", (uint64_t) 10000},
-	        {"color", CColor(1.0, 0.0, 0.0, 1.0)},
+	        {"color", CHyprColor(1.0, 0.0, 0.0, 1.0)},
 	        {"icon", ICON_ERROR},
 	    }
 	);
