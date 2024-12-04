@@ -16,7 +16,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 		HyprlandAPI::addNotification(
 		    PHANDLE,
 		    "[hy3] hy3 was compiled for a different version of hyprland; refusing to load.",
-		    CColor {1.0, 0.2, 0.2, 1.0},
+		    CHyprColor {1.0, 0.2, 0.2, 1.0},
 		    10000
 		);
 

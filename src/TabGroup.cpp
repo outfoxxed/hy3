@@ -170,8 +170,8 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 		auto focused = this->focused.value();
 		auto urgent = this->urgent.value();
 		auto inactive = 1.0 - (focused + urgent);
-		auto c = (CColor(*col_active) * focused) + (CColor(*col_urgent) * urgent)
-		       + (CColor(*col_inactive) * inactive);
+		auto c = (CHyprColor(*col_active) * focused) + (CHyprColor(*col_urgent) * urgent)
+		       + (CHyprColor(*col_inactive) * inactive);
 
 		cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
@@ -214,8 +214,8 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 			pango_layout_set_width(layout, width * PANGO_SCALE);
 			pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
 
-			auto c = (CColor(*col_text_active) * focused) + (CColor(*col_text_urgent) * urgent)
-			       + (CColor(*col_text_inactive) * inactive);
+			auto c = (CHyprColor(*col_text_active) * focused) + (CHyprColor(*col_text_urgent) * urgent)
+			       + (CHyprColor(*col_text_inactive) * inactive);
 
 			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
@@ -600,7 +600,7 @@ void Hy3TabGroup::renderTabBar() {
 			window_box.scale(scale);
 
 			if (window_box.width > 0 && window_box.height > 0)
-				g_pHyprOpenGL->renderRect(&window_box, CColor(0, 0, 0, 0), *window_rounding);
+				g_pHyprOpenGL->renderRect(&window_box, CHyprColor(0, 0, 0, 0), *window_rounding);
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
