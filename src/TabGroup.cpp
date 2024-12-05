@@ -13,6 +13,24 @@
 #include <pixman.h>
 
 #include "globals.hpp"
+#include "log.hpp"
+
+// This is a workaround CHyprColor not having working arithmetic operator...
+static inline CHyprColor
+merge_colors(float f1, CHyprColor c1, float f2, CHyprColor c2, float f3, CHyprColor c3) {
+	Hyprgraphics::CColor::SOkLab oklab_out;
+	float f[3] = {f1, f2, f3};
+	Hyprgraphics::CColor::SOkLab c[3] = {c1.asOkLab(), c2.asOkLab(), c3.asOkLab()};
+
+	oklab_out.l = c[0].l * f[0] + c[1].l * f[1] + c[2].l * f[2];
+	oklab_out.a = c[0].a * f[0] + c[1].a * f[1] + c[2].a * f[2];
+	oklab_out.b = c[0].b * f[0] + c[1].b * f[1] + c[2].b * f[2];
+	float alpha = c1.a * f[0] + c2.a * f[1] + c3.a * f[2];
+
+	// the alpha is linear, otherwise use the fact that CColor can take an OkLab and do the correct
+	// conversion to an rgb
+	return (CHyprColor(Hyprgraphics::CColor(oklab_out), alpha));
+}
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->focused
@@ -169,9 +187,15 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 		// set brush
 		auto focused = this->focused.value();
 		auto urgent = this->urgent.value();
-		auto inactive = 1.0 - (focused + urgent);
-		auto c = (CHyprColor(*col_active) * focused) + (CHyprColor(*col_urgent) * urgent)
-		       + (CHyprColor(*col_inactive) * inactive);
+		auto inactive = 1.0f - (focused + urgent);
+		CHyprColor c = merge_colors(
+		    focused,
+		    CHyprColor(*col_active),
+		    urgent,
+		    CHyprColor(*col_urgent),
+		    inactive,
+		    CHyprColor(*col_inactive)
+		);
 
 		cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
@@ -214,8 +238,17 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 			pango_layout_set_width(layout, width * PANGO_SCALE);
 			pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
 
-			auto c = (CHyprColor(*col_text_active) * focused) + (CHyprColor(*col_text_urgent) * urgent)
-			       + (CHyprColor(*col_text_inactive) * inactive);
+			CHyprColor c = merge_colors(
+			    focused,
+			    CHyprColor(*col_text_active),
+			    urgent,
+			    CHyprColor(*col_text_urgent),
+			    inactive,
+			    CHyprColor(*col_text_inactive)
+			);
+
+			// auto c = (CHyprColor(*col_text_active) * focused) + (CHyprColor(*col_text_urgent) * urgent)
+			//       + (CHyprColor(*col_text_inactive) * inactive);
 
 			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
