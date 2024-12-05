@@ -13,6 +13,20 @@
 #include <pixman.h>
 
 #include "globals.hpp"
+#include "log.hpp"
+
+// This is a workaround CHyprColor not having working arithmetic operator...
+static inline CHyprColor
+merge_colors(float f1, CHyprColor col1, float f2, CHyprColor col2, float f3, CHyprColor col3) {
+	CHyprColor out = CHyprColor(0, 0, 0, 0);
+
+	out.r = col1.r * f1 + col2.r * f2 + col3.r * f3;
+	out.g = col1.g * f1 + col2.g * f2 + col3.g * f3;
+	out.b = col1.b * f1 + col2.b * f2 + col3.b * f3;
+	out.a = col1.a * f1 + col2.a * f2 + col3.a * f3;
+
+	return out;
+}
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
 	this->focused
@@ -169,11 +183,15 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 		// set brush
 		auto focused = this->focused.value();
 		auto urgent = this->urgent.value();
-		auto inactive = !(focused || urgent);
-		CHyprColor c;
-		if (focused) c = CHyprColor(*col_active);
-		if (urgent) c = CHyprColor(*col_urgent);
-		if (inactive) c = CHyprColor(*col_inactive);
+		auto inactive = 1.0f - (focused + urgent);
+		CHyprColor c = merge_colors(
+		    focused,
+		    CHyprColor(*col_active),
+		    urgent,
+		    CHyprColor(*col_urgent),
+		    inactive,
+		    CHyprColor(*col_inactive)
+		);
 
 		cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
@@ -216,11 +234,15 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 			pango_layout_set_width(layout, width * PANGO_SCALE);
 			pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
 
-			CHyprColor c;
+			CHyprColor c = merge_colors(
+			    focused,
+			    CHyprColor(*col_text_active),
+			    urgent,
+			    CHyprColor(*col_text_urgent),
+			    inactive,
+			    CHyprColor(*col_text_inactive)
+			);
 
-			if (focused) c = CHyprColor(*col_text_active);
-			if (urgent) c = CHyprColor(*col_text_urgent);
-			if (inactive) c = CHyprColor(*col_text_inactive);
 			// auto c = (CHyprColor(*col_text_active) * focused) + (CHyprColor(*col_text_urgent) * urgent)
 			//       + (CHyprColor(*col_text_inactive) * inactive);
 
