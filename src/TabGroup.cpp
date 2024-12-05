@@ -169,9 +169,11 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 		// set brush
 		auto focused = this->focused.value();
 		auto urgent = this->urgent.value();
-		auto inactive = 1.0 - (focused + urgent);
-		auto c = (CHyprColor(*col_active) * focused) + (CHyprColor(*col_urgent) * urgent)
-		       + (CHyprColor(*col_inactive) * inactive);
+		auto inactive = !(focused || urgent);
+		CHyprColor c;
+		if (focused) c = CHyprColor(*col_active);
+		if (urgent) c = CHyprColor(*col_urgent);
+		if (inactive) c = CHyprColor(*col_inactive);
 
 		cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
@@ -214,8 +216,13 @@ void Hy3TabBarEntry::prepareTexture(float scale, CBox& box) {
 			pango_layout_set_width(layout, width * PANGO_SCALE);
 			pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
 
-			auto c = (CHyprColor(*col_text_active) * focused) + (CHyprColor(*col_text_urgent) * urgent)
-			       + (CHyprColor(*col_text_inactive) * inactive);
+			CHyprColor c;
+
+			if (focused) c = CHyprColor(*col_text_active);
+			if (urgent) c = CHyprColor(*col_text_urgent);
+			if (inactive) c = CHyprColor(*col_text_inactive);
+			// auto c = (CHyprColor(*col_text_active) * focused) + (CHyprColor(*col_text_urgent) * urgent)
+			//       + (CHyprColor(*col_text_inactive) * inactive);
 
 			cairo_set_source_rgba(cairo, c.r, c.g, c.b, c.a);
 
