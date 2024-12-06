@@ -17,15 +17,19 @@
 
 // This is a workaround CHyprColor not having working arithmetic operator...
 static inline CHyprColor
-merge_colors(float f1, CHyprColor col1, float f2, CHyprColor col2, float f3, CHyprColor col3) {
-	CHyprColor out = CHyprColor(0, 0, 0, 0);
+merge_colors(float f1, CHyprColor c1, float f2, CHyprColor c2, float f3, CHyprColor c3) {
+	Hyprgraphics::CColor::SOkLab oklab_out;
+	float f[3] = {f1, f2, f3};
+	Hyprgraphics::CColor::SOkLab c[3] = {c1.asOkLab(), c2.asOkLab(), c3.asOkLab()};
 
-	out.r = col1.r * f1 + col2.r * f2 + col3.r * f3;
-	out.g = col1.g * f1 + col2.g * f2 + col3.g * f3;
-	out.b = col1.b * f1 + col2.b * f2 + col3.b * f3;
-	out.a = col1.a * f1 + col2.a * f2 + col3.a * f3;
+	oklab_out.l = c[0].l * f[0] + c[1].l * f[1] + c[2].l * f[2];
+	oklab_out.a = c[0].a * f[0] + c[1].a * f[1] + c[2].a * f[2];
+	oklab_out.b = c[0].b * f[0] + c[1].b * f[1] + c[2].b * f[2];
+	float alpha = c1.a * f[0] + c2.a * f[1] + c3.a * f[2];
 
-	return out;
+	// the alpha is linear, otherwise use the fact that CColor can take an OkLab and do the correct
+	// conversion to an rgb
+	return (CHyprColor(Hyprgraphics::CColor(oklab_out), alpha));
 }
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
