@@ -1,5 +1,8 @@
 # Changelog
 
+# hl0.46.0 and before
+*check the commit history*
+
 # hl0.45.0 and before
 
 - Added hyprsplit compatibility for hy3:movetoworkspace
