@@ -6,11 +6,13 @@
     inherit hyprland hlversion;
     versionCheck = false;
   },
-}: pkgs.mkShell {
+}: pkgs.mkShell.override {
+  inherit (hy3) stdenv;
+} {
   inputsFrom = [ hy3 ];
 
   nativeBuildInputs = with pkgs; [
-    clang-tools_17
+    clang-tools
     bear
   ];
 }

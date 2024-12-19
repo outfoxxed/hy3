@@ -15,7 +15,7 @@
   debug ? false,
   hlversion ? "git",
   versionCheck ? true,
-}: stdenv.mkDerivation {
+}: hyprland.stdenv.mkDerivation {
   pname = "hy3";
   version = "hl${hlversion}${lib.optionalString debug "-debug"}";
   src = nix-gitignore.gitignoreSource [] ./.;
