@@ -12,6 +12,7 @@
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
 #include "SelectionHook.hpp"
+#include "TabGroup.hpp"
 #include "globals.hpp"
 #include "src/desktop/Window.hpp"
 
@@ -1520,11 +1521,11 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 		if (!rendering_normally) break;
 
 		for (auto& entry: g_Hy3Layout->tab_groups) {
-			if (!entry.hidden && entry.target_window == g_pHyprOpenGL->m_pCurrentWindow.lock()
+			if (!entry.hidden && entry.target_window == g_pHyprOpenGL->m_RenderData.currentWindow.lock()
 			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
 			           == rendered_groups.end())
 			{
-				entry.renderTabBar();
+				g_pHyprRenderer->m_sRenderPass.add(entry.pass);
 				rendered_groups.push_back(&entry);
 			}
 		}
@@ -1539,6 +1540,7 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
 			           == rendered_groups.end())
 			{
+				g_pHyprRenderer->m_sRenderPass.add(entry.pass);
 				entry.renderTabBar();
 			}
 		}

@@ -8,6 +8,7 @@
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Texture.hpp>
 #include <hyprutils/math/Box.hpp>
+#include <hyprutils/math/Region.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <pango/pangocairo.h>
 #include <pixman.h>
@@ -685,6 +686,10 @@ void Hy3TabGroup::renderTabBar() {
 		glStencilMask(0xff);
 		glStencilFunc(GL_ALWAYS, 1, 0xff);
 	}
+}
+
+void Hy3TabPassElement::draw(const CRegion& damage) {
+	this->group->renderTabBar();
 }
 
 void findOverlappingWindows(Hy3Node& node, float height, std::vector<PHLWINDOWREF>& windows) {

@@ -9,6 +9,7 @@ class Hy3TabBar;
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Texture.hpp>
+#include <hyprland/src/render/Renderer.hpp>
 
 #include "Hy3Node.hpp"
 
@@ -83,6 +84,19 @@ private:
 	Hy3TabBar(const Hy3TabBar&) = delete;
 };
 
+class Hy3TabPassElement: public IPassElement {
+public:
+	Hy3TabPassElement(Hy3TabGroup* group): group(group) {}
+
+	void draw(const CRegion& damage) override;
+	bool needsLiveBlur() override { return false; }
+	bool needsPrecomputeBlur() override { return false; }
+	const char* passName() override { return "Hy3TabPassElement"; }
+
+private:
+	Hy3TabGroup* group;
+};
+
 class Hy3TabGroup {
 public:
 	PHLWINDOW target_window = nullptr;
@@ -100,6 +114,8 @@ public:
 	void tick();
 	// render the scaled tab bar on the current monitor.
 	void renderTabBar();
+
+	SP<Hy3TabPassElement> pass = makeShared<Hy3TabPassElement>(this);
 
 private:
 	std::vector<PHLWINDOWREF> stencil_windows;
