@@ -73,8 +73,6 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 
 	this->vertical_pos = 0.0;
 	this->fade_opacity = 1.0;
-
-	this->texture = makeShared<CTexture>();
 }
 
 bool Hy3TabBarEntry::operator==(const Hy3Node& node) const { return this->node == node; }
@@ -241,6 +239,8 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 		g_object_unref(context);
 
 		auto data = cairo_image_surface_get_data(cairo_surface);
+
+		if (!this->texture) this->texture = makeShared<CTexture>();
 		this->texture->allocate();
 
 		glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
