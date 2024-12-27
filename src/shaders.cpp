@@ -8,19 +8,24 @@
 
 Hy3Shaders::Hy3Shaders() {
 	{
-		auto& s = this->border_rect;
-		s.program = Hy3Shaders::createProgram(SHADER_SIMPLE_QUAD, SHADER_BORDER_RECT_FRAG);
+		auto& s = this->tab;
+		s.program = Hy3Shaders::createProgram(SHADER_TAB_VERT, SHADER_TAB_FRAG);
 		s.posAttrib = glGetAttribLocation(s.program, "pos");
 		s.proj = glGetUniformLocation(s.program, "proj");
+		s.monitorSize = glGetUniformLocation(s.program, "monitorSize");
+		s.pixelOffset = glGetUniformLocation(s.program, "pixelOffset");
 		s.pixelSize = glGetUniformLocation(s.program, "pixelSize");
+		s.applyBlur = glGetUniformLocation(s.program, "applyBlur");
+		s.blurTex = glGetUniformLocation(s.program, "blurTex");
+		s.opacity = glGetUniformLocation(s.program, "opacity");
 		s.fillColor = glGetUniformLocation(s.program, "fillColor");
 		s.borderColor = glGetUniformLocation(s.program, "borderColor");
-		s.outerRadius = glGetUniformLocation(s.program, "outerRadius");
 		s.borderWidth = glGetUniformLocation(s.program, "borderWidth");
+		s.outerRadius = glGetUniformLocation(s.program, "outerRadius");
 	}
 }
 
-Hy3Shaders::~Hy3Shaders() { glDeleteProgram(this->border_rect.program); }
+Hy3Shaders::~Hy3Shaders() { glDeleteProgram(this->tab.program); }
 
 Hy3Shaders* Hy3Shaders::instance() {
 	static auto* INSTANCE = new Hy3Shaders();

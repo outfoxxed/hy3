@@ -280,6 +280,14 @@ plugin {
       col.inactive = <color> # default: rgba(30303090)
 	  col.border.inactive = <color> # default: rgba(505050b0)
       col.text.inactive = <color> # default: rgba(ffffffff)
+
+	  # if tab backgrounds should be blurred
+	  # Blur is only visible when the above colors are not opaque.
+	  blur = <bool> # default: true
+
+	  # opacity multiplier for tabs
+	  # Applies to blur as well as the given colors.
+	  opacity = <float> # default: 1.0
     }
 
     # autotiling settings

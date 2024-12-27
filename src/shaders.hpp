@@ -11,12 +11,17 @@ public:
 		GLuint program;
 		GLuint posAttrib;
 		GLint proj;
+		GLint monitorSize;
+		GLint pixelOffset;
+		GLint pixelSize;
+		GLint applyBlur;
+		GLint blurTex;
+		GLint opacity;
 		GLint fillColor;
 		GLint borderColor;
-		GLint pixelSize;
-		GLint outerRadius;
 		GLint borderWidth;
-	} border_rect;
+		GLint outerRadius;
+	} tab;
 
 	static Hy3Shaders* instance();
 

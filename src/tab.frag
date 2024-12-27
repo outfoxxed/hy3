@@ -1,15 +1,20 @@
 precision highp float;
-varying highp vec4 v_color;
-varying highp vec2 v_texcoord;
 
+uniform highp vec2 pixelSize;
+uniform float opacity;
 uniform highp vec4 fillColor;
 uniform highp vec4 borderColor;
-uniform highp vec2 pixelSize;
 uniform float outerRadius;
 uniform float borderWidth;
 
+uniform bool applyBlur;
+uniform sampler2D blurTex;
+
+varying highp vec2 pixCoord;
+varying highp vec2 monitorTexCoord;
+
 void main() {
-	highp vec2 pixCoord = v_texcoord * pixelSize;
+	float opacityMul = opacity;
 	highp vec2 cornerDist = min(pixCoord, pixelSize - pixCoord);
 
 	gl_FragColor = fillColor;
@@ -37,7 +42,8 @@ void main() {
 			dist = sqrt(distSq);
 			calculatedDist = true;
 			float normalized = 1.0 - smoothstep(0.0, 1.0, (dist - outerRadius + SMOOTHING_CONSTANT) / (SMOOTHING_CONSTANT_2X));
-			gl_FragColor = borderColor * normalized;
+			gl_FragColor = borderColor;
+			opacityMul *= normalized;
 		} else if (distSq > innerTest2 * innerTest2) {
 			gl_FragColor = borderColor;
 		}
@@ -50,4 +56,10 @@ void main() {
 	} else if (cornerDist.x <= borderWidth || cornerDist.y <= borderWidth) {
 		gl_FragColor = borderColor;
 	}
+
+	if (applyBlur && gl_FragColor.a != 1.0) {
+		gl_FragColor = gl_FragColor + texture2D(blurTex, monitorTexCoord) * (1.0 - gl_FragColor.a);
+	}
+
+	gl_FragColor *= opacityMul;
 }

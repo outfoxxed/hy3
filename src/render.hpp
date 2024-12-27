@@ -4,8 +4,10 @@
 
 class Hy3Render {
 public:
-	static void renderBorderRect(
+	static void renderTab(
 	    const CBox& box,
+	    float opacity,
+	    bool blur,
 	    const CHyprColor& fillColor,
 	    const CHyprColor& borderColor,
 	    int borderWidth,

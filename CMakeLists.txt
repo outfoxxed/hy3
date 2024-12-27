@@ -24,11 +24,11 @@ add_library(hy3 SHARED
 	src/render.cpp
 )
 
-configure_file(src/simple_quad.vert ${CMAKE_CURRENT_BINARY_DIR}/src/simple_quad.vert COPYONLY)
-file(READ ${CMAKE_CURRENT_BINARY_DIR}/src/simple_quad.vert SHADER_SIMPLE_QUAD)
+configure_file(src/tab.vert ${CMAKE_CURRENT_BINARY_DIR}/src/tab.vert COPYONLY)
+file(READ ${CMAKE_CURRENT_BINARY_DIR}/src/tab.vert SHADER_TAB_VERT)
 
-configure_file(src/border_rect.frag ${CMAKE_CURRENT_BINARY_DIR}/src/border_rect.frag COPYONLY)
-file(READ ${CMAKE_CURRENT_BINARY_DIR}/src/border_rect.frag SHADER_BORDER_RECT)
+configure_file(src/tab.frag ${CMAKE_CURRENT_BINARY_DIR}/src/tab.frag COPYONLY)
+file(READ ${CMAKE_CURRENT_BINARY_DIR}/src/tab.frag SHADER_TAB_FRAG)
 
 configure_file(src/shader_content.hpp.in src/shader_content.hpp @ONLY)
 target_include_directories(hy3 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)

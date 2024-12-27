@@ -125,6 +125,8 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	// clang-format off
 	static const auto s_radius = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:radius");
 	static const auto border_width = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:border_width");
+	static const auto s_opacity = ConfigValue<Hyprlang::FLOAT>("plugin:hy3:tabs:opacity");
+	static const auto blur = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:blur");
 	static const auto col_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active");
 	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.active");
 	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
@@ -157,15 +159,21 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	    CHyprColor(*col_border_inactive)
 	);
 
-	color.a *= opacity;
-	border_color.a *= opacity;
-
 	box.round();
 
 	// sometimes enabled before our renderer is called
 	glDisable(GL_SCISSOR_TEST);
 
-	Hy3Render::renderBorderRect(box, color, border_color, *border_width, radius);
+	Hy3Render::renderTab(
+	    box,
+	    opacity * *s_opacity,
+	    *blur,
+	    color,
+	    border_color,
+	    *border_width,
+	    radius
+	);
+
 	this->renderText(scale, box, opacity);
 }
 

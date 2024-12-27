@@ -2,6 +2,7 @@
 #include <hyprland/src/config/ConfigDataValues.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/version.h>
+#include <hyprlang.hpp>
 
 #include "SelectionHook.hpp"
 #include "dispatchers.hpp"
@@ -30,6 +31,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 #define CONF(NAME, TYPE, VALUE)                                                                    \
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:" NAME, Hyprlang::CConfigValue((TYPE) VALUE))
 
+	using Hyprlang::FLOAT;
 	using Hyprlang::INT;
 	using Hyprlang::STRING;
 
@@ -50,12 +52,14 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("tabs:text_font", STRING, "Sans");
 	CONF("tabs:text_height", INT, 8);
 	CONF("tabs:text_padding", INT, 3);
-	CONF("tabs:col.active", INT, 0xb050a0e0);
-	CONF("tabs:col.border.active", INT, 0xb070b0c0);
-	CONF("tabs:col.urgent", INT, 0xb0ff4f4f);
-	CONF("tabs:col.border.urgent", INT, 0xb0ff8080);
-	CONF("tabs:col.inactive", INT, 0x90303030);
-	CONF("tabs:col.border.inactive", INT, 0xb0505050);
+	CONF("tabs:opacity", FLOAT, 1.0);
+	CONF("tabs:blur", INT, 1);
+	CONF("tabs:col.active", INT, 0xff50a0e0);
+	CONF("tabs:col.border.active", INT, 0xff70b0c0);
+	CONF("tabs:col.urgent", INT, 0xffff4f4f);
+	CONF("tabs:col.border.urgent", INT, 0xffff8080);
+	CONF("tabs:col.inactive", INT, 0x50303030);
+	CONF("tabs:col.border.inactive", INT, 0x90505050);
 	CONF("tabs:col.text.active", INT, 0xff000000);
 	CONF("tabs:col.text.urgent", INT, 0xff000000);
 	CONF("tabs:col.text.inactive", INT, 0xffffffff);

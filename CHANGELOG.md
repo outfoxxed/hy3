@@ -2,9 +2,9 @@
 
 # Upcoming
 
-- Added configurable borders to tabs
+- Added configurable borders and blurred backgrounds to tabs.
 - Renamed `hy3:tabs:rounding` to `hy3:tabs:radius`.
-- Changed default tab style
+- Changed default tab style.
 
 # hl0.46.0 and before
 

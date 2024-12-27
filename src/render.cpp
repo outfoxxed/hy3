@@ -3,26 +3,32 @@
 #include <GLES2/gl2.h>
 #include <hyprland/src/helpers/math/Math.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
+#include <hyprutils/math/Vector2D.hpp>
 
 #include "shaders.hpp"
 
-void Hy3Render::renderBorderRect(
+void Hy3Render::renderTab(
     const CBox& box,
+    float opacity,
+    bool blur,
     const CHyprColor& fillColor,
     const CHyprColor& borderColor,
     int borderWidth,
     int radius
 ) {
-	static auto& shader = Hy3Shaders::instance()->border_rect;
+	static auto& shader = Hy3Shaders::instance()->tab;
 	auto& rdata = g_pHyprOpenGL->m_RenderData;
 
 	auto rbox = box;
 	rdata.renderModif.applyToBox(rbox);
 
+	const auto& monitorSize = rdata.pMonitor->vecTransformedSize;
+	auto monitorBox = CBox {Vector2D(), monitorSize};
+
 	auto matrix = rdata.monitorProjection.projectBox(
-	    rbox,
+	    monitorBox,
 	    wlTransformToHyprutils(invertTransform(rdata.pMonitor->transform)),
-	    rbox.rot
+	    monitorBox.rot
 	);
 
 	auto glMatrix = rdata.projection.copy().multiply(matrix);
@@ -35,6 +41,18 @@ void Hy3Render::renderBorderRect(
 	glMatrix.transpose();
 	glUniformMatrix3fv(shader.proj, 1, GL_FALSE, glMatrix.getMatrix().data());
 #endif
+
+	WP<CTexture> blurTex;
+
+	if (blur) {
+		blurTex = rdata.pCurrentMonData->blurFB.getTexture();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(blurTex->m_iTarget, blurTex->m_iTexID);
+		glUniform1i(shader.blurTex, 0);
+	}
+
+	glUniform1i(shader.applyBlur, blur);
 
 	// premultiplied
 	glUniform4f(
@@ -55,7 +73,10 @@ void Hy3Render::renderBorderRect(
 		);
 	}
 
+	glUniform2f(shader.monitorSize, monitorSize.x, monitorSize.y);
+	glUniform2f(shader.pixelOffset, rbox.x, rbox.y);
 	glUniform2f(shader.pixelSize, rbox.w, rbox.h);
+	glUniform1f(shader.opacity, opacity);
 	glUniform1f(shader.outerRadius, radius);
 	glUniform1f(shader.borderWidth, borderWidth);
 
@@ -65,4 +86,8 @@ void Hy3Render::renderBorderRect(
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glDisableVertexAttribArray(shader.posAttrib);
+
+	if (blur) {
+		glBindTexture(blurTex->m_iTarget, 0);
+	}
 }
