@@ -240,22 +240,22 @@ plugin {
     # tab group settings
     tabs {
       # height of the tab bar
-      height = <int> # default: 15
+      height = <int> # default: 22
 
       # padding between the tab bar and its focused node
-      padding = <int> # default: 5
+      padding = <int> # default: 6
 
       # the tab bar should animate in/out from the top instead of below the window
       from_top = <bool> # default: false
 
-      # rounding of tab bar corners
-      rounding = <int> # default: 3
+      # radius of tab bar corners
+      radius = <int> # default: 6
 
       # render the window title on the bar
       render_text = <bool> # default: true
 
       # center the window title
-      text_center = <bool> # default: false
+      text_center = <bool> # default: true
 
       # font to render the window title with
       text_font = <string> # default: Sans
@@ -266,23 +266,20 @@ plugin {
       # left padding of the window title
       text_padding = <int> # default: 3
 
-      # active tab bar segment color
-      col.active = <color> # default: 0xff32b4ff
+      # active tab bar segment colors
+      col.active = <color> # default: rgba(50a0e0b0)
+	  col.border.active = <color> # default: rgba(70b0c0b0)
+      col.text.active = <color> # default: rgba(000000ff)
 
-      # urgent tab bar segment color
-      col.urgent = <color> # default: 0xffff4f4f
+      # urgent tab bar segment colors
+      col.urgent = <color> # default: rgba(ff4f4fb0)
+      col.border.urgent = <color> # default: rgba(ff8080b0)
+      col.text.urgent = <color> # default: rgba(000000ff)
 
-      # inactive tab bar segment color
-      col.inactive = <color> # default: 0x80808080
-
-      # active tab bar text color
-      col.text.active = <color> # default: 0xff000000
-
-      # urgent tab bar text color
-      col.text.urgent = <color> # default: 0xff000000
-
-      # inactive tab bar text color
-      col.text.inactive = <color> # default: 0xff000000
+      # inactive tab bar segment colors
+      col.inactive = <color> # default: rgba(30303090)
+	  col.border.inactive = <color> # default: rgba(505050b0)
+      col.text.inactive = <color> # default: rgba(ffffffff)
     }
 
     # autotiling settings

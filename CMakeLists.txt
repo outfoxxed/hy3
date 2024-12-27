@@ -20,7 +20,18 @@ add_library(hy3 SHARED
 	src/Hy3Node.cpp
 	src/TabGroup.cpp
 	src/SelectionHook.cpp
+	src/shaders.cpp
+	src/render.cpp
 )
+
+configure_file(src/simple_quad.vert ${CMAKE_CURRENT_BINARY_DIR}/src/simple_quad.vert COPYONLY)
+file(READ ${CMAKE_CURRENT_BINARY_DIR}/src/simple_quad.vert SHADER_SIMPLE_QUAD)
+
+configure_file(src/border_rect.frag ${CMAKE_CURRENT_BINARY_DIR}/src/border_rect.frag COPYONLY)
+file(READ ${CMAKE_CURRENT_BINARY_DIR}/src/border_rect.frag SHADER_BORDER_RECT)
+
+configure_file(src/shader_content.hpp.in src/shader_content.hpp @ONLY)
+target_include_directories(hy3 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 option(HY3_NO_VERSION_CHECK "Disable hyprland version check" FALSE)
 

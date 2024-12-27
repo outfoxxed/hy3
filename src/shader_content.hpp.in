@@ -1,0 +1,4 @@
+#include <string_view>
+
+constexpr std::string_view SHADER_SIMPLE_QUAD = R"(@SHADER_SIMPLE_QUAD@)";
+constexpr std::string_view SHADER_BORDER_RECT_FRAG = R"(@SHADER_BORDER_RECT@)";

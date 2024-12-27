@@ -1,5 +1,6 @@
 #include "TabGroup.hpp"
 
+#include <GLES2/gl2.h>
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
@@ -15,6 +16,7 @@
 
 #include "globals.hpp"
 #include "log.hpp"
+#include "render.hpp"
 
 // This is a workaround CHyprColor not having working arithmetic operator...
 static inline CHyprColor
@@ -120,18 +122,24 @@ bool Hy3TabBarEntry::shouldRemove() {
 void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	auto opacity = opacity_mul * this->fade_opacity.value();
 
-	static const auto s_rounding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:rounding");
+	// clang-format off
+	static const auto s_radius = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:radius");
+	static const auto border_width = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:border_width");
 	static const auto col_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active");
+	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.active");
 	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
+	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.urgent");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
+	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.inactive");
+	// clang-format on
 
-	auto rounding =
-	    std::min((double) *s_rounding * scale, std::min(box.width * 0.5, box.height * 0.5));
+	auto radius = std::min((double) *s_radius * scale, std::min(box.width * 0.5, box.height * 0.5));
 
 	auto focused = this->focused.value();
 	auto urgent = this->urgent.value();
 	auto inactive = 1.0f - (focused + urgent);
-	CHyprColor c = merge_colors(
+
+	auto color = merge_colors(
 	    focused,
 	    CHyprColor(*col_active),
 	    urgent,
@@ -140,9 +148,24 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	    CHyprColor(*col_inactive)
 	);
 
-	c.a *= opacity;
+	auto border_color = merge_colors(
+	    focused,
+	    CHyprColor(*col_border_active),
+	    urgent,
+	    CHyprColor(*col_border_urgent),
+	    inactive,
+	    CHyprColor(*col_border_inactive)
+	);
 
-	g_pHyprOpenGL->renderRect(&box, c, rounding);
+	color.a *= opacity;
+	border_color.a *= opacity;
+
+	box.round();
+
+	// sometimes enabled before our renderer is called
+	glDisable(GL_SCISSOR_TEST);
+
+	Hy3Render::renderBorderRect(box, color, border_color, *border_width, radius);
 	this->renderText(scale, box, opacity);
 }
 
