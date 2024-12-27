@@ -267,27 +267,27 @@ plugin {
       text_padding = <int> # default: 3
 
       # active tab bar segment colors
-      col.active = <color> # default: rgba(50a0e0b0)
-	  col.border.active = <color> # default: rgba(70b0c0b0)
+      col.active = <color> # default: rgba(50a0e0ff)
+      col.border.active = <color> # default: rgba(70b0c0ff)
       col.text.active = <color> # default: rgba(000000ff)
 
       # urgent tab bar segment colors
-      col.urgent = <color> # default: rgba(ff4f4fb0)
-      col.border.urgent = <color> # default: rgba(ff8080b0)
+      col.urgent = <color> # default: rgba(ff4f4fff)
+      col.border.urgent = <color> # default: rgba(ff8080ff)
       col.text.urgent = <color> # default: rgba(000000ff)
 
       # inactive tab bar segment colors
-      col.inactive = <color> # default: rgba(30303090)
-	  col.border.inactive = <color> # default: rgba(505050b0)
+      col.inactive = <color> # default: rgba(30303050)
+      col.border.inactive = <color> # default: rgba(50505090)
       col.text.inactive = <color> # default: rgba(ffffffff)
 
-	  # if tab backgrounds should be blurred
-	  # Blur is only visible when the above colors are not opaque.
-	  blur = <bool> # default: true
+      # if tab backgrounds should be blurred
+      # Blur is only visible when the above colors are not opaque.
+      blur = <bool> # default: true
 
-	  # opacity multiplier for tabs
-	  # Applies to blur as well as the given colors.
-	  opacity = <float> # default: 1.0
+      # opacity multiplier for tabs
+      # Applies to blur as well as the given colors.
+      opacity = <float> # default: 1.0
     }
 
     # autotiling settings
