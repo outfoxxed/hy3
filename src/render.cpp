@@ -46,7 +46,10 @@ void Hy3Render::renderTab(
 
 	if (blur) {
 		blurTex = rdata.pCurrentMonData->blurFB.getTexture();
+		if (!blurTex) blur = false;
+	}
 
+	if (blur) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(blurTex->m_iTarget, blurTex->m_iTexID);
 		glUniform1i(shader.blurTex, 0);
