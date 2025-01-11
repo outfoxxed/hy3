@@ -504,10 +504,10 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PH
 	} else if (window->m_bIsFloating) {
 		// No parent node - is this a floating window?  If so, use the same logic as the `main` layout
 		const auto required_size = Vector2D(
-		    std::max((window->m_vRealSize.goal() + delta).x, 20.0),
-		    std::max((window->m_vRealSize.goal() + delta).y, 20.0)
+		    std::max((window->m_vRealSize->goal() + delta).x, 20.0),
+		    std::max((window->m_vRealSize->goal() + delta).y, 20.0)
 		);
-		window->m_vRealSize = required_size;
+		*window->m_vRealSize = required_size;
 	}
 }
 
@@ -531,23 +531,23 @@ void Hy3Layout::fullscreenRequestForWindow(
 			this->applyNodeDataToWindow(node);
 		} else {
 			// restore floating position if not
-			window->m_vRealPosition = window->m_vLastFloatingPosition;
-			window->m_vRealSize = window->m_vLastFloatingSize;
+			*window->m_vRealPosition = window->m_vLastFloatingPosition;
+			*window->m_vRealSize = window->m_vLastFloatingSize;
 
 			window->unsetWindowData(PRIORITY_LAYOUT);
 		}
 	} else {
 		// save position and size if floating
 		if (window->m_bIsFloating) {
-			window->m_vLastFloatingPosition = window->m_vRealPosition.goal();
-			window->m_vPosition = window->m_vRealPosition.goal();
-			window->m_vLastFloatingSize = window->m_vRealSize.goal();
-			window->m_vSize = window->m_vRealSize.goal();
+			window->m_vLastFloatingPosition = window->m_vRealPosition->goal();
+			window->m_vPosition = window->m_vRealPosition->goal();
+			window->m_vLastFloatingSize = window->m_vRealSize->goal();
+			window->m_vSize = window->m_vRealSize->goal();
 		}
 
 		if (target_mode == FSMODE_FULLSCREEN) {
-			window->m_vRealPosition = monitor->vecPosition;
-			window->m_vRealSize = monitor->vecSize;
+			*window->m_vRealPosition = monitor->vecPosition;
+			*window->m_vRealSize = monitor->vecSize;
 		} else {
 			// Copy of vaxry's massive hack
 
@@ -1212,15 +1212,15 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 				auto& children = group.children;
 				auto& tab_bar = *group.tab_bar;
 
-				auto size = tab_bar.size.value();
-				auto x = pos.x - tab_bar.pos.value().x;
+				auto size = tab_bar.size->value();
+				auto x = pos.x - tab_bar.pos->value().x;
 				auto child_iter = children.begin();
 
 				for (auto& tab: tab_bar.bar.entries) {
 					if (child_iter == children.end()) break;
 
-					if (x > tab.offset.value() * size.x
-					    && x < (tab.offset.value() + tab.width.value()) * size.x)
+					if (x > tab.offset->value() * size.x
+					    && x < (tab.offset->value() + tab.width->value()) * size.x)
 					{
 						*focused_node = *child_iter;
 						return &node;
@@ -1646,24 +1646,24 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 		const auto reserved = window->getFullWindowReservedArea();
 
-		window->m_vRealPosition = window->m_vPosition + reserved.topLeft;
-		window->m_vRealSize = window->m_vSize - (reserved.topLeft + reserved.bottomRight);
+		*window->m_vRealPosition = window->m_vPosition + reserved.topLeft;
+		*window->m_vRealSize = window->m_vSize - (reserved.topLeft + reserved.bottomRight);
 
-		g_pXWaylandManager->setWindowSize(window, window->m_vRealSize.goal());
+		g_pXWaylandManager->setWindowSize(window, window->m_vRealSize->goal());
 	} else {
 		auto reserved = window->getFullWindowReservedArea();
 		auto wb = node->getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight});
 
-		window->m_vRealPosition = wb.pos();
-		window->m_vRealSize = wb.size();
+		*window->m_vRealPosition = wb.pos();
+		*window->m_vRealSize = wb.size();
 
 		g_pXWaylandManager->setWindowSize(window, wb.size());
 
 		if (no_animation) {
 			g_pHyprRenderer->damageWindow(window);
 
-			window->m_vRealPosition.warp();
-			window->m_vRealSize.warp();
+			window->m_vRealPosition->warp();
+			window->m_vRealSize->warp();
 
 			g_pHyprRenderer->damageWindow(window);
 		}
