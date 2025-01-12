@@ -5,6 +5,7 @@
 - Added configurable borders and blurred backgrounds to tabs.
 - Renamed `hy3:tabs:rounding` to `hy3:tabs:radius`.
 - Changed default tab style.
+- Fixed floating windows losing their size after maximizing and then going into fullscreen.
 
 # hl0.46.0 and before
 

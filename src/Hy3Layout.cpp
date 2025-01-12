@@ -538,7 +538,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 		}
 	} else {
 		// save position and size if floating
-		if (window->m_bIsFloating) {
+		if (window->m_bIsFloating && current_mode == FSMODE_NONE) {
 			window->m_vLastFloatingPosition = window->m_vRealPosition->goal();
 			window->m_vPosition = window->m_vRealPosition->goal();
 			window->m_vLastFloatingSize = window->m_vRealSize->goal();
