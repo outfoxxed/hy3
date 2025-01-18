@@ -6,6 +6,7 @@
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
+#include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <ranges>
 
@@ -14,6 +15,7 @@
 #include "SelectionHook.hpp"
 #include "TabGroup.hpp"
 #include "globals.hpp"
+#include "src/desktop/WLSurface.hpp"
 #include "src/desktop/Window.hpp"
 
 std::string operationWorkspaceForName(const std::string& workspace) {
@@ -1257,16 +1259,20 @@ void Hy3Layout::focusTab(
 	Hy3Node* tab_focused_node;
 
 	if (target == TabFocus::MouseLocation || mouse != TabFocusMousePriority::Ignore) {
+		// no surf focused at all
+		auto ptrSurfaceResource = g_pSeatManager->state.pointerFocus.lock();
+		if (!ptrSurfaceResource) return;
+
+		auto ptrSurface = CWLSurface::fromResource(ptrSurfaceResource);
+		if (!ptrSurface) return;
+
+		// non window-parented surface focused, cant have a tab
+		auto window = ptrSurface->getWindow();
+		if (!window || window->m_bIsFloating) return;
+
 		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
-		if (g_pCompositor->vectorToWindowUnified(
-		        mouse_pos,
-		        RESERVED_EXTENTS | INPUT_EXTENTS | ALLOW_FLOATING | FLOATING_ONLY
-		    )
-		    == nullptr)
-		{
-			tab_node = findTabBarAt(*node, mouse_pos, &tab_focused_node);
-			if (tab_node != nullptr) goto hastab;
-		}
+		tab_node = findTabBarAt(*node, mouse_pos, &tab_focused_node);
+		if (tab_node != nullptr) goto hastab;
 
 		if (target == TabFocus::MouseLocation || mouse == TabFocusMousePriority::Require) return;
 	}

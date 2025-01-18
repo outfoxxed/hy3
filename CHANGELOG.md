@@ -6,6 +6,7 @@
 - Renamed `hy3:tabs:rounding` to `hy3:tabs:radius`.
 - Changed default tab style.
 - Fixed floating windows losing their size after maximizing and then going into fullscreen.
+- Fixed tab bars being clickable while covered by layers or with active pointer grabs.
 
 # hl0.46.0 and before
 
