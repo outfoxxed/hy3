@@ -3,9 +3,12 @@
 #include <GLES2/gl2.h>
 #include <hyprland/src/helpers/math/Math.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
+#include <hyprutils/math/Box.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 
 #include "shaders.hpp"
+
+using Hyprutils::Math::CBox;
 
 void Hy3Render::renderTab(
     const CBox& box,

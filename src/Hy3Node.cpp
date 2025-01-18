@@ -4,6 +4,7 @@
 
 #include <bits/ranges_util.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/defines.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/math/Box.hpp>

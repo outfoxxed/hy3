@@ -5,7 +5,7 @@
 class Hy3Render {
 public:
 	static void renderTab(
-	    const CBox& box,
+	    const Hyprutils::Math::CBox& box,
 	    float opacity,
 	    bool blur,
 	    const CHyprColor& fillColor,

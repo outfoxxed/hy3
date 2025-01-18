@@ -3,11 +3,14 @@
 
 #include <dlfcn.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/plugins/PluginSystem.hpp>
 #include <ranges>
 
 #include "Hy3Layout.hpp"
@@ -1049,7 +1052,12 @@ void changeNodeWorkspaceRecursive(Hy3Node& node, const PHLWORKSPACE& workspace) 
 	}
 }
 
-void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow, bool warp) {
+void Hy3Layout::moveNodeToWorkspace(
+    const PHLWORKSPACE& origin,
+    std::string wsname,
+    bool follow,
+    bool warp
+) {
 	auto target = getWorkspaceIDNameFromString(operationWorkspaceForName(wsname));
 
 	if (target.id == WORKSPACE_INVALID) {

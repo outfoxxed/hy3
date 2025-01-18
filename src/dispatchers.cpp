@@ -2,6 +2,7 @@
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/string/String.hpp>
 
@@ -158,8 +159,8 @@ void dispatch_move_to_workspace(std::string value) {
 	auto follow = args[1] == "follow";
 
 	auto warp_cursor =
-			follow
-			&& ((!*no_cursor_warps && args[2] != "nowarp") || (*no_cursor_warps && args[2] == "warp"));
+	    follow
+	    && ((!*no_cursor_warps && args[2] != "nowarp") || (*no_cursor_warps && args[2] == "warp"));
 
 	g_Hy3Layout->moveNodeToWorkspace(origin_workspace, workspace, follow, warp_cursor);
 }

@@ -3,9 +3,12 @@
 #include <GLES2/gl2.h>
 #include <cairo/cairo.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/helpers/Color.hpp>
+#include <hyprland/src/managers/AnimationManager.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Texture.hpp>
 #include <hyprutils/math/Box.hpp>
@@ -15,7 +18,6 @@
 #include <pixman.h>
 
 #include "globals.hpp"
-#include "log.hpp"
 #include "render.hpp"
 
 // This is a workaround CHyprColor not having working arithmetic operator...
