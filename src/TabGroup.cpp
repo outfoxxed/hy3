@@ -552,6 +552,8 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 
 void damageBox(const Vector2D* position, const Vector2D* size) {
 	auto box = CBox {position->x, position->y, size->x, size->y};
+	// Either a rounding error or an issue below makes this necessary.
+	box.expand(1);
 	g_pHyprRenderer->damageBox(&box);
 }
 
