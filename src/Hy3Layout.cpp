@@ -988,7 +988,7 @@ bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follo
 		g_pCompositor->setActiveMonitor(next_monitor);
 		auto next_workspace = next_monitor->activeWorkspace;
 		if (next_workspace) {
-			moveNodeToWorkspace(node.workspace, next_workspace->m_szName, follow);
+			moveNodeToWorkspace(node.workspace, next_workspace->m_szName, follow, false);
 			return true;
 		}
 	}
@@ -1049,7 +1049,7 @@ void changeNodeWorkspaceRecursive(Hy3Node& node, const PHLWORKSPACE& workspace) 
 	}
 }
 
-void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow) {
+void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow, bool warp) {
 	auto target = getWorkspaceIDNameFromString(operationWorkspaceForName(wsname));
 
 	if (target.id == WORKSPACE_INVALID) {
@@ -1114,11 +1114,14 @@ void Hy3Layout::moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsna
 			origin_ws->m_pMonitor->setSpecialWorkspace(nullptr);
 		}
 
-		monitor->changeWorkspace(workspace);
-
 		static const auto allow_workspace_cycles =
 		    ConfigValue<Hyprlang::INT>("binds:allow_workspace_cycles");
+
+		monitor->changeWorkspace(workspace);
 		if (*allow_workspace_cycles) workspace->rememberPrevWorkspace(origin_ws);
+
+		node->parent->recalcSizePosRecursive();
+		node->focus(warp);
 	}
 }
 

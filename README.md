@@ -337,8 +337,10 @@ plugin {
  - `hy3:movewindow, <l | u | d | r | left | down | up | right>, [once], [visible]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
    - `visible` - only move between visible nodes, not hidden tabs
- - `hy3:movetoworkspace, <workspace>, [follow]` - move the active node to the given workspace
+ - `hy3:movetoworkspace, <workspace>, [follow, [warp | nowarp]]` - move the active node to the given workspace
    - `follow` - change focus to the given workspace when moving the selected node
+   - `warp` - warp the mouse to the selected window, even if `general:no_cursor_warps` is true. 
+   - `nowarp` - does not warp the mouse to the selected window, even if `general:no_cursor_warps` is false.
  - `hy3:killactive` - close all windows in the focused node
  - `hy3:changefocus, <top | bottom | raise | lower | tab | tabnode>`
    - `top` - focus all nodes in the workspace

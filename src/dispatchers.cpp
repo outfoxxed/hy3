@@ -150,12 +150,18 @@ void dispatch_move_to_workspace(std::string value) {
 
 	auto args = CVarList(value);
 
+	static const auto no_cursor_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
+
 	auto workspace = args[0];
 	if (workspace == "") return;
 
-	bool follow = args[1] == "follow";
+	auto follow = args[1] == "follow";
 
-	g_Hy3Layout->moveNodeToWorkspace(origin_workspace, workspace, follow);
+	auto warp_cursor =
+			follow
+			&& ((!*no_cursor_warps && args[2] != "nowarp") || (*no_cursor_warps && args[2] == "warp"));
+
+	g_Hy3Layout->moveNodeToWorkspace(origin_workspace, workspace, follow, warp_cursor);
 }
 
 void dispatch_changefocus(std::string arg) {

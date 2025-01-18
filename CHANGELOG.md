@@ -7,6 +7,8 @@
 - Changed default tab style.
 - Fixed floating windows losing their size after maximizing and then going into fullscreen.
 - Fixed tab bars being clickable while covered by layers or with active pointer grabs.
+- Fixed bugs when moving nodes across workspaces.
+- Added warp option to `hy3:movetoworkspace`.
 
 # hl0.46.0 and before
 

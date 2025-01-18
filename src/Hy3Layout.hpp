@@ -126,7 +126,7 @@ public:
 	Hy3Node* focusMonitor(ShiftDirection);
 
 	void warpCursor();
-	void moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow);
+	void moveNodeToWorkspace(const PHLWORKSPACE& origin, std::string wsname, bool follow, bool warp);
 	void changeFocus(const PHLWORKSPACE& workspace, FocusShift);
 	void focusTab(
 	    const PHLWORKSPACE& workspace,
