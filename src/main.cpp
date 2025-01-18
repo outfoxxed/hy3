@@ -54,14 +54,14 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("tabs:text_padding", INT, 3);
 	CONF("tabs:opacity", FLOAT, 1.0);
 	CONF("tabs:blur", INT, 1);
-	CONF("tabs:col.active", INT, 0xff50a0e0);
-	CONF("tabs:col.border.active", INT, 0xff70b0c0);
-	CONF("tabs:col.urgent", INT, 0xffff4f4f);
-	CONF("tabs:col.border.urgent", INT, 0xffff8080);
-	CONF("tabs:col.inactive", INT, 0x50303030);
-	CONF("tabs:col.border.inactive", INT, 0x90505050);
-	CONF("tabs:col.text.active", INT, 0xff000000);
-	CONF("tabs:col.text.urgent", INT, 0xff000000);
+	CONF("tabs:col.active", INT, 0x4033ccff);
+	CONF("tabs:col.border.active", INT, 0xee33ccff);
+	CONF("tabs:col.urgent", INT, 0x40ff2233);
+	CONF("tabs:col.border.urgent", INT, 0xeeff2233);
+	CONF("tabs:col.inactive", INT, 0x20303030);
+	CONF("tabs:col.border.inactive", INT, 0xaa606060);
+	CONF("tabs:col.text.active", INT, 0xffffffff);
+	CONF("tabs:col.text.urgent", INT, 0xffffffff);
 	CONF("tabs:col.text.inactive", INT, 0xffffffff);
 
 	// autotiling
