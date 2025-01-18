@@ -1,3 +1,5 @@
+#include <any>
+#include <cstdint>
 #include <regex>
 #include <set>
 
@@ -6,6 +8,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
@@ -18,8 +21,22 @@
 #include "SelectionHook.hpp"
 #include "TabGroup.hpp"
 #include "globals.hpp"
+#include "src/SharedDefs.hpp"
 #include "src/desktop/WLSurface.hpp"
 #include "src/desktop/Window.hpp"
+#include "src/devices/IPointer.hpp"
+
+PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
+	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return nullptr;
+
+	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
+	if (!valid(workspace)) workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+
+	if (!valid(workspace)) return nullptr;
+	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
+
+	return workspace;
+}
 
 std::string operationWorkspaceForName(const std::string& workspace) {
 	typedef std::string (*PHYPRSPLIT_GET_WORKSPACE_FN)(const std::string& workspace);
@@ -44,6 +61,7 @@ SP<HOOK_CALLBACK_FN> renderHookPtr;
 SP<HOOK_CALLBACK_FN> windowTitleHookPtr;
 SP<HOOK_CALLBACK_FN> urgentHookPtr;
 SP<HOOK_CALLBACK_FN> tickHookPtr;
+SP<HOOK_CALLBACK_FN> mouseButtonPtr;
 
 bool performContainment(Hy3Node& node, bool contained, PHLWINDOW& window) {
 	if (node.data.is_group()) {
@@ -705,14 +723,21 @@ void Hy3Layout::onEnable() {
 	}
 
 	renderHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "render", &Hy3Layout::renderHook);
+
 	windowTitleHookPtr = HyprlandAPI::registerCallbackDynamic(
 	    PHANDLE,
 	    "windowTitle",
 	    &Hy3Layout::windowGroupUpdateRecursiveHook
 	);
+
 	urgentHookPtr =
 	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "urgent", &Hy3Layout::windowGroupUrgentHook);
+
 	tickHookPtr = HyprlandAPI::registerCallbackDynamic(PHANDLE, "tick", &Hy3Layout::tickHook);
+
+	mouseButtonPtr =
+	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "mouseButton", &Hy3Layout::mouseButtonHook);
+
 	selection_hook::enable();
 }
 
@@ -721,6 +746,7 @@ void Hy3Layout::onDisable() {
 	windowTitleHookPtr.reset();
 	urgentHookPtr.reset();
 	tickHookPtr.reset();
+	mouseButtonPtr.reset();
 	selection_hook::disable();
 
 	for (auto& node: this->nodes) {
@@ -1591,6 +1617,41 @@ void Hy3Layout::tickHook(void*, SCallbackInfo&, std::any) {
 		if (entry->bar.destroy) tab_groups.erase(entry++);
 		else entry = std::next(entry);
 	}
+}
+
+void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
+	auto event = std::any_cast<IPointer::SButtonEvent>(data);
+	if (event.state != 1 || event.button != 272) return;
+
+	auto ptr_surface_resource = g_pSeatManager->state.pointerFocus.lock();
+	if (!ptr_surface_resource) return;
+
+	auto ptr_surface = CWLSurface::fromResource(ptr_surface_resource);
+	if (!ptr_surface) return;
+
+	// non window-parented surface focused, cant have a tab
+	auto window = ptr_surface->getWindow();
+	if (!window || window->m_bIsFloating) return;
+
+	auto* node = g_Hy3Layout->getNodeFromWindow(window);
+	if (!node) return;
+
+	auto* root = node;
+	while (root->parent) root = root->parent;
+
+	Hy3Node* focus = nullptr;
+	auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
+	auto* tab_node = findTabBarAt(*root, mouse_pos, &focus);
+	if (!tab_node) return;
+
+	while (focus->data.is_group() && !focus->data.as_group().group_focused
+	       && focus->data.as_group().focused_child != nullptr)
+		focus = focus->data.as_group().focused_child;
+
+	focus->focus(false);
+	tab_node->recalcSizePosRecursive();
+
+	info.cancelled = true;
 }
 
 Hy3Node* Hy3Layout::getNodeFromWindow(const PHLWINDOW& window) {

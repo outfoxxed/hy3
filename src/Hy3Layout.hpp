@@ -74,6 +74,8 @@ enum class ExpandFullscreenOption {
 	MaximizeAsFullscreen,
 };
 
+PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false);
+
 class Hy3Layout: public IHyprLayout {
 public:
 	void onWindowCreated(PHLWINDOW, eDirection = DIRECTION_DEFAULT) override;
@@ -155,6 +157,7 @@ public:
 	static void windowGroupUrgentHook(void*, SCallbackInfo&, std::any);
 	static void windowGroupUpdateRecursiveHook(void*, SCallbackInfo&, std::any);
 	static void tickHook(void*, SCallbackInfo&, std::any);
+	static void mouseButtonHook(void*, SCallbackInfo&, std::any);
 
 	std::list<Hy3Node> nodes;
 	std::list<Hy3TabGroup> tab_groups;

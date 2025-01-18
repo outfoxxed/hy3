@@ -2,24 +2,11 @@
 
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
-#include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/string/String.hpp>
 
 #include "dispatchers.hpp"
 #include "globals.hpp"
-
-PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false) {
-	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return nullptr;
-
-	auto workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
-	if (!valid(workspace)) workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
-
-	if (!valid(workspace)) return nullptr;
-	if (!allow_fullscreen && workspace->m_bHasFullscreenWindow) return nullptr;
-
-	return workspace;
-}
 
 void dispatch_makegroup(std::string value) {
 	auto workspace = workspace_for_action();
@@ -197,9 +184,6 @@ void dispatch_focustab(std::string value) {
 		if (!isNumber(args[i])) return;
 		index = std::stoi(args[i]);
 		Debug::log(LOG, "Focus index '%s' -> %d, errno: %d", args[i].c_str(), index, errno);
-	} else if (args[i] == "mouse") {
-		g_Hy3Layout->focusTab(workspace, TabFocus::MouseLocation, mouse, false, 0);
-		return;
 	} else return;
 
 	i++;

@@ -351,12 +351,7 @@ plugin {
    - `tabnode` - raise focus to the nearest node under the tab
  - `hy3:togglefocuslayer, [nowarp]` - toggle focus between tiled and floating layers
    - `nowarp` - do not warp the mouse to the newly focused window
- - `hy3:focustab <mouse | [l | r | left | right | index, <index>], [prioritize_hovered | require_hovered], [wrap]>`
-   - `mouse` - focus the tab under the mouse, works well with a non consuming bind, e.g.
-     ```conf
-     # binds hy3:focustab to lmb and still allows windows to receive clicks
-     bindn = , mouse:272, hy3:focustab, mouse
-     ```
+ - `hy3:focustab [l | r | left | right | index, <index>], [prioritize_hovered | require_hovered], [wrap]`
    - `l | r | left | right` - direction to change focus towards
    - `index, <index>` - select the `index`th tab
    - `prioritize_hovered` - prioritize the tab group under the mouse when multiple are stacked. use the lowest group if none is under the mouse.
