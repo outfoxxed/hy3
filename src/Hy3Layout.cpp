@@ -14,6 +14,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprutils/math/Vector2D.hpp>
 #include <ranges>
 
 #include "Hy3Layout.hpp"
@@ -954,6 +955,7 @@ void Hy3Layout::shiftFocus(
 			    g_pCompositor->getWindowInDirection(current_window, getShiftDirectionChar(direction));
 
 			if (next_window != nullptr) {
+				g_pInputManager->unconstrainMouse();
 				g_pCompositor->focusWindow(next_window);
 				if (warp) Hy3Layout::warpCursorToBox(next_window->m_vPosition, next_window->m_vSize);
 			}
@@ -1003,8 +1005,9 @@ Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
 				}
 			}
 		}
+
 		if (!found) {
-			g_pCompositor->warpCursorTo(next_monitor->vecPosition + next_monitor->vecSize / 2);
+			Hy3Layout::warpCursorWithFocus(next_monitor->vecPosition + next_monitor->vecSize / 2);
 		}
 	}
 	return nullptr;
@@ -1040,7 +1043,7 @@ void Hy3Layout::toggleFocusLayer(const PHLWORKSPACE& workspace, bool warp) {
 	g_pCompositor->focusWindow(target);
 
 	if (warp) {
-		g_pCompositor->warpCursorTo(target->middle());
+		Hy3Layout::warpCursorWithFocus(target->middle());
 	}
 }
 
@@ -1049,13 +1052,13 @@ void Hy3Layout::warpCursor() {
 
 	if (current_window != nullptr) {
 		if (current_window != nullptr) {
-			g_pCompositor->warpCursorTo(current_window->middle(), true);
+			Hy3Layout::warpCursorWithFocus(current_window->middle(), true);
 		}
 	} else {
 		auto* node = this->getWorkspaceFocusedNode(g_pCompositor->m_pLastMonitor->activeWorkspace);
 
 		if (node != nullptr) {
-			g_pCompositor->warpCursorTo(node->position + node->size / 2);
+			Hy3Layout::warpCursorWithFocus(node->position + node->size / 2);
 		}
 	}
 }
@@ -1503,7 +1506,20 @@ void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
 	if (cursorpos.x < pos.x || cursorpos.x >= pos.x + size.x || cursorpos.y < pos.y
 	    || cursorpos.y >= pos.y + size.y)
 	{
-		g_pCompositor->warpCursorTo(pos + size / 2, true);
+		Hy3Layout::warpCursorWithFocus(pos + size / 2, true);
+	}
+}
+
+void Hy3Layout::warpCursorWithFocus(const Vector2D& target, bool force) {
+	static const auto input_follows_mouse = ConfigValue<Hyprlang::INT>("input:follow_mouse");
+	static const auto no_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
+
+	g_pCompositor->warpCursorTo(target, force);
+
+	if (*no_warps && !force) return;
+
+	if (*input_follows_mouse) {
+		g_pInputManager->simulateMouseMovement();
 	}
 }
 

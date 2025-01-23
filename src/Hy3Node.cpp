@@ -12,6 +12,7 @@
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
 #include "globals.hpp"
+#include "src/managers/input/InputManager.hpp"
 
 const float MIN_RATIO = 0.0f;
 
@@ -167,6 +168,8 @@ bool Hy3Node::operator==(const Hy3Node& rhs) const { return this->data == rhs.da
 
 void Hy3Node::focus(bool warp) {
 	this->markFocused();
+
+	g_pInputManager->unconstrainMouse();
 
 	switch (this->data.type()) {
 	case Hy3NodeType::Window: {

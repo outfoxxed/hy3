@@ -141,6 +141,7 @@ public:
 	void killFocusedNode(const PHLWORKSPACE& workspace);
 	void expand(const PHLWORKSPACE& workspace, ExpandOption, ExpandFullscreenOption);
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
+	static void warpCursorWithFocus(const Vector2D& pos, bool force = false);
 
 	bool shouldRenderSelected(const PHLWINDOW&);
 	PHLWINDOW findTiledWindowCandidate(const PHLWINDOW& from);
