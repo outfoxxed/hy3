@@ -397,7 +397,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		group.focused_child->setHidden(false);
 
 		auto box = CBox {tpos.x, tpos.y, tsize.x, tsize.y};
-		g_pHyprRenderer->damageBox(&box);
+		g_pHyprRenderer->damageBox(box);
 	}
 
 	if (group.expand_focused == ExpandFocusType::Latch) {

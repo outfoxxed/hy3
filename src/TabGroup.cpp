@@ -348,7 +348,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	glBlendFunc(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_ALPHA);
 	glBlendColor(c.r, c.g, c.b, c.a);
 
-	g_pHyprOpenGL->renderTexture(this->texture, &texture_box, opacity);
+	g_pHyprOpenGL->renderTexture(this->texture, texture_box, opacity);
 
 	glBlendColor(1, 1, 1, 1);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -556,7 +556,7 @@ void damageBox(const Vector2D* position, const Vector2D* size) {
 	auto box = CBox {position->x, position->y, size->x, size->y};
 	// Either a rounding error or an issue below makes this necessary.
 	box.expand(1);
-	g_pHyprRenderer->damageBox(&box);
+	g_pHyprRenderer->damageBox(box);
 }
 
 void Hy3TabGroup::tick() {
@@ -714,7 +714,7 @@ void Hy3TabGroup::renderTabBar() {
 			window_box.scale(scale);
 
 			if (window_box.width > 0 && window_box.height > 0)
-				g_pHyprOpenGL->renderRect(&window_box, CHyprColor(0, 0, 0, 0), *window_rounding);
+				g_pHyprOpenGL->renderRect(window_box, CHyprColor(0, 0, 0, 0), *window_rounding);
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
