@@ -1691,7 +1691,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		*window->m_vRealPosition = window->m_vPosition + reserved.topLeft;
 		*window->m_vRealSize = window->m_vSize - (reserved.topLeft + reserved.bottomRight);
 
-		g_pXWaylandManager->setWindowSize(window, window->m_vRealSize->goal());
+		window->sendWindowSize(window->m_vRealSize->goal());
 	} else {
 		auto reserved = window->getFullWindowReservedArea();
 		auto wb = node->getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight});
@@ -1699,7 +1699,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		*window->m_vRealPosition = wb.pos();
 		*window->m_vRealSize = wb.size();
 
-		g_pXWaylandManager->setWindowSize(window, wb.size());
+		window->sendWindowSize(wb.size());
 
 		if (no_animation) {
 			g_pHyprRenderer->damageWindow(window);
