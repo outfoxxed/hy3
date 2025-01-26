@@ -1,0 +1,4 @@
+#include <string_view>
+
+constexpr std::string_view SHADER_TAB_VERT = R"(@SHADER_TAB_VERT@)";
+constexpr std::string_view SHADER_TAB_FRAG = R"(@SHADER_TAB_FRAG@)";

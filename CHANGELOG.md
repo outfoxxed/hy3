@@ -1,5 +1,17 @@
 # Changelog
 
+# Upcoming
+
+- Added configurable borders and blurred backgrounds to tabs.
+- Renamed `hy3:tabs:rounding` to `hy3:tabs:radius`.
+- Changed default tab style.
+- Fixed floating windows losing their size after maximizing and then going into fullscreen.
+- Fixed tab bars being clickable while covered by layers or with active pointer grabs.
+- Fixed bugs when moving nodes across workspaces.
+- Added warp option to `hy3:movetoworkspace`.
+- Fixed broken tab damage tracking (artifacts when tabs animate).
+- Replaced `hy3:focustab mouse` with an unconditional hook that works better.
+
 # hl0.46.0 and before
 
 - Only compatibility fixes.

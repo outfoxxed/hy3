@@ -4,6 +4,7 @@
 
 #include <bits/ranges_util.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/defines.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/math/Box.hpp>
@@ -11,6 +12,7 @@
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
 #include "globals.hpp"
+#include "src/managers/input/InputManager.hpp"
 
 const float MIN_RATIO = 0.0f;
 
@@ -167,6 +169,8 @@ bool Hy3Node::operator==(const Hy3Node& rhs) const { return this->data == rhs.da
 void Hy3Node::focus(bool warp) {
 	this->markFocused();
 
+	g_pInputManager->unconstrainMouse();
+
 	switch (this->data.type()) {
 	case Hy3NodeType::Window: {
 		auto window = this->data.as_window();
@@ -322,11 +326,11 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 	if (this->data.is_window() && this->data.as_window()->isFullscreen()) {
 		auto window = this->data.as_window();
-		auto monitor = this->workspace->m_pMonitor.lock();
+		auto& monitor = this->workspace->m_pMonitor;
 
 		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
-			window->m_vRealPosition = monitor->vecPosition;
-			window->m_vRealSize = monitor->vecSize;
+			*window->m_vRealPosition = monitor->vecPosition;
+			*window->m_vRealSize = monitor->vecSize;
 			return;
 		}
 

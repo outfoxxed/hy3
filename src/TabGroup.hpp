@@ -8,6 +8,7 @@ class Hy3TabBar;
 #include <vector>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/render/Texture.hpp>
 
 #include "Hy3Node.hpp"
@@ -16,32 +17,31 @@ struct Hy3TabBarEntry {
 	std::string window_title;
 	bool destroying = false;
 	SP<CTexture> texture;
-	CAnimatedVariable<float> focused;
-	CAnimatedVariable<float> urgent;
-	CAnimatedVariable<float> offset;       // 0.0-1.0 of total bar
-	CAnimatedVariable<float> width;        // 0.0-1.0 of total bar
-	CAnimatedVariable<float> vertical_pos; // 0.0-1.0, user specified direction
-	CAnimatedVariable<float> fade_opacity; // 0.0-1.0
+	PHLANIMVAR<float> focused;
+	PHLANIMVAR<float> urgent;
+	PHLANIMVAR<float> offset;       // 0.0-1.0 of total bar
+	PHLANIMVAR<float> width;        // 0.0-1.0 of total bar
+	PHLANIMVAR<float> vertical_pos; // 0.0-1.0, user specified direction
+	PHLANIMVAR<float> fade_opacity; // 0.0-1.0
 	Hy3TabBar& tab_bar;
 	Hy3Node& node; // only used for comparioson. do not deref.
 
 	struct {
-		int x, y;
-		float rounding = 0.0;
 		float scale = 0.0;
-		float focused = 0.0;
-		float urgent = 0.0;
 		std::string window_title;
+		int full_logical_width = 0;
+		float render_width = 0;
 
 		std::string text_font;
-		int text_height = 0;
-		int text_padding = 0;
-		int col_active = 0;
-		int col_urgent = 0;
-		int col_inactive = 0;
-		int col_text_active = 0;
-		int col_text_urgent = 0;
-		int col_text_inactive = 0;
+		int font_height = 0;
+
+		int texture_x_offset = 0;
+		int texture_y_offset = 0;
+		int texture_width = 0;
+		int texture_height = 0;
+
+		int logical_width = 0;
+		int logical_height = 0;
 	} last_render;
 
 	Hy3TabBarEntry(Hy3TabBar&, Hy3Node&);
@@ -54,7 +54,10 @@ struct Hy3TabBarEntry {
 	void beginDestroy();
 	void unDestroy();
 	bool shouldRemove();
-	void prepareTexture(float, CBox&);
+	void render(float scale, CBox& box, float opacity_mul);
+
+private:
+	void renderText(float scale, CBox& box, float opacity);
 };
 
 class Hy3TabBar {
@@ -62,7 +65,7 @@ public:
 	bool destroy = false;
 	bool dirty = true;
 	bool damaged = true;
-	CAnimatedVariable<float> fade_opacity;
+	PHLANIMVAR<float> fade_opacity;
 
 	Hy3TabBar();
 	void beginDestroy();
@@ -83,14 +86,27 @@ private:
 	Hy3TabBar(const Hy3TabBar&) = delete;
 };
 
+class Hy3TabPassElement: public IPassElement {
+public:
+	Hy3TabPassElement(Hy3TabGroup* group): group(group) {}
+
+	void draw(const CRegion& damage) override;
+	bool needsLiveBlur() override { return false; }
+	bool needsPrecomputeBlur() override { return false; }
+	const char* passName() override { return "Hy3TabPassElement"; }
+
+private:
+	Hy3TabGroup* group;
+};
+
 class Hy3TabGroup {
 public:
 	PHLWINDOW target_window = nullptr;
 	PHLWORKSPACE workspace = nullptr;
 	bool hidden = false;
 	Hy3TabBar bar;
-	CAnimatedVariable<Vector2D> pos;
-	CAnimatedVariable<Vector2D> size;
+	PHLANIMVAR<Vector2D> pos;
+	PHLANIMVAR<Vector2D> size;
 
 	// initialize a group with the given node. UB if node is not a group.
 	Hy3TabGroup(Hy3Node&);
@@ -100,6 +116,8 @@ public:
 	void tick();
 	// render the scaled tab bar on the current monitor.
 	void renderTabBar();
+
+	SP<Hy3TabPassElement> pass = makeShared<Hy3TabPassElement>(this);
 
 private:
 	std::vector<PHLWINDOWREF> stencil_windows;

@@ -7,7 +7,7 @@ namespace selection_hook {
 inline CFunctionHook* g_LastSelectionHook = nullptr;
 
 void hook_updateDecos(void* thisptr, PHLWINDOW window) {
-	bool explicitly_selected = g_Hy3Layout->shouldRenderSelected(window);
+	bool explicitly_selected = g_Hy3Layout->shouldRenderSelected(window.get());
 
 	auto lastWindow = g_pCompositor->m_pLastWindow;
 	if (explicitly_selected) {

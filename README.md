@@ -240,22 +240,22 @@ plugin {
     # tab group settings
     tabs {
       # height of the tab bar
-      height = <int> # default: 15
+      height = <int> # default: 22
 
       # padding between the tab bar and its focused node
-      padding = <int> # default: 5
+      padding = <int> # default: 6
 
       # the tab bar should animate in/out from the top instead of below the window
       from_top = <bool> # default: false
 
-      # rounding of tab bar corners
-      rounding = <int> # default: 3
+      # radius of tab bar corners
+      radius = <int> # default: 6
 
       # render the window title on the bar
       render_text = <bool> # default: true
 
       # center the window title
-      text_center = <bool> # default: false
+      text_center = <bool> # default: true
 
       # font to render the window title with
       text_font = <string> # default: Sans
@@ -266,23 +266,28 @@ plugin {
       # left padding of the window title
       text_padding = <int> # default: 3
 
-      # active tab bar segment color
-      col.active = <color> # default: 0xff32b4ff
+      # active tab bar segment colors
+      col.active = <color> # default: rgba(50a0e0ff)
+      col.border.active = <color> # default: rgba(70b0c0ff)
+      col.text.active = <color> # default: rgba(000000ff)
 
-      # urgent tab bar segment color
-      col.urgent = <color> # default: 0xffff4f4f
+      # urgent tab bar segment colors
+      col.urgent = <color> # default: rgba(ff4f4fff)
+      col.border.urgent = <color> # default: rgba(ff8080ff)
+      col.text.urgent = <color> # default: rgba(000000ff)
 
-      # inactive tab bar segment color
-      col.inactive = <color> # default: 0x80808080
+      # inactive tab bar segment colors
+      col.inactive = <color> # default: rgba(30303050)
+      col.border.inactive = <color> # default: rgba(50505090)
+      col.text.inactive = <color> # default: rgba(ffffffff)
 
-      # active tab bar text color
-      col.text.active = <color> # default: 0xff000000
+      # if tab backgrounds should be blurred
+      # Blur is only visible when the above colors are not opaque.
+      blur = <bool> # default: true
 
-      # urgent tab bar text color
-      col.text.urgent = <color> # default: 0xff000000
-
-      # inactive tab bar text color
-      col.text.inactive = <color> # default: 0xff000000
+      # opacity multiplier for tabs
+      # Applies to blur as well as the given colors.
+      opacity = <float> # default: 1.0
     }
 
     # autotiling settings
@@ -332,8 +337,10 @@ plugin {
  - `hy3:movewindow, <l | u | d | r | left | down | up | right>, [once], [visible]` - move a window left, up, down, or right
    - `once` - only move directly to the neighboring group, without moving into any of its subgroups
    - `visible` - only move between visible nodes, not hidden tabs
- - `hy3:movetoworkspace, <workspace>, [follow]` - move the active node to the given workspace
+ - `hy3:movetoworkspace, <workspace>, [follow, [warp | nowarp]]` - move the active node to the given workspace
    - `follow` - change focus to the given workspace when moving the selected node
+   - `warp` - warp the mouse to the selected window, even if `general:no_cursor_warps` is true. 
+   - `nowarp` - does not warp the mouse to the selected window, even if `general:no_cursor_warps` is false.
  - `hy3:killactive` - close all windows in the focused node
  - `hy3:changefocus, <top | bottom | raise | lower | tab | tabnode>`
    - `top` - focus all nodes in the workspace
@@ -344,12 +351,7 @@ plugin {
    - `tabnode` - raise focus to the nearest node under the tab
  - `hy3:togglefocuslayer, [nowarp]` - toggle focus between tiled and floating layers
    - `nowarp` - do not warp the mouse to the newly focused window
- - `hy3:focustab <mouse | [l | r | left | right | index, <index>], [prioritize_hovered | require_hovered], [wrap]>`
-   - `mouse` - focus the tab under the mouse, works well with a non consuming bind, e.g.
-     ```conf
-     # binds hy3:focustab to lmb and still allows windows to receive clicks
-     bindn = , mouse:272, hy3:focustab, mouse
-     ```
+ - `hy3:focustab [l | r | left | right | index, <index>], [prioritize_hovered | require_hovered], [wrap]`
    - `l | r | left | right` - direction to change focus towards
    - `index, <index>` - select the `index`th tab
    - `prioritize_hovered` - prioritize the tab group under the mouse when multiple are stacked. use the lowest group if none is under the mouse.
