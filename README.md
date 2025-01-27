@@ -20,6 +20,16 @@ Additional features may be suggested in the repo issues or the [matrix room](htt
 ### Demo
 <video width="640" height="360" controls="controls" src="https://user-images.githubusercontent.com/83010835/255322916-85ae8196-8b12-4e15-b060-9872db10839f.mp4"></video>
 
+-----
+
+In addition to hy3, I maintain [Quickshell](https://quickshell.outfoxxed.me/?utm_source=hy3-readme),
+a toolkit for creating custom bars, widgets, lockscreens, and other desktop shell components
+with first class support for Hyprland.
+
+If that sounds interesting, check out the [website](https://quickshell.outfoxxed.me/?utm_source=hy3-readme).
+
+-----
+
 ### Stability
 hy3 has a tagged release for each hyprland update, and master tracks hyprland's main branch.
 If you are running a release version of hyprland then use the matching tagged hy3 version.
@@ -37,9 +47,6 @@ When reporting bugs, please include:
 - Commit hash of the version you are running.
 - Steps to reproduce the bug (if you can figure them out)
 - backtrace of the crash (if applicable)
-
-If you are too lazy to use the issue tracker, please at least ping `@outfoxxed:outfoxxed.me`
-in the [matrix room](https://matrix.to/#/#hy3-support:outfoxxed.me) with your bug information.
 
 ## Installation
 
