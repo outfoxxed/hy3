@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+#include <utility>
 class Hy3TabGroup;
 class Hy3TabBar;
 
@@ -90,10 +92,11 @@ class Hy3TabPassElement: public IPassElement {
 public:
 	Hy3TabPassElement(Hy3TabGroup* group): group(group) {}
 
+	const char* passName() override { return "Hy3TabPassElement"; }
 	void draw(const CRegion& damage) override;
 	bool needsLiveBlur() override { return false; }
-	bool needsPrecomputeBlur() override { return false; }
-	const char* passName() override { return "Hy3TabPassElement"; }
+	bool needsPrecomputeBlur() override;
+	std::optional<CBox> boundingBox() override;
 
 private:
 	Hy3TabGroup* group;
@@ -114,6 +117,7 @@ public:
 	// update tab bar with node position and data. UB if node is not a group.
 	void updateWithGroup(Hy3Node&, bool warp);
 	void tick();
+	std::pair<CBox, CBox> getRenderBB() const;
 	// render the scaled tab bar on the current monitor.
 	void renderTabBar();
 
