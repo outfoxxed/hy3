@@ -11,6 +11,7 @@
 - Added warp option to `hy3:movetoworkspace`.
 - Fixed broken tab damage tracking (artifacts when tabs animate).
 - Replaced `hy3:focustab mouse` with an unconditional hook that works better.
+- Renamed tab color options.
 
 # hl0.46.0 and before
 

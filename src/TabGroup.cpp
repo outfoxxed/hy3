@@ -149,11 +149,11 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	static const auto s_opacity = ConfigValue<Hyprlang::FLOAT>("plugin:hy3:tabs:opacity");
 	static const auto blur = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:blur");
 	static const auto col_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active");
-	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.active");
+	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.border");
 	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
-	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.urgent");
+	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.border");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
-	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.inactive");
+	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.border");
 	// clang-format on
 
 	auto radius = std::min((double) *s_radius * scale, std::min(box.width * 0.5, box.height * 0.5));
@@ -205,9 +205,9 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	static const auto text_font = ConfigValue<Hyprlang::STRING>("plugin:hy3:tabs:text_font");
 	static const auto text_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_height");
 	static const auto text_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_padding");
-	static const auto col_text_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.text.active");
-	static const auto col_text_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.text.urgent");
-	static const auto col_text_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.text.inactive");
+	static const auto col_text_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.text");
+	static const auto col_text_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.text");
+	static const auto col_text_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.text");
 	// clang-format on
 
 	if (!*render_text) {
@@ -779,11 +779,11 @@ bool Hy3TabPassElement::needsPrecomputeBlur() {
 	static const auto s_opacity = ConfigValue<Hyprlang::FLOAT>("plugin:hy3:tabs:opacity");
 	static const auto blur = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:blur");
 	static const auto col_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active");
-	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.active");
+	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.border");
 	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
-	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.urgent");
+	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.border");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
-	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.border.inactive");
+	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.border");
 	// clang-format on
 
 	if (!*blur) return false;

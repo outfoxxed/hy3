@@ -275,18 +275,18 @@ plugin {
 
       # active tab bar segment colors
       col.active = <color> # default: rgba(50a0e0ff)
-      col.border.active = <color> # default: rgba(70b0c0ff)
-      col.text.active = <color> # default: rgba(000000ff)
+      col.active.border = <color> # default: rgba(70b0c0ff)
+      col.active.text = <color> # default: rgba(ffffffff)
 
       # urgent tab bar segment colors
       col.urgent = <color> # default: rgba(ff4f4fff)
-      col.border.urgent = <color> # default: rgba(ff8080ff)
-      col.text.urgent = <color> # default: rgba(000000ff)
+      col.urgent.border = <color> # default: rgba(ff8080ff)
+      col.urgent.text = <color> # default: rgba(ffffffff)
 
       # inactive tab bar segment colors
       col.inactive = <color> # default: rgba(30303050)
-      col.border.inactive = <color> # default: rgba(50505090)
-      col.text.inactive = <color> # default: rgba(ffffffff)
+      col.inactive.border = <color> # default: rgba(50505090)
+      col.inactive.text = <color> # default: rgba(ffffffff)
 
       # if tab backgrounds should be blurred
       # Blur is only visible when the above colors are not opaque.
