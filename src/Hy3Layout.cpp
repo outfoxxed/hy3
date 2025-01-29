@@ -926,6 +926,9 @@ void Hy3Layout::shiftFocus(
 		}
 
 		target->focus(warp);
+		if (node->parent == target->parent && node->parent->data.as_group().layout == Hy3GroupLayout::Tabbed) {
+			g_pInputManager->simulateMouseMovement();
+		}
 		while (target->parent != nullptr) target = target->parent;
 		target->recalcSizePosRecursive();
 	}
