@@ -258,6 +258,9 @@ plugin {
       # radius of tab bar corners
       radius = <int> # default: 6
 
+      # tab bar border width
+      border_width = <int> # default: 2
+
       # render the window title on the bar
       render_text = <bool> # default: true
 
@@ -346,7 +349,7 @@ plugin {
    - `visible` - only move between visible nodes, not hidden tabs
  - `hy3:movetoworkspace, <workspace>, [follow, [warp | nowarp]]` - move the active node to the given workspace
    - `follow` - change focus to the given workspace when moving the selected node
-   - `warp` - warp the mouse to the selected window, even if `general:no_cursor_warps` is true. 
+   - `warp` - warp the mouse to the selected window, even if `general:no_cursor_warps` is true.
    - `nowarp` - does not warp the mouse to the selected window, even if `general:no_cursor_warps` is false.
  - `hy3:killactive` - close all windows in the focused node
  - `hy3:changefocus, <top | bottom | raise | lower | tab | tabnode>`
