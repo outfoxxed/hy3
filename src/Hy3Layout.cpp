@@ -1734,6 +1734,24 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
     bool once,
     bool visible
 ) {
+
+    auto* parent = node.parent;
+    if (shift && parent && parent->parent == nullptr &&
+        parent->data.as_group().layout != Hy3GroupLayout::Tabbed &&
+        shiftMatchesLayout(parent->data.as_group().layout, direction)) {
+        // Check if we're at the edge
+        auto& children = parent->data.as_group().children;
+        bool at_edge = (shiftIsForward(direction) && &node == children.back()) ||
+                      (!shiftIsForward(direction) && &node == children.front());
+        if (at_edge) {
+            auto next_monitor = g_pCompositor->getMonitorInDirection(getShiftDirectionChar(direction));
+            if (next_monitor && next_monitor->activeWorkspace) {
+                moveNodeToWorkspace(node.workspace.get(), next_monitor->activeWorkspace->m_szName, true, false);
+                return nullptr;
+            }
+        }
+    }
+
 	auto* break_origin = &node.getExpandActor();
 	auto* break_parent = break_origin->parent;
 
