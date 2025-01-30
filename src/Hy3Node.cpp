@@ -771,7 +771,7 @@ Hy3Node* Hy3Node::removeFromParentRecursive(Hy3Node** expand_actor) {
 		parent = parent->parent;
 		auto& group = parent->data.as_group();
 
-		if (group.children.size() > 2) {
+		if (group.children.size() > 2 && group.focused_child == child) {
 			auto iter = std::find(group.children.begin(), group.children.end(), child);
 
 			group.group_focused = false;
