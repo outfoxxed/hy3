@@ -1613,6 +1613,7 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 		focus = focus->data.as_group().focused_child;
 
 	focus->focus(false);
+	g_pInputManager->simulateMouseMovement();
 	tab_node->recalcSizePosRecursive();
 
 	info.cancelled = true;
