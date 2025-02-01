@@ -140,7 +140,6 @@ public:
 	void killFocusedNode(const CWorkspace* workspace);
 	void expand(const CWorkspace* workspace, ExpandOption, ExpandFullscreenOption);
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
-	static void warpCursorWithFocus(const Vector2D& pos, bool force = false);
 
 	bool shouldRenderSelected(const CWindow*);
 	PHLWINDOW findTiledWindowCandidate(const CWindow* from);

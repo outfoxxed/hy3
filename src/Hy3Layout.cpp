@@ -890,6 +890,8 @@ void Hy3Layout::shiftFocus(
     bool visible,
     bool warp
 ) {
+	static const auto input_follows_mouse = ConfigValue<Hyprlang::INT>("input:follow_mouse");
+	static const auto no_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
 	auto current_window = g_pCompositor->m_pLastWindow.lock();
 
 	if (current_window != nullptr) {
@@ -926,7 +928,7 @@ void Hy3Layout::shiftFocus(
 		}
 
 		target->focus(warp);
-		if (node->parent != nullptr && node->parent == target->parent && node->parent->data.as_group().layout == Hy3GroupLayout::Tabbed) {
+		if (*input_follows_mouse && !*no_warps) {
 			g_pInputManager->simulateMouseMovement();
 		}
 		while (target->parent != nullptr) target = target->parent;
@@ -957,7 +959,7 @@ Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
 		}
 
 		if (!found) {
-			Hy3Layout::warpCursorWithFocus(next_monitor->vecPosition + next_monitor->vecSize / 2);
+			g_pCompositor->warpCursorTo(next_monitor->vecPosition + next_monitor->vecSize / 2);
 		}
 	}
 	return nullptr;
@@ -993,7 +995,7 @@ void Hy3Layout::toggleFocusLayer(const CWorkspace* workspace, bool warp) {
 	g_pCompositor->focusWindow(target);
 
 	if (warp) {
-		Hy3Layout::warpCursorWithFocus(target->middle());
+		g_pCompositor->warpCursorTo(target->middle());
 	}
 }
 
@@ -1002,14 +1004,14 @@ void Hy3Layout::warpCursor() {
 
 	if (current_window != nullptr) {
 		if (current_window != nullptr) {
-			Hy3Layout::warpCursorWithFocus(current_window->middle(), true);
+			g_pCompositor->warpCursorTo(current_window->middle(), true);
 		}
 	} else {
 		auto* node =
 		    this->getWorkspaceFocusedNode(g_pCompositor->m_pLastMonitor->activeWorkspace.get());
 
 		if (node != nullptr) {
-			Hy3Layout::warpCursorWithFocus(node->position + node->size / 2);
+			g_pCompositor->warpCursorTo(node->position + node->size / 2);
 		}
 	}
 }
@@ -1457,20 +1459,7 @@ void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
 	if (cursorpos.x < pos.x || cursorpos.x >= pos.x + size.x || cursorpos.y < pos.y
 	    || cursorpos.y >= pos.y + size.y)
 	{
-		Hy3Layout::warpCursorWithFocus(pos + size / 2, true);
-	}
-}
-
-void Hy3Layout::warpCursorWithFocus(const Vector2D& target, bool force) {
-	static const auto input_follows_mouse = ConfigValue<Hyprlang::INT>("input:follow_mouse");
-	static const auto no_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
-
-	g_pCompositor->warpCursorTo(target, force);
-
-	if (*no_warps && !force) return;
-
-	if (*input_follows_mouse) {
-		g_pInputManager->simulateMouseMovement();
+		g_pCompositor->warpCursorTo(pos + size / 2, true);
 	}
 }
 
@@ -1587,6 +1576,9 @@ void Hy3Layout::tickHook(void*, SCallbackInfo&, std::any) {
 }
 
 void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
+	static const auto input_follows_mouse = ConfigValue<Hyprlang::INT>("input:follow_mouse");
+	static const auto no_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
+
 	auto event = std::any_cast<IPointer::SButtonEvent>(data);
 	if (event.state != 1 || event.button != 272) return;
 
@@ -1616,9 +1608,8 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 		focus = focus->data.as_group().focused_child;
 
 	focus->focus(false);
-	g_pInputManager->simulateMouseMovement();
+	if (*input_follows_mouse && !*no_warps) g_pInputManager->simulateMouseMovement();
 	tab_node->recalcSizePosRecursive();
-
 	info.cancelled = true;
 }
 
