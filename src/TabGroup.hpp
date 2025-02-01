@@ -6,7 +6,6 @@ class Hy3TabGroup;
 class Hy3TabBar;
 
 #include <list>
-#include <memory>
 #include <vector>
 
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -19,6 +18,7 @@ struct Hy3TabBarEntry {
 	std::string window_title;
 	bool destroying = false;
 	SP<CTexture> texture;
+	PHLANIMVAR<float> active;
 	PHLANIMVAR<float> focused;
 	PHLANIMVAR<float> urgent;
 	PHLANIMVAR<float> offset;       // 0.0-1.0 of total bar
@@ -50,6 +50,7 @@ struct Hy3TabBarEntry {
 	bool operator==(const Hy3Node&) const;
 	bool operator==(const Hy3TabBarEntry&) const;
 
+	void setActive(bool);
 	void setFocused(bool);
 	void setUrgent(bool);
 	void setWindowTitle(std::string);
@@ -60,8 +61,12 @@ struct Hy3TabBarEntry {
 
 private:
 	void renderText(float scale, CBox& box, float opacity);
-	CHyprColor
-	mergeColors(const CHyprColor& focused, const CHyprColor& urgent, const CHyprColor& inactive);
+	CHyprColor mergeColors(
+	    const CHyprColor& active,
+	    const CHyprColor& focused,
+	    const CHyprColor& urgent,
+	    const CHyprColor& inactive
+	);
 };
 
 class Hy3TabBar {
