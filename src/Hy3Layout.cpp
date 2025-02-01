@@ -1595,7 +1595,7 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 
 	// non window-parented surface focused, cant have a tab
 	auto window = ptr_surface->getWindow();
-	if (!window || window->m_bIsFloating) return;
+	if (!window || window->m_bIsFloating || window->isFullscreen()) return;
 
 	auto* node = g_Hy3Layout->getNodeFromWindow(window.get());
 	if (!node) return;
@@ -1613,6 +1613,7 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 		focus = focus->data.as_group().focused_child;
 
 	focus->focus(false);
+	g_pInputManager->simulateMouseMovement();
 	tab_node->recalcSizePosRecursive();
 
 	info.cancelled = true;

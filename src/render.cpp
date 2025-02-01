@@ -4,11 +4,13 @@
 #include <hyprland/src/helpers/math/Math.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprutils/math/Box.hpp>
+#include <hyprutils/math/Misc.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 
 #include "shaders.hpp"
 
 using Hyprutils::Math::CBox;
+using Hyprutils::Math::HYPRUTILS_TRANSFORM_NORMAL;
 
 void Hy3Render::renderTab(
     const CBox& box,
@@ -28,11 +30,8 @@ void Hy3Render::renderTab(
 	const auto& monitorSize = rdata.pMonitor->vecTransformedSize;
 	auto monitorBox = CBox {Vector2D(), monitorSize};
 
-	auto matrix = rdata.monitorProjection.projectBox(
-	    monitorBox,
-	    wlTransformToHyprutils(invertTransform(rdata.pMonitor->transform)),
-	    monitorBox.rot
-	);
+	auto matrix =
+			rdata.monitorProjection.projectBox(monitorBox, HYPRUTILS_TRANSFORM_NORMAL, monitorBox.rot);
 
 	auto glMatrix = rdata.projection.copy().multiply(matrix);
 
