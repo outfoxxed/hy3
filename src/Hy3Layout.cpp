@@ -1806,7 +1806,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
             if (next_monitor && next_monitor->activeWorkspace) {
                 moveNodeToWorkspace(node.workspace.get(), 
                                   next_monitor->activeWorkspace->m_szName, 
-                                  true, false, direction);
+                                  true, true, direction);
                 return nullptr;
             }
         }
