@@ -165,6 +165,7 @@ public:
 private:
 	Hy3Node* getNodeFromWindow(const CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
+	bool isAtEdgeWithNoMovement(Hy3Node& node, ShiftDirection direction);
 
 	// if shift is true, shift the window in the given direction, returning
 	// nullptr, if shift is false, return the window in the given direction or
