@@ -1033,7 +1033,8 @@ void Hy3Layout::moveNodeToWorkspace(
     CWorkspace* origin,
     std::string wsname,
     bool follow,
-    bool warp
+    bool warp,
+    ShiftDirection direction
 ) {
 	auto target = getWorkspaceIDNameFromString(operationWorkspaceForName(wsname));
 
@@ -1084,8 +1085,30 @@ void Hy3Layout::moveNodeToWorkspace(
 		node->removeFromParentRecursive(&expand_actor);
 		if (expand_actor != nullptr) expand_actor->recalcSizePosRecursive();
 
+        // Get the root group of the target workspace
+        auto* root_group = this->getWorkspaceRootGroup(workspace.get());
+        if (!root_group) {
+            // Create a new root group if none exists
+            this->nodes.push_back({
+                .data = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
+                .position = workspace->m_pMonitor->vecPosition + workspace->m_pMonitor->vecReservedTopLeft,
+                .size = workspace->m_pMonitor->vecSize - workspace->m_pMonitor->vecReservedTopLeft - workspace->m_pMonitor->vecReservedBottomRight,
+                .workspace = workspace,
+                .layout = this,
+            });
+            root_group = &this->nodes.back();
+        }
+
+        // Insert the node at the edge of the root group
+        node->parent = root_group;
+        if (shiftIsForward(direction)) {
+            root_group->data.as_group().children.push_front(node);
+        } else {
+            root_group->data.as_group().children.push_back(node);
+        }
+
 		changeNodeWorkspaceRecursive(*node, workspace);
-		this->insertNode(*node);
+		root_group->recalcSizePosRecursive();
 		origin->updateWindows();
 		workspace->updateWindows();
 	}
@@ -1747,7 +1770,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
         if (at_edge) {
             auto next_monitor = g_pCompositor->getMonitorInDirection(getShiftDirectionChar(direction));
             if (next_monitor && next_monitor->activeWorkspace) {
-                moveNodeToWorkspace(node.workspace.get(), next_monitor->activeWorkspace->m_szName, true, false);
+                moveNodeToWorkspace(node.workspace.get(), next_monitor->activeWorkspace->m_szName, true, false, direction);
                 return nullptr;
             }
         }
