@@ -60,6 +60,8 @@ struct Hy3TabBarEntry {
 
 private:
 	void renderText(float scale, CBox& box, float opacity);
+	CHyprColor
+	mergeColors(const CHyprColor& focused, const CHyprColor& urgent, const CHyprColor& inactive);
 };
 
 class Hy3TabBar {
