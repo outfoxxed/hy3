@@ -4,6 +4,7 @@
 
 #include <GLES2/gl2.h>
 #include <cairo/cairo.h>
+#include <hyprgraphics/color/Color.hpp>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
@@ -22,24 +23,35 @@
 #include "globals.hpp"
 #include "render.hpp"
 
-// This is a workaround CHyprColor not having working arithmetic operator...
-static inline CHyprColor
-merge_colors(float f1, CHyprColor c1, float f2, CHyprColor c2, float f3, CHyprColor c3) {
-	Hyprgraphics::CColor::SOkLab oklab_out;
-	float f[3] = {f1, f2, f3};
-	Hyprgraphics::CColor::SOkLab c[3] = {c1.asOkLab(), c2.asOkLab(), c3.asOkLab()};
+using Hyprgraphics::CColor;
 
-	oklab_out.l = c[0].l * f[0] + c[1].l * f[1] + c[2].l * f[2];
-	oklab_out.a = c[0].a * f[0] + c[1].a * f[1] + c[2].a * f[2];
-	oklab_out.b = c[0].b * f[0] + c[1].b * f[1] + c[2].b * f[2];
-	float alpha = c1.a * f[0] + c2.a * f[1] + c3.a * f[2];
+// This is a workaround CHyprColor not having working arithmetic operator...
+template <typename... Args>
+CHyprColor merge_colors(Args... colors) {
+	auto merge_oklab = []<typename... Args2>(Args2... colors) {
+		return CColor::SOkLab {
+		    .l = ((colors.first * colors.second.l) + ...),
+		    .a = ((colors.first * colors.second.a) + ...),
+		    .b = ((colors.first * colors.second.b) + ...),
+		};
+	};
+
+	auto oklab = merge_oklab(std::make_pair(colors.first, colors.second.asOkLab())...);
+	auto alpha = ((colors.first * colors.second.a) + ...);
 
 	// the alpha is linear, otherwise use the fact that CColor can take an OkLab and do the correct
 	// conversion to an rgb
-	return (CHyprColor(Hyprgraphics::CColor(oklab_out), alpha));
+	return CHyprColor(Hyprgraphics::CColor(oklab), alpha);
 }
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
+	g_pAnimationManager->createAnimation(
+	    0.0F,
+	    this->active,
+	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    AVARDAMAGE_NONE
+	);
+
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->focused,
@@ -84,6 +96,7 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 
 	auto update_callback = [this](auto) { this->tab_bar.dirty = true; };
 
+	this->active->setUpdateCallback(update_callback);
 	this->focused->setUpdateCallback(update_callback);
 	this->urgent->setUpdateCallback(update_callback);
 	this->offset->setUpdateCallback(update_callback);
@@ -102,6 +115,12 @@ bool Hy3TabBarEntry::operator==(const Hy3Node& node) const { return this->node =
 
 bool Hy3TabBarEntry::operator==(const Hy3TabBarEntry& entry) const {
 	return this->node == entry.node;
+}
+
+void Hy3TabBarEntry::setActive(bool active) {
+	if (this->active->goal() != active) {
+		*this->active = active;
+	}
 }
 
 void Hy3TabBarEntry::setFocused(bool focused) {
@@ -150,6 +169,8 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	static const auto blur = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:blur");
 	static const auto col_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active");
 	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.border");
+	static const auto col_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.focused");
+	static const auto col_border_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.focused.border");
 	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
 	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.border");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
@@ -158,26 +179,13 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 
 	auto radius = std::min((double) *s_radius * scale, std::min(box.width * 0.5, box.height * 0.5));
 
-	auto focused = this->focused->value();
-	auto urgent = this->urgent->value();
-	auto inactive = 1.0f - (focused + urgent);
+	auto color = this->mergeColors(*col_active, *col_focused, *col_urgent, *col_inactive);
 
-	auto color = merge_colors(
-	    focused,
-	    CHyprColor(*col_active),
-	    urgent,
-	    CHyprColor(*col_urgent),
-	    inactive,
-	    CHyprColor(*col_inactive)
-	);
-
-	auto border_color = merge_colors(
-	    focused,
-	    CHyprColor(*col_border_active),
-	    urgent,
-	    CHyprColor(*col_border_urgent),
-	    inactive,
-	    CHyprColor(*col_border_inactive)
+	auto border_color = this->mergeColors(
+	    *col_border_active,
+	    *col_border_focused,
+	    *col_border_urgent,
+	    *col_border_inactive
 	);
 
 	box.round();
@@ -206,6 +214,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	static const auto text_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_height");
 	static const auto text_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_padding");
 	static const auto col_text_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.text");
+	static const auto col_text_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.text");
 	static const auto col_text_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.text");
 	static const auto col_text_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.text");
 	// clang-format on
@@ -334,18 +343,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 
 	texture_box.round();
 
-	auto focused = this->focused->value();
-	auto urgent = this->urgent->value();
-	auto inactive = 1.0f - (focused + urgent);
-
-	CHyprColor c = merge_colors(
-	    focused,
-	    CHyprColor(*col_text_active),
-	    urgent,
-	    CHyprColor(*col_text_urgent),
-	    inactive,
-	    CHyprColor(*col_text_inactive)
-	);
+	auto c = mergeColors(*col_text_active, *col_text_focused, *col_text_urgent, *col_text_inactive);
 
 	glBlendFunc(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_ALPHA);
 	glBlendColor(c.r, c.g, c.b, c.a);
@@ -354,6 +352,26 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 
 	glBlendColor(1, 1, 1, 1);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+CHyprColor Hy3TabBarEntry::mergeColors(
+    const CHyprColor& active,
+    const CHyprColor& focused,
+    const CHyprColor& urgent,
+    const CHyprColor& inactive
+) {
+	auto focused_av = this->focused->value();
+	auto active_v = this->active->value();
+	auto focused_v = focused_av - active_v;
+	auto urgent_v = this->urgent->value();
+	auto inactive_v = 1.0f - (focused_av + urgent_v);
+
+	return merge_colors(
+	    std::make_pair(active_v, active),
+	    std::make_pair(focused_v, focused),
+	    std::make_pair(urgent_v, urgent),
+	    std::make_pair(inactive_v, inactive)
+	);
 }
 
 Hy3TabBar::Hy3TabBar() {
@@ -443,9 +461,14 @@ exitloop:
 		auto* parent = (*node)->parent;
 		auto& parent_group = parent->data.as_group();
 
+		auto parent_focused = parent->isIndirectlyFocused();
+
 		entry->setFocused(
-		    parent_group.focused_child == *node
-		    || (parent_group.group_focused && parent->isIndirectlyFocused())
+		    parent_group.focused_child == *node || (parent_group.group_focused && parent_focused)
+		);
+
+		entry->setActive(
+		    parent_focused && (parent_group.focused_child == *node || parent_group.group_focused)
 		);
 
 		entry->setUrgent((*node)->isUrgent());
@@ -780,6 +803,8 @@ bool Hy3TabPassElement::needsPrecomputeBlur() {
 	static const auto blur = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:blur");
 	static const auto col_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active");
 	static const auto col_border_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.border");
+	static const auto col_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.focused");
+	static const auto col_border_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.focused.border");
 	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
 	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.border");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
@@ -790,8 +815,9 @@ bool Hy3TabPassElement::needsPrecomputeBlur() {
 	if (*s_opacity < 1.0) return false;
 
 	auto needsblur = [](const auto& col) { return CHyprColor(*col).a < 1.0; };
-	return needsblur(col_active) || needsblur(col_border_active) || needsblur(col_urgent)
-	    || needsblur(col_border_urgent) || needsblur(col_inactive) || needsblur(col_border_inactive);
+	return needsblur(col_active) || needsblur(col_border_active) || needsblur(col_focused)
+	    || needsblur(col_border_focused) || needsblur(col_urgent) || needsblur(col_border_urgent)
+	    || needsblur(col_inactive) || needsblur(col_border_inactive);
 }
 
 std::optional<CBox> Hy3TabPassElement::boundingBox() { return this->group->getRenderBB().first; }

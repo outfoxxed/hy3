@@ -1,5 +1,10 @@
 # Changelog
 
+# Upcoming
+- Added focused tab color, to mark selected tabs inside an unfocused container.
+- Fixed tab rendering on rotated displays.
+- Fixed tabs being clickable throguh fullscreen windows.
+
 # hl0.47.0 and before
 
 - Added configurable borders and blurred backgrounds to tabs.
