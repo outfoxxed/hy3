@@ -1171,22 +1171,14 @@ bottom:
 Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	// clang-format off
 	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
-	static const auto p_gaps_out = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_out");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 	// clang-format on
 
 	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(node.workspace);
 	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
-	auto gaps_out = workspace_rule.gapsOut.value_or(*p_gaps_out);
 
-	auto inset = *tab_bar_height + *tab_bar_padding;
-
-	if (node.parent == nullptr) {
-		inset += gaps_out.left;
-	} else {
-		inset += gaps_in.left;
-	}
+	auto inset = *tab_bar_height + *tab_bar_padding + gaps_in.top;
 
 	if (node.data.is_group()) {
 		if (node.hidden) return nullptr;
