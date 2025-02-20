@@ -1053,7 +1053,8 @@ void Hy3Layout::moveNodeToWorkspace(
     CWorkspace* origin,
     std::string wsname,
     bool follow,
-    bool warp
+    bool warp,
+    ShiftDirection direction
 ) {
 	auto target = getWorkspaceIDNameFromString(operationWorkspaceForName(wsname));
 
@@ -1104,8 +1105,30 @@ void Hy3Layout::moveNodeToWorkspace(
 		node->removeFromParentRecursive(&expand_actor);
 		if (expand_actor != nullptr) expand_actor->recalcSizePosRecursive();
 
+        // Get the root group of the target workspace
+        auto* root_group = this->getWorkspaceRootGroup(workspace.get());
+        if (!root_group) {
+            // Create a new root group if none exists
+            this->nodes.push_back({
+                .data = shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
+                .position = workspace->m_pMonitor->vecPosition + workspace->m_pMonitor->vecReservedTopLeft,
+                .size = workspace->m_pMonitor->vecSize - workspace->m_pMonitor->vecReservedTopLeft - workspace->m_pMonitor->vecReservedBottomRight,
+                .workspace = workspace,
+                .layout = this,
+            });
+            root_group = &this->nodes.back();
+        }
+
+        // Insert the node at the edge of the root group
+        node->parent = root_group;
+        if (shiftIsForward(direction)) {
+            root_group->data.as_group().children.push_front(node);
+        } else {
+            root_group->data.as_group().children.push_back(node);
+        }
+
 		changeNodeWorkspaceRecursive(*node, workspace);
-		this->insertNode(*node);
+		root_group->recalcSizePosRecursive();
 		origin->updateWindows();
 		workspace->updateWindows();
 	}
@@ -1740,6 +1763,43 @@ bool shiftMatchesLayout(Hy3GroupLayout layout, ShiftDirection direction) {
 	    || (layout != Hy3GroupLayout::SplitV && !shiftIsVertical(direction));
 }
 
+bool Hy3Layout::isAtEdgeWithNoMovement(Hy3Node& node, ShiftDirection direction) {
+    auto* parent = node.parent;
+    if (!parent) return true; // No parent means we're definitely at an edge
+    
+    auto& group = parent->data.as_group();
+    auto& children = group.children;
+    
+    // First check if we're at the edge of our current group
+    bool at_immediate_edge = (shiftIsForward(direction) && &node == children.back()) ||
+                           (!shiftIsForward(direction) && &node == children.front());
+    
+    if (!at_immediate_edge) return false; // If we're not at the edge, movement is possible
+    
+    // If we're in a group that matches our movement direction
+    if (shiftMatchesLayout(group.layout, direction)) {
+        // If we're at root, we're at a true edge
+        if (parent->parent == nullptr) return true;
+        
+        // Check if our parent group has any siblings in the direction we want to move
+        auto* grandparent = parent->parent;
+        auto& grandparent_group = grandparent->data.as_group();
+        auto parent_iter = std::find(grandparent_group.children.begin(), 
+                                   grandparent_group.children.end(), 
+                                   parent);
+        
+        if (shiftIsForward(direction)) {
+            return parent_iter == std::prev(grandparent_group.children.end());
+        } else {
+            return parent_iter == grandparent_group.children.begin();
+        }
+    }
+    
+    // If we're in a group that doesn't match our movement direction,
+    // check if there are any possible movements in the parent's layout
+    return group.children.size() <= 1;
+}
+
 Hy3Node* Hy3Layout::shiftOrGetFocus(
     Hy3Node& node,
     ShiftDirection direction,
@@ -1747,6 +1807,23 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
     bool once,
     bool visible
 ) {
+
+    auto* parent = node.parent;
+    if (shift && parent && parent->parent == nullptr &&
+        parent->data.as_group().layout != Hy3GroupLayout::Tabbed &&
+        shiftMatchesLayout(parent->data.as_group().layout, direction)) {
+
+        if (isAtEdgeWithNoMovement(node, direction)) {
+            auto next_monitor = g_pCompositor->getMonitorInDirection(getShiftDirectionChar(direction));
+            if (next_monitor && next_monitor->activeWorkspace) {
+                moveNodeToWorkspace(node.workspace.get(), 
+                                  next_monitor->activeWorkspace->m_szName, 
+                                  true, true, direction);
+                return nullptr;
+            }
+        }
+    }
+
 	auto* break_origin = &node.getExpandActor();
 	auto* break_parent = break_origin->parent;
 
