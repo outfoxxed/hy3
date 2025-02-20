@@ -336,7 +336,8 @@ plugin {
 ```
 
 ### Dispatcher list
- - `hy3:makegroup, <h | v | opposite | tab>, [ephemeral | force_ephemeral]` - make a vertical / horizontal split or tab group
+ - `hy3:makegroup, <h | v | opposite | tab>, [toggle], [ephemeral | force_ephemeral]` - make a vertical / horizontal split or tab group
+   - `toggle` - if the focused node is the only child of its parent, which is of the type specified, the node's parent will be removed.
    - `ephemeral` - the group will be removed once it contains only one node. does not affect existing groups.
    - `force_ephemeral` - same as ephemeral, but converts existing single windows groups.
  - `hy3:changegroup, <h | v | tab | untab | toggletab | opposite>` - change the group the node belongs to, to a different layout

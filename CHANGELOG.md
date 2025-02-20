@@ -1,5 +1,8 @@
 # Changelog
 
+# Upcoming
+- Added `toggle` to `hy3:makegroup`
+
 # hl0.47.0-1 and before
 - Added focused tab color, to mark selected tabs inside an unfocused container.
 - Fixed tab rendering on rotated displays.

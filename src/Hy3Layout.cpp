@@ -709,9 +709,29 @@ void Hy3Layout::onDisable() {
 void Hy3Layout::makeGroupOnWorkspace(
     const CWorkspace* workspace,
     Hy3GroupLayout layout,
-    GroupEphemeralityOption ephemeral
+    GroupEphemeralityOption ephemeral,
+    bool toggle
 ) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
+
+	if (node && toggle) {
+		auto* parent = node->parent;
+		auto& group = parent->data.as_group();
+
+		if (group.children.size() == 1 && group.layout == layout) {
+			group.children.clear();
+			Hy3Node::swapData(*node, *parent);
+			this->nodes.remove(*node); // now the parent
+
+			if (auto* pp = node->parent->parent) {
+				pp->updateTabBarRecursive();
+				pp->recalcSizePosRecursive();
+			}
+
+			return;
+		}
+	}
+
 	this->makeGroupOn(node, layout, ephemeral);
 }
 

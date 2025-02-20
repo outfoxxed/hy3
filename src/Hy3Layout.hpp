@@ -105,7 +105,7 @@ public:
 	void onDisable() override;
 
 	void insertNode(Hy3Node& node);
-	void makeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout, GroupEphemeralityOption);
+	void makeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout, GroupEphemeralityOption, bool toggle);
 	void makeOppositeGroupOnWorkspace(const CWorkspace* workspace, GroupEphemeralityOption);
 	void changeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout);
 	void untabGroupOnWorkspace(const CWorkspace* workspace);

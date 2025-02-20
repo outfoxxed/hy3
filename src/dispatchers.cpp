@@ -14,19 +14,22 @@ void dispatch_makegroup(std::string value) {
 
 	auto args = CVarList(value);
 
+	auto toggle = args[1] == "toggle";
+	auto i = toggle ? 2 : 1;
+
 	GroupEphemeralityOption ephemeral = GroupEphemeralityOption::Standard;
-	if (args[1] == "ephemeral") {
+	if (args[i] == "ephemeral") {
 		ephemeral = GroupEphemeralityOption::Ephemeral;
-	} else if (args[1] == "force_ephemeral") {
+	} else if (args[i] == "force_ephemeral") {
 		ephemeral = GroupEphemeralityOption::ForceEphemeral;
 	}
 
 	if (args[0] == "h") {
-		g_Hy3Layout->makeGroupOnWorkspace(workspace.get(), Hy3GroupLayout::SplitH, ephemeral);
+		g_Hy3Layout->makeGroupOnWorkspace(workspace.get(), Hy3GroupLayout::SplitH, ephemeral, toggle);
 	} else if (args[0] == "v") {
-		g_Hy3Layout->makeGroupOnWorkspace(workspace.get(), Hy3GroupLayout::SplitV, ephemeral);
+		g_Hy3Layout->makeGroupOnWorkspace(workspace.get(), Hy3GroupLayout::SplitV, ephemeral, toggle);
 	} else if (args[0] == "tab") {
-		g_Hy3Layout->makeGroupOnWorkspace(workspace.get(), Hy3GroupLayout::Tabbed, ephemeral);
+		g_Hy3Layout->makeGroupOnWorkspace(workspace.get(), Hy3GroupLayout::Tabbed, ephemeral, toggle);
 	} else if (args[0] == "opposite") {
 		g_Hy3Layout->makeOppositeGroupOnWorkspace(workspace.get(), ephemeral);
 	}
