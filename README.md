@@ -18,7 +18,7 @@ i3 / sway like layout for [hyprland](https://github.com/hyprwm/hyprland).
 Additional features may be suggested in the repo issues or the [matrix room](https://matrix.to/#/#hy3:outfoxxed.me).
 
 ### Demo
-<video width="640" height="360" controls="controls" src="https://user-images.githubusercontent.com/83010835/255322916-85ae8196-8b12-4e15-b060-9872db10839f.mp4"></video>
+<video width="640" height="360" controls="controls" src="https://github.com/user-attachments/assets/ed2fe78d-8c31-47d8-a91d-e89aed42189c"></video>
 
 -----
 
