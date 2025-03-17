@@ -127,7 +127,7 @@ public:
 	Hy3Node* focusMonitor(ShiftDirection);
 
 	void warpCursor();
-	void moveNodeToWorkspace(CWorkspace* origin, std::string wsname, bool follow, bool warp);
+	void moveNodeToWorkspace(CWorkspace* origin, std::string wsname, bool follow, bool warp, ShiftDirection direction = ShiftDirection::Right);
 	void changeFocus(const CWorkspace* workspace, FocusShift);
 	void focusTab(
 	    const CWorkspace* workspace,
@@ -165,6 +165,7 @@ public:
 private:
 	Hy3Node* getNodeFromWindow(const CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
+	bool isAtEdgeWithNoMovement(Hy3Node& node, ShiftDirection direction);
 
 	// if shift is true, shift the window in the given direction, returning
 	// nullptr, if shift is false, return the window in the given direction or
@@ -183,3 +184,8 @@ private:
 
 	friend struct Hy3Node;
 };
+
+
+bool shiftIsForward(ShiftDirection direction);
+bool shiftIsVertical(ShiftDirection direction);
+bool shiftMatchesLayout(Hy3GroupLayout layout, ShiftDirection direction);
