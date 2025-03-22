@@ -130,6 +130,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 
 	if (root != nullptr) {
 		opening_after = root->getFocusedNode();
+		if (opening_after) opening_after = &opening_after->getPlacementActor();
 
 		// opening_after->parent cannot be nullptr
 		if (opening_after == root) {
@@ -156,6 +157,8 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 				opening_after = this->getNodeFromWindow(mouse_window.get());
 			}
 		}
+
+		if (opening_after) opening_after = &opening_after->getPlacementActor();
 	}
 
 	if (opening_after != nullptr
@@ -713,6 +716,7 @@ void Hy3Layout::makeGroupOnWorkspace(
     bool toggle
 ) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
+	if (node) node = &node->getPlacementActor();
 
 	if (node && toggle) {
 		auto* parent = node->parent;
@@ -740,12 +744,14 @@ void Hy3Layout::makeOppositeGroupOnWorkspace(
     GroupEphemeralityOption ephemeral
 ) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
+	if (node) node = &node->getPlacementActor();
 	this->makeOppositeGroupOn(node, ephemeral);
 }
 
 void Hy3Layout::changeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout layout) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
+	node = &node->getPlacementActor();
 
 	this->changeGroupOn(*node, layout);
 }
@@ -753,6 +759,7 @@ void Hy3Layout::changeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayo
 void Hy3Layout::untabGroupOnWorkspace(const CWorkspace* workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
+	node = &node->getPlacementActor();
 
 	this->untabGroupOn(*node);
 }
@@ -760,6 +767,7 @@ void Hy3Layout::untabGroupOnWorkspace(const CWorkspace* workspace) {
 void Hy3Layout::toggleTabGroupOnWorkspace(const CWorkspace* workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
+	node = &node->getPlacementActor();
 
 	this->toggleTabGroupOn(*node);
 }
@@ -767,6 +775,7 @@ void Hy3Layout::toggleTabGroupOnWorkspace(const CWorkspace* workspace) {
 void Hy3Layout::changeGroupToOppositeOnWorkspace(const CWorkspace* workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
+	node = &node->getPlacementActor();
 
 	this->changeGroupToOppositeOn(*node);
 }
@@ -774,6 +783,7 @@ void Hy3Layout::changeGroupToOppositeOnWorkspace(const CWorkspace* workspace) {
 void Hy3Layout::changeGroupEphemeralityOnWorkspace(const CWorkspace* workspace, bool ephemeral) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
+	node = &node->getPlacementActor();
 
 	this->changeGroupEphemeralityOn(*node, ephemeral);
 }
@@ -876,20 +886,25 @@ void Hy3Layout::changeGroupEphemeralityOn(Hy3Node& node, bool ephemeral) {
 }
 
 void Hy3Layout::shiftNode(Hy3Node& node, ShiftDirection direction, bool once, bool visible) {
-	if (once && node.parent != nullptr && node.parent->data.as_group().children.size() == 1) {
-		if (node.parent->parent == nullptr) {
-			node.parent->data.as_group().setLayout(Hy3GroupLayout::SplitH);
-			node.parent->recalcSizePosRecursive();
-		} else {
-			auto* node2 = node.parent;
-			Hy3Node::swapData(node, *node2);
-			node2->layout->nodes.remove(node);
-			node2->updateTabBarRecursive();
-			node2->recalcSizePosRecursive();
+	if (once) {
+		auto& n = node.getPlacementActor();
+		if (n.parent != nullptr && n.parent->data.as_group().children.size() == 1) {
+			if (n.parent->parent == nullptr) {
+				n.parent->data.as_group().setLayout(Hy3GroupLayout::SplitH);
+				n.parent->recalcSizePosRecursive();
+			} else {
+				auto* n2 = n.parent;
+				Hy3Node::swapData(n, *n2);
+				n2->layout->nodes.remove(n);
+				n2->updateTabBarRecursive();
+				n2->recalcSizePosRecursive();
+			}
+
+			return;
 		}
-	} else {
-		this->shiftOrGetFocus(node, direction, true, once, visible);
 	}
+
+	this->shiftOrGetFocus(&node, direction, true, once, visible);
 }
 
 void Hy3Layout::shiftWindow(
@@ -936,7 +951,7 @@ void Hy3Layout::shiftFocus(
 		return;
 	}
 
-	auto* target = this->shiftOrGetFocus(*node, direction, false, false, visible);
+	auto* target = this->shiftOrGetFocus(node, direction, false, false, visible);
 
 	if (target != nullptr) {
 		if (warp) {
@@ -1460,6 +1475,27 @@ void Hy3Layout::expand(
 	  this->recalculateMonitor(monitor->ID);*/
 }
 
+void Hy3Layout::setTabLock(const CWorkspace* workspace, TabLockMode mode) {
+	auto* node = this->getWorkspaceFocusedNode(workspace);
+	if (node == nullptr || node->parent == nullptr) return;
+	node = node->parent;
+
+	while (node->parent != nullptr
+	       && (!node->data.is_group() || node->data.as_group().layout != Hy3GroupLayout::Tabbed))
+		node = node->parent;
+
+	if (node == nullptr) return;
+
+	auto& group = node->data.as_group();
+	switch (mode) {
+	case TabLockMode::Lock: group.locked = true; break;
+	case TabLockMode::Unlock: group.locked = false; break;
+	case TabLockMode::Toggle: group.locked = !group.locked; break;
+	}
+
+	node->updateTabBar();
+}
+
 void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
 	auto cursorpos = g_pPointerManager->position();
 
@@ -1741,13 +1777,15 @@ bool shiftMatchesLayout(Hy3GroupLayout layout, ShiftDirection direction) {
 }
 
 Hy3Node* Hy3Layout::shiftOrGetFocus(
-    Hy3Node& node,
+    Hy3Node* node,
     ShiftDirection direction,
     bool shift,
     bool once,
     bool visible
 ) {
-	auto* break_origin = &node.getExpandActor();
+	node = &node->getExpandActor();
+	auto* break_origin = &node->getPlacementActor();
+	auto* shift_actor = break_origin;
 	auto* break_parent = break_origin->parent;
 
 	auto has_broken_once = false;
@@ -1765,7 +1803,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			// group has the correct orientation
 
 			if (once && shift && has_broken_once) break;
-			if (break_origin != &node) has_broken_once = true;
+			if (break_origin != shift_actor) has_broken_once = true;
 
 			// if this movement would break out of the group, continue the break loop
 			// (do not enter this if) otherwise break.
@@ -1776,6 +1814,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			    ))
 				break;
 		}
+
 		if (break_parent->parent == nullptr) {
 			if (!shift) return focusMonitor(direction);
 
@@ -1786,7 +1825,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			}
 
 			if (group.layout != Hy3GroupLayout::Tabbed && group.children.size() == 2
-			    && std::find(group.children.begin(), group.children.end(), &node) != group.children.end())
+			    && std::find(group.children.begin(), group.children.end(), shift_actor)
+			           != group.children.end())
 			{
 				group.setLayout(
 				    shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH
@@ -1837,11 +1877,12 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 
 		if ((*iter)->data.is_window()
 		    || ((*iter)->data.is_group()
-		        && (*iter)->data.as_group().expand_focused != ExpandFocusType::NotExpanded)
+		        && ((*iter)->data.as_group().expand_focused != ExpandFocusType::NotExpanded
+		            || (*iter)->data.as_group().locked))
 		    || (shift && once && has_broken_once))
 		{
 			if (shift) {
-				if (target_group == node.parent) {
+				if (target_group == shift_actor->parent) {
 					if (shiftIsForward(direction)) insert = std::next(iter);
 					else insert = iter;
 				} else {
@@ -1924,27 +1965,27 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 
 	auto& group_data = target_group->data.as_group();
 
-	if (target_group == node.parent) {
+	if (target_group == shift_actor->parent) {
 		// nullptr is used as a signal value instead of removing it first to avoid
 		// iterator invalidation.
-		auto iter = std::find(group_data.children.begin(), group_data.children.end(), &node);
+		auto iter = std::find(group_data.children.begin(), group_data.children.end(), shift_actor);
 		*iter = nullptr;
 		auto& group = target_group->data.as_group();
-		group.children.insert(insert, &node);
+		group.children.insert(insert, shift_actor);
 		group.children.remove(nullptr);
 		target_group->recalcSizePosRecursive();
 	} else {
-		target_group->data.as_group().children.insert(insert, &node);
+		target_group->data.as_group().children.insert(insert, shift_actor);
 
 		// must happen AFTER `insert` is used
-		auto* old_parent = node.removeFromParentRecursive(nullptr);
-		node.parent = target_group;
-		node.size_ratio = 1.0;
+		auto* old_parent = shift_actor->removeFromParentRecursive(nullptr);
+		shift_actor->parent = target_group;
+		shift_actor->size_ratio = 1.0;
 
 		if (old_parent != nullptr) {
 			auto& group = old_parent->data.as_group();
 			if (old_parent->parent != nullptr && group.ephemeral && group.children.size() == 1
-			    && !group.hasChild(&node))
+			    && !group.hasChild(shift_actor))
 			{
 				Hy3Node::swallowGroups(old_parent);
 			}
@@ -1960,8 +2001,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			target_parent = target_parent->parent;
 		}
 
-		node.updateTabBarRecursive();
-		node.focus(false);
+		node->updateTabBarRecursive();
+		node->focus(false);
 
 		if (target_parent != target_group && target_parent != nullptr)
 			target_parent->recalcSizePosRecursive();

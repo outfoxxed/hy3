@@ -26,6 +26,7 @@ Hy3GroupData::Hy3GroupData(Hy3GroupLayout layout): layout(layout) {
 
 Hy3GroupData::Hy3GroupData(Hy3GroupData&& from) {
 	this->layout = from.layout;
+	this->locked = from.locked;
 	this->previous_nontab_layout = from.previous_nontab_layout;
 	this->children = std::move(from.children);
 	this->group_focused = from.group_focused;
@@ -298,6 +299,12 @@ Hy3Node& Hy3Node::getExpandActor() {
 	       && node->parent->data.as_group().expand_focused != ExpandFocusType::NotExpanded)
 		node = node->parent;
 
+	return *node;
+}
+
+Hy3Node& Hy3Node::getPlacementActor() {
+	Hy3Node* node = &this->getExpandActor();
+	while (node->parent && node->parent->data.as_group().locked) node = node->parent;
 	return *node;
 }
 

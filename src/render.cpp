@@ -31,7 +31,7 @@ void Hy3Render::renderTab(
 	auto monitorBox = CBox {Vector2D(), monitorSize};
 
 	auto matrix =
-			rdata.monitorProjection.projectBox(monitorBox, HYPRUTILS_TRANSFORM_NORMAL, monitorBox.rot);
+	    rdata.monitorProjection.projectBox(monitorBox, HYPRUTILS_TRANSFORM_NORMAL, monitorBox.rot);
 
 	auto glMatrix = rdata.projection.copy().multiply(matrix);
 

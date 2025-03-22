@@ -66,6 +66,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("tabs:col.urgent", INT, 0x40ff2233);
 	CONF("tabs:col.urgent.border", INT, 0xeeff2233);
 	CONF("tabs:col.urgent.text", INT, 0xffffffff);
+	CONF("tabs:col.locked", INT, 0x40909033);
+	CONF("tabs:col.locked.border", INT, 0xee909033);
+	CONF("tabs:col.locked.text", INT, 0xffffffff);
 
 	// autotiling
 	CONF("autotile:enable", INT, 0);

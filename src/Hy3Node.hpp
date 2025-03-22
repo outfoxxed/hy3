@@ -37,6 +37,7 @@ struct Hy3GroupData {
 	Hy3Node* focused_child = nullptr;
 	ExpandFocusType expand_focused = ExpandFocusType::NotExpanded;
 	bool ephemeral = false;
+	bool locked = false;
 	bool containment = false;
 	Hy3TabGroup* tab_bar = nullptr;
 
@@ -106,6 +107,7 @@ struct Hy3Node {
 	void resize(ShiftDirection, double, bool no_animation = false);
 	bool isIndirectlyFocused();
 	Hy3Node& getExpandActor();
+	Hy3Node& getPlacementActor();
 
 	void recalcSizePosRecursive(bool no_animation = false);
 	void updateTabBar(bool no_animation = false);

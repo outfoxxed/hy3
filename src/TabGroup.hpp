@@ -65,6 +65,7 @@ private:
 	    const CHyprColor& active,
 	    const CHyprColor& focused,
 	    const CHyprColor& urgent,
+	    const CHyprColor& locked,
 	    const CHyprColor& inactive
 	);
 };
@@ -75,6 +76,7 @@ public:
 	bool dirty = true;
 	bool damaged = true;
 	PHLANIMVAR<float> fade_opacity;
+	PHLANIMVAR<float> locked;
 
 	Hy3TabBar();
 	void beginDestroy();

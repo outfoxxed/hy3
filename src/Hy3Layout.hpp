@@ -54,6 +54,12 @@ enum class TabFocusMousePriority {
 	Require,
 };
 
+enum class TabLockMode {
+	Lock,
+	Unlock,
+	Toggle,
+};
+
 enum class SetSwallowOption {
 	NoSwallow,
 	Swallow,
@@ -105,7 +111,12 @@ public:
 	void onDisable() override;
 
 	void insertNode(Hy3Node& node);
-	void makeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout, GroupEphemeralityOption, bool toggle);
+	void makeGroupOnWorkspace(
+	    const CWorkspace* workspace,
+	    Hy3GroupLayout,
+	    GroupEphemeralityOption,
+	    bool toggle
+	);
 	void makeOppositeGroupOnWorkspace(const CWorkspace* workspace, GroupEphemeralityOption);
 	void changeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout);
 	void untabGroupOnWorkspace(const CWorkspace* workspace);
@@ -139,6 +150,7 @@ public:
 	void setNodeSwallow(const CWorkspace* workspace, SetSwallowOption);
 	void killFocusedNode(const CWorkspace* workspace);
 	void expand(const CWorkspace* workspace, ExpandOption, ExpandFullscreenOption);
+	void setTabLock(const CWorkspace* workspace, TabLockMode);
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
 	static void warpCursorWithFocus(const Vector2D& pos, bool force = false);
 
@@ -169,7 +181,7 @@ private:
 	// if shift is true, shift the window in the given direction, returning
 	// nullptr, if shift is false, return the window in the given direction or
 	// nullptr. if once is true, only one group will be broken out of / into
-	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool shift, bool once, bool visible);
+	Hy3Node* shiftOrGetFocus(Hy3Node*, ShiftDirection, bool shift, bool once, bool visible);
 
 	void updateAutotileWorkspaces();
 	bool shouldAutotileWorkspace(const CWorkspace* workspace);
