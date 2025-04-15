@@ -219,7 +219,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	static const auto text_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_height");
 	static const auto text_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:text_padding");
 	static const auto col_text_active = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.text");
-	static const auto col_text_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active.text");
+	static const auto col_text_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.focused.text");
 	static const auto col_text_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.text");
 	static const auto col_text_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked.text");
 	static const auto col_text_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.text");
