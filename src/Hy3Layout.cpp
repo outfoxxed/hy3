@@ -1590,13 +1590,19 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 		rendering_normally = false;
 
 		for (auto& entry: g_Hy3Layout->tab_groups) {
-			if (!entry.hidden && entry.target_window->m_pMonitor == g_pHyprOpenGL->m_RenderData.pMonitor
-			    && (!entry.target_window->m_pWorkspace || entry.target_window->m_pWorkspace->m_bVisible)
-			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
-			           == rendered_groups.end())
-			{
-				g_pHyprRenderer->m_sRenderPass.add(entry.pass);
-				entry.renderTabBar();
+			if (!entry.hidden && entry.target_window->m_pMonitor == g_pHyprOpenGL->m_RenderData.pMonitor) {
+				auto active_workspace = g_pCompositor->m_pLastMonitor->activeSpecialWorkspace;
+				if (!valid(active_workspace)) {
+					active_workspace = g_pCompositor->m_pLastMonitor->activeWorkspace;
+				}
+
+				if (entry.target_window->m_pWorkspace == active_workspace
+				    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
+				           == rendered_groups.end())
+				{
+					g_pHyprRenderer->m_sRenderPass.add(entry.pass);
+					entry.renderTabBar();
+				}
 			}
 		}
 
