@@ -112,7 +112,7 @@ void dispatch_movefocus(std::string value) {
 	int argi = 0;
 	auto shift = parseShiftArg(args[argi++]);
 	if (!shift) return;
-	if (workspace->m_bHasFullscreenWindow) {
+	if (workspace->m_hasFullscreenWindow) {
 		g_Hy3Layout->focusMonitor(shift.value());
 		return;
 	}
