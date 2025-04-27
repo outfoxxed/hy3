@@ -9,15 +9,15 @@ inline CFunctionHook* g_LastSelectionHook = nullptr;
 void hook_updateDecos(void* thisptr, PHLWINDOW window) {
 	bool explicitly_selected = g_Hy3Layout->shouldRenderSelected(window.get());
 
-	auto lastWindow = g_pCompositor->m_lastWindow;
+	auto lastWindow = g_pCompositor->m_pLastWindow;
 	if (explicitly_selected) {
-		g_pCompositor->m_lastWindow = window;
+		g_pCompositor->m_pLastWindow = window;
 	}
 
 	((void (*)(void*, PHLWINDOW)) g_LastSelectionHook->m_pOriginal)(thisptr, window);
 
 	if (explicitly_selected) {
-		g_pCompositor->m_lastWindow = lastWindow;
+		g_pCompositor->m_pLastWindow = lastWindow;
 	}
 }
 

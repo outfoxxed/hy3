@@ -321,19 +321,19 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	auto gaps_out = workspace_rule.gapsOut.value_or(*p_gaps_out);
 
 	auto gap_topleft_offset = Vector2D(
-	    (int) -(gaps_in.m_left - gaps_out.m_left),
-	    (int) -(gaps_in.m_top - gaps_out.m_top)
+	    (int) -(gaps_in.left - gaps_out.left),
+	    (int) -(gaps_in.top - gaps_out.top)
 	);
 
 	auto gap_bottomright_offset = Vector2D(
-			(int) -(gaps_in.m_right - gaps_out.m_right),
-			(int) -(gaps_in.m_bottom - gaps_out.m_bottom)
+			(int) -(gaps_in.right - gaps_out.right),
+			(int) -(gaps_in.bottom - gaps_out.bottom)
 	);
 	// clang-format on
 
 	if (this->data.is_window() && this->data.as_window()->isFullscreen()) {
 		auto window = this->data.as_window();
-		auto& monitor = this->workspace->m_monitor;
+		auto& monitor = this->workspace->m_pMonitor;
 
 		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
 			*window->m_vRealPosition = monitor->vecPosition;
@@ -532,7 +532,7 @@ void findTopWindowInNode(Hy3Node& node, FindTopWindowInNodeResult& result) {
 	switch (node.data.type()) {
 	case Hy3NodeType::Window: {
 		auto window = node.data.as_window();
-		auto& windows = g_pCompositor->m_windows;
+		auto& windows = g_pCompositor->m_vWindows;
 
 		for (; result.index < windows.size(); result.index++) {
 			if (windows[result.index] == window) {
@@ -652,8 +652,8 @@ CBox Hy3Node::getStandardWindowArea(SBoxExtents extents) {
 	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
 
 	SBoxExtents inner_gap_extents;
-	inner_gap_extents.topLeft = {(int) -gaps_in.m_left, (int) -gaps_in.m_top};
-	inner_gap_extents.bottomRight = {(int) -gaps_in.m_right, (int) -gaps_in.m_bottom};
+	inner_gap_extents.topLeft = {(int) -gaps_in.left, (int) -gaps_in.top};
+	inner_gap_extents.bottomRight = {(int) -gaps_in.right, (int) -gaps_in.bottom};
 
 	SBoxExtents combined_outer_extents;
 	combined_outer_extents.topLeft = -this->gap_topleft_offset;
