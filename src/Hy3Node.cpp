@@ -177,7 +177,7 @@ void Hy3Node::focus(bool warp) {
 		auto window = this->data.as_window();
 		window->setHidden(false);
 		g_pCompositor->focusWindow(window);
-		if (warp) Hy3Layout::warpCursorToBox(window->m_vPosition, window->m_vSize);
+		if (warp) Hy3Layout::warpCursorToBox(window->m_position, window->m_size);
 		break;
 	}
 	case Hy3NodeType::Group: {
@@ -336,8 +336,8 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		auto& monitor = this->workspace->m_monitor;
 
 		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
-			*window->m_vRealPosition = monitor->vecPosition;
-			*window->m_vRealSize = monitor->vecSize;
+			*window->m_realPosition = monitor->vecPosition;
+			*window->m_realSize = monitor->vecSize;
 			return;
 		}
 
@@ -567,7 +567,7 @@ void Hy3Node::updateTabBar(bool no_animation) {
 			FindTopWindowInNodeResult result;
 			findTopWindowInNode(*this, result);
 			group.tab_bar->target_window = result.window;
-			if (result.window != nullptr) group.tab_bar->workspace = result.window->m_pWorkspace;
+			if (result.window != nullptr) group.tab_bar->workspace = result.window->m_workspace;
 		} else if (group.tab_bar != nullptr) {
 			group.tab_bar->bar.beginDestroy();
 			group.tab_bar = nullptr;
@@ -600,7 +600,7 @@ void Hy3Node::updateDecos() {
 
 std::string Hy3Node::getTitle() {
 	switch (this->data.type()) {
-	case Hy3NodeType::Window: return this->data.as_window()->m_szTitle;
+	case Hy3NodeType::Window: return this->data.as_window()->m_title;
 	case Hy3NodeType::Group:
 		std::string title;
 		auto& group = this->data.as_group();
@@ -625,7 +625,7 @@ std::string Hy3Node::getTitle() {
 
 bool Hy3Node::isUrgent() {
 	switch (this->data.type()) {
-	case Hy3NodeType::Window: return this->data.as_window()->m_bIsUrgent;
+	case Hy3NodeType::Window: return this->data.as_window()->m_isUrgent;
 	case Hy3NodeType::Group:
 		for (auto* child: this->data.as_group().children) {
 			if (child->isUrgent()) return true;
