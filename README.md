@@ -378,7 +378,7 @@ plugin {
    - `prioritize_hovered` - prioritize the tab group under the mouse when multiple are stacked. use the lowest group if none is under the mouse.
    - `require_hovered` - affect the tab group under the mouse. do nothing if none are hovered.
    - `wrap` - wrap to the opposite size of the tab bar if moving off the end
- - `hy3:locktab, [lock | unlock]` - lock the current tab, makingg it behave like a node
+ - `hy3:locktab, [lock | unlock]` - lock the current tab, making it behave like a node
  - `hy3:debugnodes` - print the node tree into the hyprland log
  - :warning: **ALPHA QUALITY** `hy3:setswallow, <true | false | toggle>` - set the containing node's window swallow state
  - :warning: **ALPHA QUALITY** `hy3:expand, <expand | shrink | base>` - expand the current node to cover other nodes
