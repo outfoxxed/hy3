@@ -336,15 +336,15 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		auto& monitor = this->workspace->m_monitor;
 
 		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
-			*window->m_realPosition = monitor->vecPosition;
-			*window->m_realSize = monitor->vecSize;
+			*window->m_realPosition = monitor->m_position;
+			*window->m_realSize = monitor->m_size;
 			return;
 		}
 
 		Hy3Node fake_node = {
 		    .data = window,
-		    .position = monitor->vecPosition + monitor->vecReservedTopLeft,
-		    .size = monitor->vecSize - monitor->vecReservedTopLeft - monitor->vecReservedBottomRight,
+		    .position = monitor->m_position + monitor->m_reservedTopLeft,
+		    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
 		    .gap_topleft_offset = gap_topleft_offset,
 		    .gap_bottomright_offset = gap_bottomright_offset,
 		    .workspace = this->workspace,

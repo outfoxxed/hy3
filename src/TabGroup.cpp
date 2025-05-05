@@ -310,7 +310,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 		if (!this->texture) this->texture = makeShared<CTexture>();
 		this->texture->allocate();
 
-		glBindTexture(GL_TEXTURE_2D, this->texture->m_iTexID);
+		glBindTexture(GL_TEXTURE_2D, this->texture->m_texID);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
@@ -682,11 +682,11 @@ void Hy3TabGroup::tick() {
 }
 
 std::pair<CBox, CBox> Hy3TabGroup::getRenderBB() const {
-	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor.get();
-	auto scale = monitor->scale;
+	auto* monitor = g_pHyprOpenGL->m_renderData.pMonitor.get();
+	auto scale = monitor->m_scale;
 
-	auto monitor_size = monitor->vecSize;
-	auto pos = this->pos->value() - monitor->vecPosition;
+	auto monitor_size = monitor->m_size;
+	auto pos = this->pos->value() - monitor->m_position;
 	auto size = this->size->value();
 
 	if (valid(this->workspace)) {
@@ -706,8 +706,8 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto [box, scaledBox] = this->getRenderBB();
 
-	auto* monitor = g_pHyprOpenGL->m_RenderData.pMonitor.get();
-	auto scale = monitor->scale;
+	auto* monitor = g_pHyprOpenGL->m_renderData.pMonitor.get();
+	auto scale = monitor->m_scale;
 
 	if (!this->bar.damaged) {
 		pixman_region32 damage;
@@ -715,7 +715,7 @@ void Hy3TabGroup::renderTabBar() {
 
 		pixman_region32_intersect_rect(
 		    &damage,
-		    g_pHyprOpenGL->m_RenderData.damage.pixman(),
+		    g_pHyprOpenGL->m_renderData.damage.pixman(),
 		    scaledBox.x,
 		    scaledBox.y,
 		    scaledBox.width,
@@ -757,7 +757,7 @@ void Hy3TabGroup::renderTabBar() {
 			auto window = windowref.lock();
 
 			auto wpos =
-			    window->m_realPosition->value() - monitor->vecPosition
+			    window->m_realPosition->value() - monitor->m_position
 			    + (window->m_workspace ? window->m_workspace->m_renderOffset->value() : Vector2D());
 
 			auto wsize = window->m_realSize->value();
