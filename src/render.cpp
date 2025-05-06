@@ -22,12 +22,12 @@ void Hy3Render::renderTab(
     int radius
 ) {
 	static auto& shader = Hy3Shaders::instance()->tab;
-	auto& rdata = g_pHyprOpenGL->m_RenderData;
+	auto& rdata = g_pHyprOpenGL->m_renderData;
 
 	auto rbox = box;
 	rdata.renderModif.applyToBox(rbox);
 
-	const auto& monitorSize = rdata.pMonitor->vecTransformedSize;
+	const auto& monitorSize = rdata.pMonitor->m_transformedSize;
 	auto monitorBox = CBox {Vector2D(), monitorSize};
 
 	auto matrix =
@@ -53,7 +53,7 @@ void Hy3Render::renderTab(
 
 	if (blur) {
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(blurTex->m_iTarget, blurTex->m_iTexID);
+		glBindTexture(blurTex->m_target, blurTex->m_texID);
 		glUniform1i(shader.blurTex, 0);
 	}
 
@@ -93,6 +93,6 @@ void Hy3Render::renderTab(
 	glDisableVertexAttribArray(shader.posAttrib);
 
 	if (blur) {
-		glBindTexture(blurTex->m_iTarget, 0);
+		glBindTexture(blurTex->m_target, 0);
 	}
 }

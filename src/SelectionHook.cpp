@@ -14,7 +14,7 @@ void hook_updateDecos(void* thisptr, PHLWINDOW window) {
 		g_pCompositor->m_lastWindow = window;
 	}
 
-	((void (*)(void*, PHLWINDOW)) g_LastSelectionHook->m_pOriginal)(thisptr, window);
+	((void (*)(void*, PHLWINDOW)) g_LastSelectionHook->m_original)(thisptr, window);
 
 	if (explicitly_selected) {
 		g_pCompositor->m_lastWindow = lastWindow;
