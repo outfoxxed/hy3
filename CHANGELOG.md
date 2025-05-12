@@ -1,5 +1,9 @@
 # Changelog
 
+# hl0.49.0 and before
+
+- Only compatibility fixes.
+
 # hl0.48.0 and before
 - Added `toggle` to `hy3:makegroup`
 - Added `hy3:locktab`
