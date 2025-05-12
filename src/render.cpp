@@ -35,7 +35,7 @@ void Hy3Render::renderTab(
 
 	auto glMatrix = rdata.projection.copy().multiply(matrix);
 
-	glUseProgram(shader.program);
+	g_pHyprOpenGL->useProgram(shader.program);
 
 #ifndef GLES2
 	glUniformMatrix3fv(shader.proj, 1, GL_TRUE, glMatrix.getMatrix().data());

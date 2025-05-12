@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string_view>
-
 #include <GLES2/gl2.h>
 #include <hyprland/src/render/OpenGL.hpp>
 
@@ -28,8 +26,4 @@ public:
 private:
 	Hy3Shaders();
 	~Hy3Shaders();
-
-	static GLuint createProgram(const std::string_view vert, const std::string_view frag);
-	static GLuint compileShader(GLuint type, const std::string_view src);
-	static void logShaderError(GLuint shader, bool program);
 };
