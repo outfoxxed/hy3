@@ -130,8 +130,6 @@ public:
 	// render the scaled tab bar on the current monitor.
 	void renderTabBar();
 
-	SP<Hy3TabPassElement> pass = makeShared<Hy3TabPassElement>(this);
-
 private:
 	std::vector<PHLWINDOWREF> stencil_windows;
 	Vector2D last_workspace_offset;

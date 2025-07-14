@@ -1580,7 +1580,7 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
 			           == rendered_groups.end())
 			{
-				g_pHyprRenderer->m_renderPass.add(entry.pass);
+				g_pHyprRenderer->m_renderPass.add(makeUnique<Hy3TabPassElement>(&entry));
 				rendered_groups.push_back(&entry);
 			}
 		}
@@ -1595,7 +1595,7 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 			    && std::find(rendered_groups.begin(), rendered_groups.end(), &entry)
 			           == rendered_groups.end())
 			{
-				g_pHyprRenderer->m_renderPass.add(entry.pass);
+				g_pHyprRenderer->m_renderPass.add(makeUnique<Hy3TabPassElement>(&entry));
 				entry.renderTabBar();
 			}
 		}
