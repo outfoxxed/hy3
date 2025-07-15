@@ -1596,7 +1596,6 @@ void Hy3Layout::renderHook(void*, SCallbackInfo&, std::any data) {
 			           == rendered_groups.end())
 			{
 				g_pHyprRenderer->m_renderPass.add(makeUnique<Hy3TabPassElement>(&entry));
-				entry.renderTabBar();
 			}
 		}
 
