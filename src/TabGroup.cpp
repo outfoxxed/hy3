@@ -196,7 +196,7 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	box.round();
 
 	// sometimes enabled before our renderer is called
-	glDisable(GL_SCISSOR_TEST);
+	g_pHyprOpenGL->scissor(nullptr);
 
 	Hy3Render::renderTab(
 	    box,
