@@ -1,6 +1,6 @@
 {
   inputs = {
-    hyprland.url = "github:hyprwm/Hyprland/da3583fd5e86044d02af9fcfac84724e02545336";
+    hyprland.url = "github:hyprwm/hyprland/c4a4c341568944bd4fb9cd503558b2de602c0213";
   };
 
   outputs = { self, hyprland, ... }: let
@@ -24,13 +24,13 @@
       default = import ./shell.nix {
         inherit pkgs;
         hlversion = hyprlandVersion;
-        hyprland = hyprland.packages.${system}.hyprland-debug;
+        hyprland = hyprland.packages.${system}.hyprland;
       };
 
       impure = import ./shell.nix {
         pkgs = import <nixpkgs> {};
         hlversion = hyprlandVersion;
-        hyprland = (pkgs.appendOverlays [ hyprland.overlays.hyprland-packages ]).hyprland-debug.overrideAttrs {
+        hyprland = (pkgs.appendOverlays [ hyprland.overlays.hyprland-packages ]).hyprland.overrideAttrs {
           dontStrip = true;
         };
       };
