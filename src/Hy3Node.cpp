@@ -586,8 +586,25 @@ void Hy3Node::updateTabBarRecursive() {
 
 void Hy3Node::updateDecos() {
 	switch (this->data.type()) {
-	case Hy3NodeType::Window:
+	case Hy3NodeType::Window: {
+		MONITORID monitorId = this->data.as_window().get()->m_workspace->m_monitor->m_id;
+		// Handles "focused on another monitor" damaging
+		if (monitorId != g_lastMonitorId) {
+			// Damage currently focused monitor if it exists
+			if (g_lastMonitorId != MONITOR_INVALID) {
+				const auto oldMonitor = g_pCompositor->getMonitorFromID(g_lastMonitorId);
+				g_lastMonitorId = monitorId;
+				g_pHyprRenderer->damageMonitor(oldMonitor);
+			} else {
+				g_lastMonitorId = monitorId;
+			}
+			// Damage new monitor
+			const auto newMonitor = g_pCompositor->getMonitorFromID(g_lastMonitorId);
+			g_pHyprRenderer->damageMonitor(newMonitor);
+		}
+
 		g_pCompositor->updateWindowAnimatedDecorationValues(this->data.as_window());
+		}
 		break;
 	case Hy3NodeType::Group:
 		for (auto* child: this->data.as_group().children) {
