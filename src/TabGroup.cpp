@@ -360,7 +360,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	glBlendFunc(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_ALPHA);
 	glBlendColor(c.r, c.g, c.b, c.a);
 
-	g_pHyprOpenGL->renderTexture(this->texture, texture_box, opacity);
+	g_pHyprOpenGL->renderTexture(this->texture, texture_box, { .a = opacity });
 
 	glBlendColor(1, 1, 1, 1);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -767,7 +767,7 @@ void Hy3TabGroup::renderTabBar() {
 			window_box.scale(scale);
 
 			if (window_box.width > 0 && window_box.height > 0)
-				g_pHyprOpenGL->renderRect(window_box, CHyprColor(0, 0, 0, 0), *window_rounding);
+				g_pHyprOpenGL->renderRect(window_box, CHyprColor(0, 0, 0, 0), { .round = *window_rounding });
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
