@@ -67,6 +67,13 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	);
 
 	g_pAnimationManager->createAnimation(
+	    0.0F,
+	    this->onInactiveMonitor,
+	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    AVARDAMAGE_NONE
+	);
+
+	g_pAnimationManager->createAnimation(
 	    -1.0F,
 	    this->offset,
 	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
@@ -99,6 +106,7 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	this->active->setUpdateCallback(update_callback);
 	this->focused->setUpdateCallback(update_callback);
 	this->urgent->setUpdateCallback(update_callback);
+	this->onInactiveMonitor->setUpdateCallback(update_callback);
 	this->focused->setUpdateCallback(update_callback);
 	this->offset->setUpdateCallback(update_callback);
 	this->width->setUpdateCallback(update_callback);
@@ -144,6 +152,12 @@ void Hy3TabBarEntry::setWindowTitle(std::string title) {
 	}
 }
 
+void Hy3TabBarEntry::setOnInactiveMonitor(bool onInactiveMonitor) {
+	if (this->onInactiveMonitor->goal() != onInactiveMonitor) {
+		*this->onInactiveMonitor = onInactiveMonitor;
+	}
+}
+
 void Hy3TabBarEntry::beginDestroy() {
 	this->destroying = true;
 	*this->vertical_pos = 1.0;
@@ -176,20 +190,29 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.border");
 	static const auto col_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked");
 	static const auto col_border_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked.border");
+	static const auto col_inactiveMonitor = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactiveMonitor");
+	static const auto col_border_inactiveMonitor = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactiveMonitor.border");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
 	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.border");
 	// clang-format on
 
 	auto radius = std::min((double) *s_radius * scale, std::min(box.width * 0.5, box.height * 0.5));
 
-	auto color =
-	    this->mergeColors(*col_active, *col_focused, *col_urgent, *col_locked, *col_inactive);
+	auto color = this->mergeColors(
+	    *col_active,
+	    *col_focused,
+	    *col_urgent,
+	    *col_locked,
+	    *col_inactiveMonitor,
+	    *col_inactive
+	);
 
 	auto border_color = this->mergeColors(
 	    *col_border_active,
 	    *col_border_focused,
 	    *col_border_urgent,
 	    *col_border_locked,
+	    *col_border_inactiveMonitor,
 	    *col_border_inactive
 	);
 
@@ -222,6 +245,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	static const auto col_text_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.focused.text");
 	static const auto col_text_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.text");
 	static const auto col_text_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked.text");
+	static const auto col_text_inactiveMonitor = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactiveMonitor.text");
 	static const auto col_text_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.text");
 	// clang-format on
 
@@ -354,6 +378,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	    *col_text_focused,
 	    *col_text_urgent,
 	    *col_text_locked,
+	    *col_text_inactiveMonitor,
 	    *col_text_inactive
 	);
 
@@ -371,19 +396,22 @@ CHyprColor Hy3TabBarEntry::mergeColors(
     const CHyprColor& focused,
     const CHyprColor& urgent,
     const CHyprColor& locked,
+    const CHyprColor& inactiveMonitor,
     const CHyprColor& inactive
 ) {
-	auto active_v = this->active->value();
-	auto urgent_v = std::max(0.0f, this->urgent->value() - active_v);
-	auto focused_v = std::max(0.0f, this->focused->value() - active_v - urgent_v);
-	auto locked_v = std::max(0.0f, this->tab_bar.locked->value() - active_v - urgent_v - focused_v);
-	auto inactive_v = 1.0f - (active_v + urgent_v + focused_v + locked_v);
+	auto inactiveMonitor_v = this->onInactiveMonitor->value();
+	auto active_v = this->active->value() - inactiveMonitor_v;
+	auto urgent_v = std::max(0.0f, this->urgent->value() - inactiveMonitor_v - active_v);
+	auto focused_v = std::max(0.0f, this->focused->value() - inactiveMonitor_v - active_v - urgent_v);
+	auto locked_v = std::max(0.0f, this->tab_bar.locked->value() - inactiveMonitor_v - active_v - urgent_v - focused_v);
+	auto inactive_v = 1.0f - (inactiveMonitor_v + active_v + urgent_v + focused_v + locked_v);
 
 	return merge_colors(
 	    std::make_pair(active_v, active),
 	    std::make_pair(urgent_v, urgent),
 	    std::make_pair(focused_v, focused),
 	    std::make_pair(locked_v, locked),
+	    std::make_pair(inactiveMonitor_v, inactiveMonitor),
 	    std::make_pair(inactive_v, inactive)
 	);
 }
@@ -491,6 +519,18 @@ exitloop:
 
 		entry->setActive(
 		    parent_focused && (parent_group.focused_child == *node || parent_group.group_focused)
+		);
+
+		MONITORID entryMonitor = (*node)->workspace->monitorID();
+		MONITORID activeMonitor;
+		if (g_lastMonitorId == MONITOR_INVALID) {
+			activeMonitor = g_pCompositor->m_lastMonitor->m_id;
+		} else {
+			activeMonitor = g_lastMonitorId;
+		}
+		entry->setOnInactiveMonitor(
+		    (parent_group.focused_child == *node || (parent_group.group_focused && parent_focused))
+		    && activeMonitor != entryMonitor
 		);
 
 		entry->setUrgent((*node)->isUrgent());
