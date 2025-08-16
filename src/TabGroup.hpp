@@ -21,12 +21,13 @@ struct Hy3TabBarEntry {
 	PHLANIMVAR<float> active;
 	PHLANIMVAR<float> focused;
 	PHLANIMVAR<float> urgent;
+	PHLANIMVAR<float> active_monitor;
 	PHLANIMVAR<float> offset;       // 0.0-1.0 of total bar
 	PHLANIMVAR<float> width;        // 0.0-1.0 of total bar
 	PHLANIMVAR<float> vertical_pos; // 0.0-1.0, user specified direction
 	PHLANIMVAR<float> fade_opacity; // 0.0-1.0
 	Hy3TabBar& tab_bar;
-	Hy3Node& node; // only used for comparioson. do not deref.
+	Hy3Node& node; // only used for comparison. do not deref.
 
 	struct {
 		float scale = 0.0;
@@ -54,6 +55,7 @@ struct Hy3TabBarEntry {
 	void setFocused(bool);
 	void setUrgent(bool);
 	void setWindowTitle(std::string);
+	void setMonitorActive(bool);
 	void beginDestroy();
 	void unDestroy();
 	bool shouldRemove();
@@ -66,6 +68,7 @@ private:
 	    const CHyprColor& focused,
 	    const CHyprColor& urgent,
 	    const CHyprColor& locked,
+	    const CHyprColor& inactiveMonitor,
 	    const CHyprColor& inactive
 	);
 };
@@ -77,6 +80,8 @@ public:
 	bool damaged = true;
 	PHLANIMVAR<float> fade_opacity;
 	PHLANIMVAR<float> locked;
+	// The monitor this bar resides on
+	MONITORID monitor_id = MONITOR_INVALID;
 
 	Hy3TabBar();
 	void beginDestroy();

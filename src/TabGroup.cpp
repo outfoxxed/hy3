@@ -67,6 +67,13 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	);
 
 	g_pAnimationManager->createAnimation(
+	    0.0F,
+	    this->active_monitor,
+	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    AVARDAMAGE_NONE
+	);
+
+	g_pAnimationManager->createAnimation(
 	    -1.0F,
 	    this->offset,
 	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
@@ -99,6 +106,7 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	this->active->setUpdateCallback(update_callback);
 	this->focused->setUpdateCallback(update_callback);
 	this->urgent->setUpdateCallback(update_callback);
+	this->active_monitor->setUpdateCallback(update_callback);
 	this->focused->setUpdateCallback(update_callback);
 	this->offset->setUpdateCallback(update_callback);
 	this->width->setUpdateCallback(update_callback);
@@ -144,6 +152,12 @@ void Hy3TabBarEntry::setWindowTitle(std::string title) {
 	}
 }
 
+void Hy3TabBarEntry::setMonitorActive(bool monitorActive) {
+	if (this->active_monitor->goal() != monitorActive) {
+		*this->active_monitor = monitorActive;
+	}
+}
+
 void Hy3TabBarEntry::beginDestroy() {
 	this->destroying = true;
 	*this->vertical_pos = 1.0;
@@ -176,6 +190,8 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.border");
 	static const auto col_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked");
 	static const auto col_border_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked.border");
+	static const auto col_active_alt_monitor = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active_alt_monitor");
+	static const auto col_border_active_alt_monitor = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active_alt_monitor.border");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
 	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.border");
 	// clang-format on
@@ -183,13 +199,14 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	auto radius = std::min((double) *s_radius * scale, std::min(box.width * 0.5, box.height * 0.5));
 
 	auto color =
-	    this->mergeColors(*col_active, *col_focused, *col_urgent, *col_locked, *col_inactive);
+	    this->mergeColors(*col_active, *col_focused, *col_urgent, *col_locked, *col_active_alt_monitor, *col_inactive);
 
 	auto border_color = this->mergeColors(
 	    *col_border_active,
 	    *col_border_focused,
 	    *col_border_urgent,
 	    *col_border_locked,
+	    *col_border_active_alt_monitor,
 	    *col_border_inactive
 	);
 
@@ -222,6 +239,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	static const auto col_text_focused = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.focused.text");
 	static const auto col_text_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.text");
 	static const auto col_text_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked.text");
+	static const auto col_text_active_alt_monitor = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.active_alt_monitor.text");
 	static const auto col_text_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.text");
 	// clang-format on
 
@@ -354,6 +372,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	    *col_text_focused,
 	    *col_text_urgent,
 	    *col_text_locked,
+	    *col_text_active_alt_monitor,
 	    *col_text_inactive
 	);
 
@@ -371,6 +390,7 @@ CHyprColor Hy3TabBarEntry::mergeColors(
     const CHyprColor& focused,
     const CHyprColor& urgent,
     const CHyprColor& locked,
+    const CHyprColor& active_alt_monitor,
     const CHyprColor& inactive
 ) {
 	auto active_v = this->active->value();
@@ -379,11 +399,16 @@ CHyprColor Hy3TabBarEntry::mergeColors(
 	auto locked_v = std::max(0.0f, this->tab_bar.locked->value() - active_v - urgent_v - focused_v);
 	auto inactive_v = 1.0f - (active_v + urgent_v + focused_v + locked_v);
 
+	auto active_monitor_v = this->active_monitor->value();
+	auto active_alt_monitor_v = active_v * (1.0 - active_monitor_v);
+	active_v *= active_monitor_v;
+
 	return merge_colors(
 	    std::make_pair(active_v, active),
 	    std::make_pair(urgent_v, urgent),
 	    std::make_pair(focused_v, focused),
 	    std::make_pair(locked_v, locked),
+	    std::make_pair(active_alt_monitor_v, active_alt_monitor),
 	    std::make_pair(inactive_v, inactive)
 	);
 }
@@ -414,11 +439,33 @@ void Hy3TabBar::beginDestroy() {
 }
 
 void Hy3TabBar::tick() {
+	auto is_on_active_monitor = [&]() {
+		auto& win = g_pCompositor->m_lastWindow;
+		if (!win) return false;
+
+		auto& workspace = win->m_workspace;
+		if (!workspace) return false;
+
+		auto& mon = workspace->m_monitor;
+		if (!mon) return false;
+
+		return mon->m_id == this->monitor_id;
+	}();
+
 	auto iter = this->entries.begin();
 
 	while (iter != this->entries.end()) {
-		if (iter->shouldRemove()) iter = this->entries.erase(iter);
-		else iter = std::next(iter);
+		if (iter->shouldRemove()) {
+			iter = this->entries.erase(iter);
+		} else {
+			iter->setMonitorActive(is_on_active_monitor);
+
+			if (iter->active_monitor->isBeingAnimated()) {
+				this->dirty = true;
+			}
+
+			iter = std::next(iter);
+		}
 	}
 
 	if (this->entries.empty()) this->destroy = true;
@@ -570,6 +617,7 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	this->updateWithGroup(node, true);
 	this->pos->warp();
 	this->size->warp();
+	this->bar.monitor_id = node.workspace->m_monitor->m_id;
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
@@ -629,6 +677,11 @@ void Hy3TabGroup::tick() {
 			if (this->bar.fade_opacity->goal() != 0.0) *this->bar.fade_opacity = 0.0;
 		} else {
 			if (this->bar.fade_opacity->goal() != 1.0) *this->bar.fade_opacity = 1.0;
+		}
+
+		if (bar.monitor_id != this->workspace->m_monitor->m_id) {
+			bar.monitor_id = this->workspace->m_monitor->m_id;
+			bar.dirty = true;
 		}
 
 		auto workspaceOffset = this->workspace->m_renderOffset->value();

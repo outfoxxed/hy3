@@ -281,6 +281,11 @@ plugin {
       col.active.border = <color> # default: rgba(33ccffee)
       col.active.text = <color> # default: rgba(ffffffff)
 
+      # active tab bar segment colors for bars on an unfocused monitor
+      col.active_alt_monitor = <color> # default: rgba(60606040)
+      col.active_alt_monitor.border = <color> # default: rgba(808080ee)
+      col.active_alt_monitor.text = <color> # default: rgba(ffffffff)
+
       # focused tab bar segment colors (focused node in unfocused container)
       col.focused = <color> # default: rgba(60606040)
       col.focused.border = <color> # default: rgba(808080ee)

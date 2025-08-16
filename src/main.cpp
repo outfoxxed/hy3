@@ -57,6 +57,9 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("tabs:col.active", INT, 0x4033ccff);
 	CONF("tabs:col.active.border", INT, 0xee33ccff);
 	CONF("tabs:col.active.text", INT, 0xffffffff);
+	CONF("tabs:col.active_alt_monitor", INT, 0x40606060);
+	CONF("tabs:col.active_alt_monitor.border", INT, 0xee808080);
+	CONF("tabs:col.active_alt_monitor.text", INT, 0xffffffff);
 	CONF("tabs:col.focused", INT, 0x40606060);
 	CONF("tabs:col.focused.border", INT, 0xee808080);
 	CONF("tabs:col.focused.text", INT, 0xffffffff);
