@@ -1,5 +1,9 @@
 # Changelog
 
+# hl0.51.0 and before
+
+- Only compatibility fixes.
+
 # hl0.50.0 and before
 
 - Only compatibility fixes.
