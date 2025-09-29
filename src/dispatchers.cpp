@@ -7,6 +7,7 @@
 
 #include "dispatchers.hpp"
 #include "globals.hpp"
+#include "src/SharedDefs.hpp"
 
 void dispatch_makegroup(std::string value) {
 	auto workspace = workspace_for_action();
@@ -263,14 +264,16 @@ void dispatch_locktab(std::string arg) {
 	g_Hy3Layout->setTabLock(workspace.get(), mode);
 }
 
-void dispatch_debug(std::string arg) {
+SDispatchResult dispatch_debug(std::string arg) {
 	auto workspace = workspace_for_action();
 
 	auto* root = g_Hy3Layout->getWorkspaceRootGroup(workspace.get());
 	if (!valid(workspace)) {
 		hy3_log(LOG, "DEBUG NODES: no nodes on workspace");
+		return { .success = false, .error = "no nodes on workspace" };
 	} else {
 		hy3_log(LOG, "DEBUG NODES\n{}", root->debugNode().c_str());
+		return { .success = false, .error = root->debugNode() };
 	}
 }
 
@@ -289,5 +292,5 @@ void registerDispatchers() {
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:killactive", dispatch_killactive);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:expand", dispatch_expand);
 	HyprlandAPI::addDispatcher(PHANDLE, "hy3:locktab", dispatch_locktab);
-	HyprlandAPI::addDispatcher(PHANDLE, "hy3:debugnodes", dispatch_debug);
+	HyprlandAPI::addDispatcherV2(PHANDLE, "hy3:debugnodes", dispatch_debug);
 }
