@@ -104,6 +104,7 @@ struct Hy3Node {
 	Hy3Node* getFocusedNode(bool ignore_group_focus = false, bool stop_at_expanded = false);
 	Hy3Node* findNeighbor(ShiftDirection);
 	Hy3Node* getImmediateSibling(ShiftDirection);
+	CMonitor* getMonitor();
 	void resize(ShiftDirection, double, bool no_animation = false);
 	bool isIndirectlyFocused();
 	Hy3Node& getExpandActor();

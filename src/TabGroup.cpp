@@ -439,27 +439,12 @@ void Hy3TabBar::beginDestroy() {
 }
 
 void Hy3TabBar::tick() {
-	auto is_on_active_monitor = [&]() {
-		auto& win = g_pCompositor->m_lastWindow;
-		if (!win) return false;
-
-		auto& workspace = win->m_workspace;
-		if (!workspace) return false;
-
-		auto& mon = workspace->m_monitor;
-		if (!mon) return false;
-
-		return mon->m_id == this->monitor_id;
-	}();
-
 	auto iter = this->entries.begin();
 
 	while (iter != this->entries.end()) {
 		if (iter->shouldRemove()) {
 			iter = this->entries.erase(iter);
 		} else {
-			iter->setMonitorActive(is_on_active_monitor);
-
 			if (iter->active_monitor->isBeingAnimated()) {
 				this->dirty = true;
 			}
@@ -536,9 +521,11 @@ exitloop:
 		    parent_group.focused_child == *node || (parent_group.group_focused && parent_focused)
 		);
 
-		entry->setActive(
-		    parent_focused && (parent_group.focused_child == *node || parent_group.group_focused)
-		);
+		auto active = parent_focused && (parent_group.focused_child == *node || parent_group.group_focused);
+		entry->setActive(active);
+
+		auto& last_monitor = g_pCompositor->m_lastMonitor;
+		entry->setMonitorActive(active && (!last_monitor || (*node)->getMonitor() == last_monitor.get()));
 
 		entry->setUrgent((*node)->isUrgent());
 		entry->setWindowTitle((*node)->getTitle());
