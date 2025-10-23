@@ -14,7 +14,10 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	PHANDLE = handle;
 
 #ifndef HY3_NO_VERSION_CHECK
-	if (GIT_COMMIT_HASH != std::string(__hyprland_api_get_hash())) {
+	const std::string COMPOSITOR_HASH = __hyprland_api_get_hash();
+	const std::string CLIENT_HASH = __hyprland_api_get_client_hash();
+
+	if (COMPOSITOR_HASH != CLIENT_HASH) {
 		HyprlandAPI::addNotification(
 		    PHANDLE,
 		    "[hy3] hy3 was compiled for a different version of hyprland; refusing to load.",
