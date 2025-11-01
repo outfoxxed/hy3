@@ -106,7 +106,7 @@ Assuming you use hyprland's home manager module, you can easily integrate hy3 by
 ```
 
 #### Manual (Nix)
-hy3's binary is availible as `${hy3.packages.<system>.hy3}/lib/libhy3.so`, so you can also
+hy3's binary is available as `${hy3.packages.<system>.hy3}/lib/libhy3.so`, so you can also
 directly use it in your hyprland config like so:
 
 ```nix
@@ -154,12 +154,13 @@ hyprpm update -f
 
 > [!WARNING]
 > When you are running a tagged hyprland version hyprpm (0.34.0+) will build against hy3's
-> corrosponding release. However if you are running an untagged build (aka `-git`) hyprpm
+> corresponding release. However if you are running an untagged build (aka `-git`) hyprpm
 > will build against hy3's *latest* commit. This means **if you are running an out of date
 > untagged build of hyprland, hyprpm may pick an incompatible revision of hy3**.
 >
 > To fix this problem you will either need to update hyprland or manually build the correct
 > version of hy3.
+
 
 ### Manual
 Install hyprland, including its headers and pkg-config file, then run the following commands:
@@ -190,9 +191,9 @@ Note that the hyprland headers and pkg-config file **MUST be installed correctly
 >
 > If you know how to fix this please open an issue or pr, or message `@outfoxxed:outfoxxed.me` in the [matrix room](https://matrix.to/#/#hy3-support:outfoxxed.me).
 
-hy3 stable (for arch's `hyprland` package) is availible on the AUR as [hy3](https://aur.archlinux.org/packages/hy3).
+hy3 stable (for arch's `hyprland` package) is available on the AUR as [hy3](https://aur.archlinux.org/packages/hy3).
 
-hy3-git (for `hyprland-git` on the AUR, unofficial package) is availible on the AUR as [hy3-git](https://aur.archlinux.org/packages/hy3-git).
+hy3-git (for `hyprland-git` on the AUR, unofficial package) is available on the AUR as [hy3-git](https://aur.archlinux.org/packages/hy3-git).
 
 Both packages install hy3 as `/usr/lib/libhy3.so`.
 You can enable it in your hyprland configuration by adding the following line anywhere in your `hyprland.conf`
@@ -383,7 +384,7 @@ plugin {
    - `prioritize_hovered` - prioritize the tab group under the mouse when multiple are stacked. use the lowest group if none is under the mouse.
    - `require_hovered` - affect the tab group under the mouse. do nothing if none are hovered.
    - `wrap` - wrap to the opposite size of the tab bar if moving off the end
- - `hy3:locktab, [lock | unlock]` - lock the current tab, makingg it behave like a node
+ - `hy3:locktab, [lock | unlock]` - lock the current tab, making it behave like a node
  - `hy3:debugnodes` - print the node tree into the hyprland log
  - :warning: **ALPHA QUALITY** `hy3:setswallow, <true | false | toggle>` - set the containing node's window swallow state
  - :warning: **ALPHA QUALITY** `hy3:expand, <expand | shrink | base>` - expand the current node to cover other nodes
