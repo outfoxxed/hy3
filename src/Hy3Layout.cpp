@@ -1140,8 +1140,10 @@ void Hy3Layout::moveNodeToWorkspace(
 		monitor->changeWorkspace(workspace);
 		if (*allow_workspace_cycles) workspace->rememberPrevWorkspace(origin_ws);
 
-		node->parent->recalcSizePosRecursive();
-		node->focus(warp);
+		if (node) {
+			node->parent->recalcSizePosRecursive();
+			node->focus(warp);
+		}
 	}
 }
 
