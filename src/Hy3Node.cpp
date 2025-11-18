@@ -587,7 +587,7 @@ void Hy3Node::updateTabBarRecursive() {
 void Hy3Node::updateDecos() {
 	switch (this->data.type()) {
 	case Hy3NodeType::Window:
-		g_pCompositor->updateWindowAnimatedDecorationValues(this->data.as_window());
+		this->data.as_window()->updateDecorationValues();
 		break;
 	case Hy3NodeType::Group:
 		for (auto* child: this->data.as_group().children) {

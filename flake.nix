@@ -1,6 +1,6 @@
 {
   inputs = {
-    hyprland.url = "github:hyprwm/hyprland/8e9add2afda58d233a75e4c5ce8503b24fa59ceb";
+    hyprland.url = "github:hyprwm/hyprland/edc311544a54a06ce4acb759b4d9a30853695452";
   };
 
   outputs = { self, hyprland, ... }: let

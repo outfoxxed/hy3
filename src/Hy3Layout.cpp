@@ -8,6 +8,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/desktop/rule/Engine.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
 #include <hyprland/src/managers/PointerManager.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
@@ -25,6 +26,8 @@
 #include "src/SharedDefs.hpp"
 #include "src/desktop/WLSurface.hpp"
 #include "src/desktop/Window.hpp"
+#include "src/desktop/rule/Rule.hpp"
+#include "src/desktop/types/OverridableVar.hpp"
 #include "src/devices/IPointer.hpp"
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
@@ -296,7 +299,7 @@ void Hy3Layout::onWindowRemovedTiling(PHLWINDOW window) {
 	    (uintptr_t) node->parent
 	);
 
-	window->unsetWindowData(PRIORITY_LAYOUT);
+	window->m_ruleApplicator->resetProps(Desktop::Rule::RULE_PROP_ALL, Desktop::Types::PRIORITY_LAYOUT);
 
 	if (window->isFullscreen()) {
 		g_pCompositor->setWindowFullscreenInternal(window, FSMODE_NONE);
@@ -494,8 +497,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 
 	const auto& monitor = window->m_monitor;
 
-	window->updateDynamicRules();
-	window->updateWindowDecos();
+	Desktop::Rule::ruleEngine()->updateAllRules();
 
 	if (target_mode == FSMODE_NONE) {
 		auto* node = this->getNodeFromWindow(window.get());
@@ -508,7 +510,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 			*window->m_realPosition = window->m_lastFloatingPosition;
 			*window->m_realSize = window->m_lastFloatingSize;
 
-			window->unsetWindowData(PRIORITY_LAYOUT);
+			window->m_ruleApplicator->resetProps(Desktop::Rule::RULE_PROP_ALL, Desktop::Types::PRIORITY_LAYOUT);
 		}
 	} else {
 		// save position and size if floating
@@ -638,7 +640,7 @@ PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const CWindow* from) {
 	for (auto& w: g_pCompositor->m_windows | std::views::reverse) {
 		if (w->m_isMapped && !w->isHidden() && w->m_isFloating && !w->isX11OverrideRedirect()
 		    && w->m_workspace == from->m_workspace && !w->m_X11ShouldntFocus
-		    && !w->m_windowData.noFocus.valueOrDefault() && w.get() != from)
+		    && !w->m_ruleApplicator->noFocus().valueOrDefault() && w.get() != from)
 		{
 			return w;
 		}
@@ -1055,8 +1057,7 @@ void changeNodeWorkspaceRecursive(Hy3Node& node, PHLWORKSPACE workspace) {
 		window->moveToWorkspace(workspace);
 		window->m_monitor = workspace->m_monitor;
 		window->updateToplevel();
-		window->updateDynamicRules();
-		window->uncacheWindowDecos();
+		Desktop::Rule::ruleEngine()->updateAllRules();
 	} else {
 		for (auto* child: node.data.as_group().children) {
 			changeNodeWorkspaceRecursive(*child, workspace);
@@ -1697,7 +1698,7 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 		return;
 	}
 
-	window->unsetWindowData(PRIORITY_LAYOUT);
+	window->m_ruleApplicator->resetProps(Desktop::Rule::RULE_PROP_ALL, Desktop::Types::PRIORITY_LAYOUT);
 
 	auto nodeBox = CBox(node->position, node->size);
 	nodeBox.round();
@@ -1712,15 +1713,6 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	    && ((*no_gaps_when_only != 0 && (only_node || window->isFullscreen()))
 	        || window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)))
 	{
-		window->m_windowData.decorate = CWindowOverridableVar(
-		    true,
-		    PRIORITY_LAYOUT
-		); // a little curious but copying what dwindle does
-		window->m_windowData.noBorder =
-		    CWindowOverridableVar(*no_gaps_when_only != 2, PRIORITY_LAYOUT);
-		window->m_windowData.noRounding = CWindowOverridableVar(true, PRIORITY_LAYOUT);
-		window->m_windowData.noShadow = CWindowOverridableVar(true, PRIORITY_LAYOUT);
-
 		window->updateWindowDecos();
 
 		const auto reserved = window->getFullWindowReservedArea();

@@ -6,15 +6,16 @@
 namespace selection_hook {
 inline CFunctionHook* g_LastSelectionHook = nullptr;
 
-void hook_updateDecos(void* thisptr, PHLWINDOW window) {
-	bool explicitly_selected = g_Hy3Layout->shouldRenderSelected(window.get());
+void hook_updateDecos(void* thisptr) {
+	auto* window = static_cast<CWindow*>(thisptr);
+	bool explicitly_selected = g_Hy3Layout->shouldRenderSelected(window);
 
 	auto lastWindow = g_pCompositor->m_lastWindow;
 	if (explicitly_selected) {
-		g_pCompositor->m_lastWindow = window;
+		g_pCompositor->m_lastWindow = window->m_self;
 	}
 
-	((void (*)(void*, PHLWINDOW)) g_LastSelectionHook->m_original)(thisptr, window);
+	((void (*)(void*)) g_LastSelectionHook->m_original)(thisptr);
 
 	if (explicitly_selected) {
 		g_pCompositor->m_lastWindow = lastWindow;
@@ -23,7 +24,7 @@ void hook_updateDecos(void* thisptr, PHLWINDOW window) {
 
 void init() {
 	static const auto decoUpdateCandidates =
-	    HyprlandAPI::findFunctionsByName(PHANDLE, "updateWindowAnimatedDecorationValues");
+	    HyprlandAPI::findFunctionsByName(PHANDLE, "updateDecorationValues");
 
 	if (decoUpdateCandidates.size() != 1) {
 		g_LastSelectionHook = nullptr;
@@ -31,7 +32,7 @@ void init() {
 		hy3_log(
 		    ERR,
 		    "expected one matching function to hook for"
-		    "\"updateWindowAnimatedDecorationValues\", found {}",
+		    "\"updateDecorationValues\", found {}",
 		    decoUpdateCandidates.size()
 		);
 
@@ -40,7 +41,7 @@ void init() {
 		    {
 		        {"text",
 		         "Failed to load function hooks: "
-		         "\"updateWindowAnimatedDecorationValues\""},
+		         "\"updateDecorationValues\""},
 		        {"time", (uint64_t) 10000},
 		        {"color", CHyprColor(1.0, 0.0, 0.0, 1.0)},
 		        {"icon", ICON_ERROR},
