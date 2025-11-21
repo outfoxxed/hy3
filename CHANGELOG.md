@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# hl0.52.0 and before
 
 - Added `active_alt_monitor` tab bar color options.
 
