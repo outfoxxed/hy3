@@ -511,6 +511,7 @@ void Hy3Layout::fullscreenRequestForWindow(
 			*window->m_realSize = window->m_lastFloatingSize;
 
 			window->m_ruleApplicator->resetProps(Desktop::Rule::RULE_PROP_ALL, Desktop::Types::PRIORITY_LAYOUT);
+			window->updateWindowData();
 		}
 	} else {
 		// save position and size if floating
@@ -1699,12 +1700,15 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	}
 
 	window->m_ruleApplicator->resetProps(Desktop::Rule::RULE_PROP_ALL, Desktop::Types::PRIORITY_LAYOUT);
+	window->updateWindowData();
 
 	auto nodeBox = CBox(node->position, node->size);
 	nodeBox.round();
 
 	window->m_size = nodeBox.size();
 	window->m_position = nodeBox.pos();
+
+	window->updateWindowDecos();
 
 	auto only_node = root_node != nullptr && root_node->data.as_group().children.size() == 1
 	              && root_node->data.as_group().children.front()->data.is_window();
@@ -1713,22 +1717,17 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 	    && ((*no_gaps_when_only != 0 && (only_node || window->isFullscreen()))
 	        || window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)))
 	{
-		window->updateWindowDecos();
 
 		const auto reserved = window->getFullWindowReservedArea();
 
 		*window->m_realPosition = window->m_position + reserved.topLeft;
 		*window->m_realSize = window->m_size - (reserved.topLeft + reserved.bottomRight);
-
-		window->sendWindowSize(true);
 	} else {
 		auto reserved = window->getFullWindowReservedArea();
 		auto wb = node->getStandardWindowArea({-reserved.topLeft, -reserved.bottomRight});
 
 		*window->m_realPosition = wb.pos();
 		*window->m_realSize = wb.size();
-
-		window->sendWindowSize(true);
 
 		if (no_animation) {
 			g_pHyprRenderer->damageWindow(window);
