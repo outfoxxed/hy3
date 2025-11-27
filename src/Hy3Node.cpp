@@ -4,6 +4,7 @@
 
 #include <bits/ranges_util.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/defines.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -176,12 +177,12 @@ void Hy3Node::focus(bool warp) {
 	case Hy3NodeType::Window: {
 		auto window = this->data.as_window();
 		window->setHidden(false);
-		g_pCompositor->focusWindow(window);
+		Desktop::focusState()->fullWindowFocus(window);
 		if (warp) Hy3Layout::warpCursorToBox(window->m_position, window->m_size);
 		break;
 	}
 	case Hy3NodeType::Group: {
-		g_pCompositor->focusWindow(nullptr);
+		Desktop::focusState()->fullWindowFocus(nullptr);
 		this->raiseToTop();
 
 		if (warp) Hy3Layout::warpCursorToBox(this->position, this->size);
@@ -218,7 +219,7 @@ PHLWINDOW Hy3Node::bringToTop() {
 
 void Hy3Node::focusWindow() {
 	auto window = this->bringToTop();
-	if (window != nullptr) g_pCompositor->focusWindow(window);
+	if (window != nullptr) Desktop::focusState()->fullWindowFocus(window);
 }
 
 void markGroupFocusedRecursive(Hy3GroupData& group) {

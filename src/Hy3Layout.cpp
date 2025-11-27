@@ -5,6 +5,7 @@
 
 #include <dlfcn.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
@@ -33,8 +34,8 @@
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
 	if (g_pLayoutManager->getCurrentLayout() != g_Hy3Layout.get()) return nullptr;
 
-	auto workspace = g_pCompositor->m_lastMonitor->m_activeSpecialWorkspace;
-	if (!valid(workspace)) workspace = g_pCompositor->m_lastMonitor->m_activeWorkspace;
+	auto workspace = Desktop::focusState()->monitor()->m_activeSpecialWorkspace;
+	if (!valid(workspace)) workspace = Desktop::focusState()->monitor()->m_activeWorkspace;
 
 	if (!valid(workspace)) return nullptr;
 	if (!allow_fullscreen && workspace->m_hasFullscreenWindow) return nullptr;
@@ -144,7 +145,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 	}
 
 	if (opening_after == nullptr) {
-		auto last_window = g_pCompositor->m_lastWindow;
+		auto last_window = Desktop::focusState()->window();
 		if (last_window != nullptr && last_window->m_workspace == node.workspace
 		    && !last_window->m_isFloating
 		    && (node.data.is_window() || last_window != node.data.as_window())
@@ -412,7 +413,7 @@ ShiftDirection reverse(ShiftDirection direction) {
 }
 
 void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PHLWINDOW pWindow) {
-	auto window = pWindow ? pWindow : g_pCompositor->m_lastWindow.lock();
+	auto window = pWindow ? pWindow : Desktop::focusState()->window();
 	if (!valid(window)) return;
 
 	auto* node = this->getNodeFromWindow(window.get());
@@ -943,7 +944,7 @@ void Hy3Layout::shiftFocus(
     bool visible,
     bool warp
 ) {
-	auto current_window = g_pCompositor->m_lastWindow.lock();
+	auto current_window = Desktop::focusState()->window();
 
 	if (current_window != nullptr) {
 		if (current_window->m_workspace->m_hasFullscreenWindow) {
@@ -956,7 +957,7 @@ void Hy3Layout::shiftFocus(
 
 			if (next_window != nullptr) {
 				g_pInputManager->unconstrainMouse();
-				g_pCompositor->focusWindow(next_window);
+				Desktop::focusState()->fullWindowFocus(next_window);
 				if (warp) Hy3Layout::warpCursorToBox(next_window->m_position, next_window->m_size);
 			}
 			return;
@@ -989,7 +990,7 @@ Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
 
 	if (next_monitor) {
 		bool found = false;
-		g_pCompositor->setActiveMonitor(next_monitor);
+		Desktop::focusState()->rawMonitorFocus(next_monitor);
 		auto next_workspace = next_monitor->m_activeWorkspace;
 
 		if (next_workspace) {
@@ -1017,7 +1018,7 @@ bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follo
 	auto next_monitor = g_pCompositor->getMonitorInDirection(getShiftDirectionChar(direction));
 
 	if (next_monitor) {
-		g_pCompositor->setActiveMonitor(next_monitor);
+		Desktop::focusState()->rawMonitorFocus(next_monitor);
 		auto next_workspace = next_monitor->m_activeWorkspace;
 		if (next_workspace) {
 			moveNodeToWorkspace(node.workspace.get(), next_workspace->m_name, follow, false);
@@ -1028,7 +1029,7 @@ bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follo
 }
 
 void Hy3Layout::toggleFocusLayer(const CWorkspace* workspace, bool warp) {
-	auto current_window = g_pCompositor->m_lastWindow.lock();
+	auto current_window = Desktop::focusState()->window();
 	if (!current_window) return;
 
 	PHLWINDOW target;
@@ -1040,7 +1041,7 @@ void Hy3Layout::toggleFocusLayer(const CWorkspace* workspace, bool warp) {
 
 	if (!target) return;
 
-	g_pCompositor->focusWindow(target);
+	Desktop::focusState()->fullWindowFocus(target);
 
 	if (warp) {
 		Hy3Layout::warpCursorWithFocus(target->middle());
@@ -1048,7 +1049,7 @@ void Hy3Layout::toggleFocusLayer(const CWorkspace* workspace, bool warp) {
 }
 
 void Hy3Layout::warpCursor() {
-	auto current_window = g_pCompositor->m_lastWindow.lock();
+	auto current_window = Desktop::focusState()->window();
 
 	if (current_window != nullptr) {
 		if (current_window != nullptr) {
@@ -1056,7 +1057,7 @@ void Hy3Layout::warpCursor() {
 		}
 	} else {
 		auto* node =
-		    this->getWorkspaceFocusedNode(g_pCompositor->m_lastMonitor->m_activeWorkspace.get());
+		    this->getWorkspaceFocusedNode(Desktop::focusState()->monitor()->m_activeWorkspace.get());
 
 		if (node != nullptr) {
 			Hy3Layout::warpCursorWithFocus(node->position + node->size / 2);
@@ -1099,7 +1100,7 @@ void Hy3Layout::moveNodeToWorkspace(
 	if (origin == workspace.get()) return;
 
 	auto* node = this->getWorkspaceFocusedNode(origin);
-	auto focused_window = g_pCompositor->m_lastWindow.lock();
+	auto focused_window = Desktop::focusState()->window();
 	auto* focused_window_node = this->getNodeFromWindow(focused_window.get());
 
 	auto origin_ws = node != nullptr           ? node->workspace
@@ -1387,7 +1388,7 @@ void Hy3Layout::setNodeSwallow(const CWorkspace* workspace, SetSwallowOption opt
 }
 
 void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
-	auto last_window = g_pCompositor->m_lastWindow.lock();
+	auto last_window = Desktop::focusState()->window();
 	if (last_window != nullptr && last_window->m_isFloating) {
 		g_pCompositor->closeWindow(last_window);
 	} else {
@@ -1543,7 +1544,7 @@ bool Hy3Layout::shouldRenderSelected(const CWindow* window) {
 	auto* focused = root->getFocusedNode();
 	if (focused == nullptr
 	    || (focused->data.is_window()
-	        && focused->data.as_window() != g_pCompositor->m_lastWindow.lock()))
+	        && focused->data.as_window() != Desktop::focusState()->window()))
 		return false;
 
 	switch (focused->data.type()) {

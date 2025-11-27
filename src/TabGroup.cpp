@@ -6,6 +6,7 @@
 #include <cairo/cairo.h>
 #include <hyprgraphics/color/Color.hpp>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
@@ -524,7 +525,7 @@ exitloop:
 		auto active = parent_focused && (parent_group.focused_child == *node || parent_group.group_focused);
 		entry->setActive(active);
 
-		auto& last_monitor = g_pCompositor->m_lastMonitor;
+		auto last_monitor = Desktop::focusState()->monitor();
 		entry->setMonitorActive(active && (!last_monitor || (*node)->getMonitor() == last_monitor.get()));
 
 		entry->setUrgent((*node)->isUrgent());
