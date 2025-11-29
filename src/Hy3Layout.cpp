@@ -20,7 +20,6 @@
 
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
-#include "SelectionHook.hpp"
 #include "TabGroup.hpp"
 #include "globals.hpp"
 #include "src/SharedDefs.hpp"
@@ -585,7 +584,17 @@ std::any Hy3Layout::layoutMessage(SLayoutMessageHeader header, std::string conte
 	return "";
 }
 
-SWindowRenderLayoutHints Hy3Layout::requestRenderHints(PHLWINDOW window) { return {}; }
+SWindowRenderLayoutHints Hy3Layout::requestRenderHints(PHLWINDOW window) {
+	if (this->shouldRenderSelected(window.get())) {
+    static auto active_color = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
+		return {
+			.isBorderGradient = true,
+			.borderGradient = static_cast<CGradientValueData*>((active_color.ptr())->getData()),
+		};
+	}
+
+	return {};
+}
 
 void Hy3Layout::switchWindows(PHLWINDOW pWindowA, PHLWINDOW pWindowB) {
 	// todo
@@ -692,8 +701,6 @@ void Hy3Layout::onEnable() {
 
 	mouseButtonPtr =
 	    HyprlandAPI::registerCallbackDynamic(PHANDLE, "mouseButton", &Hy3Layout::mouseButtonHook);
-
-	selection_hook::enable();
 }
 
 void Hy3Layout::onDisable() {
@@ -702,7 +709,6 @@ void Hy3Layout::onDisable() {
 	urgentHookPtr.reset();
 	tickHookPtr.reset();
 	mouseButtonPtr.reset();
-	selection_hook::disable();
 
 	for (auto& node: this->nodes) {
 		if (node.data.is_window()) {

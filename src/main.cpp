@@ -4,7 +4,6 @@
 #include <hyprland/src/version.h>
 #include <hyprlang.hpp>
 
-#include "SelectionHook.hpp"
 #include "dispatchers.hpp"
 #include "globals.hpp"
 
@@ -28,8 +27,6 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 		throw std::runtime_error("[hy3] target hyprland version mismatch");
 	}
 #endif
-
-	selection_hook::init();
 
 #define CONF(NAME, TYPE, VALUE)                                                                    \
 	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:" NAME, Hyprlang::CConfigValue((TYPE) VALUE))

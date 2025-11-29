@@ -19,7 +19,6 @@ add_library(hy3 SHARED
 	src/Hy3Layout.cpp
 	src/Hy3Node.cpp
 	src/TabGroup.cpp
-	src/SelectionHook.cpp
 	src/shaders.cpp
 	src/render.cpp
 )
