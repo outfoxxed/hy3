@@ -98,6 +98,7 @@ void Hy3Layout::onWindowCreatedTiling(PHLWINDOW window, eDirection) {
 	});
 
 	this->insertNode(this->nodes.back());
+	window->m_workspace->updateWindows();
 }
 
 void Hy3Layout::insertNode(Hy3Node& node) {
@@ -334,6 +335,8 @@ void Hy3Layout::onWindowRemovedTiling(PHLWINDOW window) {
 				target_parent->recalcSizePosRecursive();
 		}
 	}
+
+	window->m_workspace->updateWindows();
 }
 
 void Hy3Layout::onWindowFocusChange(PHLWINDOW window) {
@@ -496,8 +499,6 @@ void Hy3Layout::fullscreenRequestForWindow(
 	if (current_mode == target_mode || window->m_workspace->m_isSpecialWorkspace) return;
 
 	const auto& monitor = window->m_monitor;
-
-	Desktop::Rule::ruleEngine()->updateAllRules();
 
 	if (target_mode == FSMODE_NONE) {
 		auto* node = this->getNodeFromWindow(window.get());
@@ -1740,6 +1741,8 @@ void Hy3Layout::applyNodeDataToWindow(Hy3Node* node, bool no_animation) {
 
 		window->updateWindowDecos();
 	}
+
+	window->m_workspace->updateWindows();
 }
 
 bool shiftIsForward(ShiftDirection direction) {
