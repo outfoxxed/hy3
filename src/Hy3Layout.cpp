@@ -15,6 +15,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprland/src/xwayland/XWayland.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <ranges>
 
@@ -385,6 +386,13 @@ void Hy3Layout::recalculateMonitor(const MONITORID& monitor_id) {
 
 		top_node->recalcSizePosRecursive();
 	}
+
+#ifndef NO_XWAYLAND
+	CBox box = g_pCompositor->calculateX11WorkArea();
+	if (!g_pXWayland || !g_pXWayland->m_wm)
+			return;
+	g_pXWayland->m_wm->updateWorkArea(box.x, box.y, box.w, box.h);
+#endif
 }
 
 void Hy3Layout::recalculateWindow(PHLWINDOW window) {
