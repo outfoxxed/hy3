@@ -5,6 +5,7 @@
 #include <bits/ranges_util.h>
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/desktop/reserved/ReservedArea.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/defines.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
@@ -344,8 +345,8 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 		Hy3Node fake_node = {
 		    .data = window,
-		    .position = monitor->m_position + monitor->m_reservedTopLeft,
-		    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
+		    .position = monitor->m_position + Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()),
+		    .size = monitor->m_size - Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()) - Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom()),
 		    .gap_topleft_offset = gap_topleft_offset,
 		    .gap_bottomright_offset = gap_bottomright_offset,
 		    .workspace = this->workspace,

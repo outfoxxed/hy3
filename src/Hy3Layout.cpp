@@ -8,6 +8,7 @@
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
+#include <hyprland/src/desktop/reserved/ReservedArea.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/desktop/rule/Engine.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
@@ -182,14 +183,14 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 			    ConfigValue<Hyprlang::INT>("plugin:hy3:tab_first_window");
 
 			auto width =
-			    monitor->m_size.x - monitor->m_reservedBottomRight.x - monitor->m_reservedTopLeft.x;
+			    monitor->m_size.x - monitor->m_reservedArea.right() - monitor->m_reservedArea.left();
 			auto height =
-			    monitor->m_size.y - monitor->m_reservedBottomRight.y - monitor->m_reservedTopLeft.y;
+			    monitor->m_size.y - monitor->m_reservedArea.bottom() - monitor->m_reservedArea.top();
 
 			this->nodes.push_back({
 			    .data = height > width ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH,
-			    .position = monitor->m_position + monitor->m_reservedTopLeft,
-			    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
+			    .position = monitor->m_position + Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()),
+			    .size = monitor->m_size - Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()) - Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom()),
 			    .workspace = node.workspace,
 			    .layout = this,
 			});
@@ -371,9 +372,9 @@ void Hy3Layout::recalculateMonitor(const MONITORID& monitor_id) {
 
 	auto* top_node = this->getWorkspaceRootGroup(monitor->m_activeWorkspace.get());
 	if (top_node != nullptr) {
-		top_node->position = monitor->m_position + monitor->m_reservedTopLeft;
+		top_node->position = monitor->m_position + Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top());
 		top_node->size =
-		    monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight;
+		    monitor->m_size - Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()) - Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom());
 
 		top_node->recalcSizePosRecursive();
 	}
@@ -381,9 +382,9 @@ void Hy3Layout::recalculateMonitor(const MONITORID& monitor_id) {
 	top_node = this->getWorkspaceRootGroup(monitor->m_activeSpecialWorkspace.get());
 
 	if (top_node != nullptr) {
-		top_node->position = monitor->m_position + monitor->m_reservedTopLeft;
+		top_node->position = monitor->m_position + Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top());
 		top_node->size =
-		    monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight;
+		    monitor->m_size - Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()) - Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom());
 
 		top_node->recalcSizePosRecursive();
 	}
@@ -424,16 +425,16 @@ void Hy3Layout::resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PH
 		auto& monitor = window->m_monitor;
 
 		const bool display_left =
-		    STICKS(node->position.x, monitor->m_position.x + monitor->m_reservedTopLeft.x);
+		    STICKS(node->position.x, monitor->m_position.x + monitor->m_reservedArea.left());
 		const bool display_right = STICKS(
 		    node->position.x + node->size.x,
-		    monitor->m_position.x + monitor->m_size.x - monitor->m_reservedBottomRight.x
+		    monitor->m_position.x + monitor->m_size.x - monitor->m_reservedArea.right()
 		);
 		const bool display_top =
-		    STICKS(node->position.y, monitor->m_position.y + monitor->m_reservedTopLeft.y);
+		    STICKS(node->position.y, monitor->m_position.y + monitor->m_reservedArea.top());
 		const bool display_bottom = STICKS(
 		    node->position.y + node->size.y,
-		    monitor->m_position.y + monitor->m_size.y - monitor->m_reservedBottomRight.y
+		    monitor->m_position.y + monitor->m_size.y - monitor->m_reservedArea.bottom()
 		);
 
 		Vector2D resize_delta = delta;
@@ -556,8 +557,8 @@ void Hy3Layout::fullscreenRequestForWindow(
 
 			Hy3Node fakeNode = {
 			    .data = window,
-			    .position = monitor->m_position + monitor->m_reservedTopLeft,
-			    .size = monitor->m_size - monitor->m_reservedTopLeft - monitor->m_reservedBottomRight,
+			    .position = monitor->m_position + Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()),
+			    .size = monitor->m_size - Vector2D(monitor->m_reservedArea.left(), monitor->m_reservedArea.top()) - Vector2D(monitor->m_reservedArea.right(), monitor->m_reservedArea.bottom()),
 			    .gap_topleft_offset = gap_pos_offset,
 			    .gap_bottomright_offset = gap_size_offset,
 			    .workspace = window->m_workspace,
