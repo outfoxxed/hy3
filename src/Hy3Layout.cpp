@@ -8,7 +8,6 @@
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
-#include <hyprland/src/desktop/reserved/ReservedArea.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/desktop/rule/Engine.hpp>
 #include <hyprland/src/managers/LayoutManager.hpp>
