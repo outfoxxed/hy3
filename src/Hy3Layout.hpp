@@ -154,9 +154,9 @@ public:
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
 	static void warpCursorWithFocus(const Vector2D& pos, bool force = false);
 
-	bool shouldRenderSelected(const CWindow*);
-	PHLWINDOW findTiledWindowCandidate(const CWindow* from);
-	PHLWINDOW findFloatingWindowCandidate(const CWindow* from);
+	bool shouldRenderSelected(const Desktop::View::CWindow*);
+	PHLWINDOW findTiledWindowCandidate(const Desktop::View::CWindow* from);
+	PHLWINDOW findFloatingWindowCandidate(const Desktop::View::CWindow* from);
 
 	Hy3Node* getWorkspaceRootGroup(const CWorkspace* workspace);
 	Hy3Node* getWorkspaceFocusedNode(
@@ -175,7 +175,7 @@ public:
 	std::list<Hy3TabGroup> tab_groups;
 
 private:
-	Hy3Node* getNodeFromWindow(const CWindow*);
+	Hy3Node* getNodeFromWindow(const Desktop::View::CWindow*);
 	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
 
 	// if shift is true, shift the window in the given direction, returning

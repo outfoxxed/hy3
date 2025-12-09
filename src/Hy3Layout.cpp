@@ -25,8 +25,8 @@
 #include "TabGroup.hpp"
 #include "globals.hpp"
 #include "src/SharedDefs.hpp"
-#include "src/desktop/WLSurface.hpp"
-#include "src/desktop/Window.hpp"
+#include "src/desktop/view/WLSurface.hpp"
+#include "src/desktop/view/Window.hpp"
 #include "src/desktop/rule/Rule.hpp"
 #include "src/desktop/types/OverridableVar.hpp"
 #include "src/devices/IPointer.hpp"
@@ -155,7 +155,7 @@ void Hy3Layout::insertNode(Hy3Node& node) {
 		} else {
 			auto mouse_window = g_pCompositor->vectorToWindowUnified(
 			    g_pInputManager->getMouseCoordsInternal(),
-			    RESERVED_EXTENTS | INPUT_EXTENTS
+			    Desktop::View::RESERVED_EXTENTS | Desktop::View::INPUT_EXTENTS
 			);
 
 			if (mouse_window != nullptr && mouse_window->m_workspace == node.workspace) {
@@ -646,7 +646,7 @@ PHLWINDOW Hy3Layout::getNextWindowCandidate(PHLWINDOW window) {
 	}
 }
 
-PHLWINDOW Hy3Layout::findTiledWindowCandidate(const CWindow* from) {
+PHLWINDOW Hy3Layout::findTiledWindowCandidate(const Desktop::View::CWindow* from) {
 	auto* node = this->getWorkspaceFocusedNode(from->m_workspace.get(), true);
 	if (node != nullptr && node->data.is_window()) {
 		return node->data.as_window();
@@ -655,7 +655,7 @@ PHLWINDOW Hy3Layout::findTiledWindowCandidate(const CWindow* from) {
 	return PHLWINDOW();
 }
 
-PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const CWindow* from) {
+PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const Desktop::View::CWindow* from) {
 	// return the first floating window on the same workspace that has not asked not to be focused
 	for (auto& w: g_pCompositor->m_windows | std::views::reverse) {
 		if (w->m_isMapped && !w->isHidden() && w->m_isFloating && !w->isX11OverrideRedirect()
@@ -1296,11 +1296,11 @@ void Hy3Layout::focusTab(
 		auto ptrSurfaceResource = g_pSeatManager->m_state.pointerFocus.lock();
 		if (!ptrSurfaceResource) return;
 
-		auto ptrSurface = CWLSurface::fromResource(ptrSurfaceResource);
+		auto ptrSurface = Desktop::View::CWLSurface::fromResource(ptrSurfaceResource);
 		if (!ptrSurface) return;
 
 		// non window-parented surface focused, cant have a tab
-		auto window = ptrSurface->getWindow();
+		auto window = ptrSurface->view();
 		if (!window || window->m_isFloating) return;
 
 		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
@@ -1537,7 +1537,7 @@ void Hy3Layout::warpCursorWithFocus(const Vector2D& target, bool force) {
 	}
 }
 
-bool Hy3Layout::shouldRenderSelected(const CWindow* window) {
+bool Hy3Layout::shouldRenderSelected(const Desktop::View::CWindow* window) {
 	if (window == nullptr) return false;
 	auto* root = this->getWorkspaceRootGroup(window->m_workspace.get());
 	if (root == nullptr || root->data.as_group().focused_child == nullptr) return false;
@@ -1644,11 +1644,11 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 	auto ptr_surface_resource = g_pSeatManager->m_state.pointerFocus.lock();
 	if (!ptr_surface_resource) return;
 
-	auto ptr_surface = CWLSurface::fromResource(ptr_surface_resource);
+	auto ptr_surface = Desktop::View::CWLSurface::fromResource(ptr_surface_resource);
 	if (!ptr_surface) return;
 
 	// non window-parented surface focused, cant have a tab
-	auto window = ptr_surface->getWindow();
+	auto window = ptr_surface->view();
 	if (!window || window->m_isFloating || window->isFullscreen()) return;
 
 	auto* node = g_Hy3Layout->getNodeFromWindow(window.get());
@@ -1673,7 +1673,7 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 	info.cancelled = true;
 }
 
-Hy3Node* Hy3Layout::getNodeFromWindow(const CWindow* window) {
+Hy3Node* Hy3Layout::getNodeFromWindow(const Desktop::View::CWindow* window) {
 	for (auto& node: this->nodes) {
 		if (node.data.is_window() && node.data.as_window().get() == window) {
 			return &node;
