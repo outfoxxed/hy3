@@ -1300,7 +1300,8 @@ void Hy3Layout::focusTab(
 		if (!ptrSurface) return;
 
 		// non window-parented surface focused, cant have a tab
-		auto window = ptrSurface->view();
+		auto view = ptrSurface->view();
+		auto* window = dynamic_cast<Desktop::View::CWindow*>(view.get());
 		if (!window || window->m_isFloating) return;
 
 		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
@@ -1555,6 +1556,7 @@ bool Hy3Layout::shouldRenderSelected(const Desktop::View::CWindow* window) {
 		return focused->data.as_group().hasChild(node);
 	}
 	}
+	return false;
 }
 
 Hy3Node* Hy3Layout::getWorkspaceRootGroup(const CWorkspace* workspace) {
@@ -1648,10 +1650,11 @@ void Hy3Layout::mouseButtonHook(void*, SCallbackInfo& info, std::any data) {
 	if (!ptr_surface) return;
 
 	// non window-parented surface focused, cant have a tab
-	auto window = ptr_surface->view();
+	auto view = ptr_surface->view();
+	auto* window = dynamic_cast<Desktop::View::CWindow*>(view.get());
 	if (!window || window->m_isFloating || window->isFullscreen()) return;
 
-	auto* node = g_Hy3Layout->getNodeFromWindow(window.get());
+	auto* node = g_Hy3Layout->getNodeFromWindow(window);
 	if (!node) return;
 
 	auto* root = node;

@@ -215,6 +215,7 @@ PHLWINDOW Hy3Node::bringToTop() {
 		return nullptr;
 	}
 	}
+	return nullptr;
 }
 
 void Hy3Node::focusWindow() {
@@ -278,6 +279,7 @@ Hy3Node* Hy3Node::getFocusedNode(bool ignore_group_focus, bool stop_at_expanded)
 		}
 	}
 	}
+	return nullptr;
 }
 
 bool Hy3Node::isIndirectlyFocused() {
@@ -376,7 +378,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 	auto& group = this->data.as_group();
 
-	double constraint;
+	double constraint = 0.0;
 	switch (group.layout) {
 	case Hy3GroupLayout::SplitH:
 		constraint = tsize.x - gap_topleft_offset.x - gap_bottomright_offset.x;
@@ -634,6 +636,7 @@ bool Hy3Node::isUrgent() {
 
 		return false;
 	}
+	return false;
 }
 
 void Hy3Node::setHidden(bool hidden) {
