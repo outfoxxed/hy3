@@ -745,7 +745,7 @@ void Hy3Layout::makeGroupOnWorkspace(
 		auto* parent = node->parent;
 		auto& group = parent->data.as_group();
 
-		if (group.children.size() == 1 && group.layout == layout) {
+		if (group.children.size() == 1 && group.layout == layout && parent->parent != nullptr) {
 			group.children.clear();
 			Hy3Node::swapData(*node, *parent);
 			this->nodes.remove(*node); // now the parent
