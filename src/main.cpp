@@ -73,6 +73,11 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("tabs:col.locked.border", INT, 0xee909033);
 	CONF("tabs:col.locked.text", INT, 0xffffffff);
 
+	CONF("window:layout_orientation", STRING, "default");
+	CONF("window:center_max_count", INT, 2);
+	CONF("window:width_pct", FLOAT, 70.0);
+	CONF("window:center_layout_monitors", STRING, "");
+
 	// autotiling
 	CONF("autotile:enable", INT, 0);
 	CONF("autotile:ephemeral_groups", INT, 1);
