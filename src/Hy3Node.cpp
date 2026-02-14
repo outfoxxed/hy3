@@ -319,10 +319,19 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	static const auto group_inset = ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
-
+	static const auto p_window_orientation = ConfigValue<Hyprlang::STRING>("plugin:hy3:window:layout_orientation");
+	static const auto p_center_max_count = ConfigValue<Hyprlang::INT>("plugin:hy3:window:center_max_count");
+	static const auto p_width_pct  = ConfigValue<Hyprlang::FLOAT>("plugin:hy3:window:width_pct");
+	static const auto p_center_layout_monitors = ConfigValue<Hyprlang::STRING>("plugin:hy3:window:center_layout_monitors");
+	
 	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(this->workspace);
 	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
 	auto gaps_out = workspace_rule.gapsOut.value_or(*p_gaps_out);
+	auto window_orientation = std::string (*p_window_orientation);
+	auto center_layout_monitors = std::string (*p_center_layout_monitors);
+	auto window_width_pct = *p_width_pct;
+	auto center_max_count = (size_t) *p_center_max_count;
+	auto monitor = this->getMonitor();
 
 	auto gap_topleft_offset = Vector2D(
 	    (int) -(gaps_in.m_left - gaps_out.m_left),
@@ -337,7 +346,6 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 
 	if (this->data.is_window() && this->data.as_window()->isFullscreen()) {
 		auto window = this->data.as_window();
-		auto& monitor = this->workspace->m_monitor;
 
 		if (window->isEffectiveInternalFSMode(FSMODE_FULLSCREEN)) {
 			*window->m_realPosition = monitor->m_position;
@@ -364,6 +372,26 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 	} else {
 		gap_topleft_offset = this->gap_topleft_offset;
 		gap_bottomright_offset = this->gap_bottomright_offset;
+	}
+
+	bool is_centered_monitor = center_layout_monitors.empty()
+	                        || center_layout_monitors.find(monitor->m_name) != std::string::npos;
+
+	if (this->parent == nullptr && this->data.is_group() && window_orientation == "center"
+	    && is_centered_monitor)
+	{
+		auto& group = this->data.as_group();
+		auto child_count = group.children.size();
+		auto max_center_width =
+		    monitor->m_size.x * std::clamp((double) window_width_pct, 30.0, 100.0) / 100.0;
+
+		    if (child_count <= center_max_count || group.layout == Hy3GroupLayout::Tabbed) { // this for now. We should check visible windows to see if we can center or not, but maybe we have to count each child recursively
+			this->size.x = max_center_width;
+			this->position.x = monitor->m_position.x + (monitor->m_size.x - max_center_width) / 2.0;
+		} else {
+			this->position.x = monitor->m_position.x;
+			this->size.x = monitor->m_size.x;
+		}
 	}
 
 	auto tpos = this->position;

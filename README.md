@@ -315,6 +315,24 @@ plugin {
       opacity = <float> # default: 1.0
     }
 
+    # window settings
+    window {
+      # "default" = default layout orientation
+      # "center" = center the windows on the monitor
+      layout_orientation = <string> # default: "default"
+
+      # max number of windows to activate the center layout on the monitor
+      center_max_count = <int> # default: 2
+
+      # width percentage of the window to center on the monitor
+      width_pct = <float> # default: 70.0
+
+      # list of monitors that will use the center layout
+      # if empty, the center layout will be activated on all monitors
+      # example: "DP-1, DP-2"... etc.
+      center_layout_monitors = <string> # default: ""
+    }
+
     # autotiling settings
     autotile {
       # enable autotile
