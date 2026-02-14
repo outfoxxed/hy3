@@ -385,7 +385,7 @@ void Hy3Node::recalcSizePosRecursive(bool no_animation) {
 		auto max_center_width =
 		    monitor->m_size.x * std::clamp((double) window_width_pct, 30.0, 100.0) / 100.0;
 
-		if (child_count <= center_max_count) {
+		    if (child_count <= center_max_count || group.layout == Hy3GroupLayout::Tabbed) { // this for now. We should check visible windows to see if we can center or not, but maybe we have to count each child recursively
 			this->size.x = max_center_width;
 			this->position.x = monitor->m_position.x + (monitor->m_size.x - max_center_width) / 2.0;
 		} else {
