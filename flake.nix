@@ -1,6 +1,6 @@
 {
   inputs = {
-    hyprland.url = "github:hyprwm/hyprland/8f547c6fa089f91e7577947c426f692397e9a5cb";
+    hyprland.url = "github:outfoxxed/hyprland/itarget-visualbox-541";
   };
 
   outputs = {

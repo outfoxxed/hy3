@@ -46,7 +46,7 @@ CHyprColor merge_colors(Args... colors) {
 	return CHyprColor(Hyprgraphics::CColor(oklab), alpha);
 }
 
-Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(node) {
+Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(&node) {
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->active,
@@ -122,7 +122,7 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	*this->fade_opacity = 1.0;
 }
 
-bool Hy3TabBarEntry::operator==(const Hy3Node& node) const { return this->node == node; }
+bool Hy3TabBarEntry::operator==(const Hy3Node& node) const { return this->node == &node; }
 
 bool Hy3TabBarEntry::operator==(const Hy3TabBarEntry& entry) const {
 	return this->node == entry.node;
@@ -458,88 +458,78 @@ void Hy3TabBar::tick() {
 	if (this->entries.empty()) this->destroy = true;
 }
 
-void Hy3TabBar::updateNodeList(std::list<Hy3Node*>& nodes) {
-	std::list<std::list<Hy3TabBarEntry>::iterator> removed_entries;
+void Hy3TabBar::updateNodeList(std::list<UP<Hy3Node>>& nodes) {
+	std::list<Hy3TabBarEntry> pool;
+	pool.splice(pool.begin(), this->entries);
 
-	auto entry = this->entries.begin();
-	auto node = nodes.begin();
+	for (auto node = nodes.begin(); node != nodes.end(); ++node) {
+		auto match = std::find_if(pool.begin(), pool.end(), [&node](auto& entry) {
+			return **node == entry;
+		});
 
-	// move any out of order entries to removed_entries
-	while (node != nodes.end()) {
-		while (true) {
-			if (entry == this->entries.end()) goto exitloop;
-			if (*entry == **node) break;
-			removed_entries.push_back(entry);
-			entry = std::next(entry);
+		if (match != pool.end()) {
+			match->node = node->get();
+			this->entries.splice(this->entries.end(), pool, match);
 		}
-
-		node = std::next(node);
-		entry = std::next(entry);
 	}
 
-exitloop:
+	// TODO: index match is wrong if a move results in the addition of a node and destruction of another in one op
+	auto entry = this->entries.begin();
+	int node_index = 0;
+	for (auto node = nodes.begin(); node != nodes.end(); ++node, ++node_index) {
+		if (entry != this->entries.end() && entry->node == node->get()) {
+			++entry;
+			continue;
+		}
 
-	// move any extra entries to removed_entries
-	while (entry != this->entries.end()) {
-		removed_entries.push_back(entry);
-		entry = std::next(entry);
+		auto match = std::find_if(pool.begin(), pool.end(), [&node_index](auto& entry) {
+			return entry.lastIndex == node_index;
+		});
+
+		if (match != pool.end()) {
+			match->node = node->get();
+			this->entries.splice(entry, pool, match);
+		}
 	}
 
 	entry = this->entries.begin();
-	node = nodes.begin();
-
-	// add missing entries, taking first from removed_entries
-	while (node != nodes.end()) {
-		if (entry == this->entries.end() || *entry != **node) {
-			if (std::find(removed_entries.begin(), removed_entries.end(), entry) != removed_entries.end())
-			{
-				entry = std::next(entry);
-				continue;
-			}
-
-			auto moved =
-			    std::find_if(removed_entries.begin(), removed_entries.end(), [&node](auto entry) {
-				    return **node == *entry;
-			    });
-
-			if (moved != removed_entries.end()) {
-				this->entries.splice(entry, this->entries, *moved);
-				entry = *moved;
-				removed_entries.erase(moved);
-			} else {
-				entry = this->entries.emplace(entry, *this, **node);
-			}
+	node_index = 0;
+	for (auto node = nodes.begin(); node != nodes.end(); ++node, ++node_index) {
+		if (entry == this->entries.end() || entry->node != node->get()) {
+			entry = this->entries.emplace(entry, *this, **node);
 		}
 
 		entry->unDestroy();
+		entry->lastIndex = node_index;
 
-		// set stats from node data
-		auto* parent = (*node)->parent;
-		auto& parent_group = parent->data.as_group();
-
+		auto* parent = (*node)->parent.get();
+		auto& parent_group = parent->as_group();
 		auto parent_focused = parent->isIndirectlyFocused();
 
 		entry->setFocused(
-		    parent_group.focused_child == *node || (parent_group.group_focused && parent_focused)
+		    parent_group.focused_child == node->get() || (parent_group.group_focused && parent_focused)
 		);
 
-		auto active = parent_focused && (parent_group.focused_child == *node || parent_group.group_focused);
+		auto active = parent_focused && (parent_group.focused_child == node->get() || parent_group.group_focused);
 		entry->setActive(active);
 
 		auto last_monitor = Desktop::focusState()->monitor();
-		entry->setMonitorActive(active && (!last_monitor || (*node)->getMonitor() == last_monitor.get()));
+		entry->setMonitorActive(active && (!last_monitor || (*node)->layout->monitor() == last_monitor.get()));
 
 		entry->setUrgent((*node)->isUrgent());
 		entry->setWindowTitle((*node)->getTitle());
 
-		node = std::next(node);
-		if (entry != this->entries.end()) entry = std::next(entry);
+		entry = std::next(entry);
 	}
 
-	// initiate remove animations for any removed entries
-	for (auto& entry: removed_entries) {
-		if (!entry->destroying) entry->beginDestroy();
-		if (entry->shouldRemove()) this->entries.erase(entry);
+	while (!pool.empty()) {
+		auto it = pool.begin();
+		if (!it->destroying) it->beginDestroy();
+		if (it->shouldRemove()) {
+			pool.erase(it);
+		} else {
+			this->entries.splice(this->entries.end(), pool, it);
+		}
 	}
 }
 
@@ -588,6 +578,32 @@ void Hy3TabBar::setSize(Vector2D size) {
 	this->size = size;
 }
 
+UP<Hy3TabGroup> Hy3TabGroup::create(Hy3Node& node) {
+	auto up = makeUnique<Hy3TabGroup>(node);
+	up->self = WP<Hy3TabGroup>(up);
+	g_tabGroups.push_back(up->self);
+	return up;
+}
+
+Hy3TabGroupWrapper::Hy3TabGroupWrapper() = default;
+Hy3TabGroupWrapper::Hy3TabGroupWrapper(UP<Hy3TabGroup> tg): inner(std::move(tg)) {}
+Hy3TabGroupWrapper::Hy3TabGroupWrapper(Hy3TabGroupWrapper&&) = default;
+Hy3TabGroupWrapper& Hy3TabGroupWrapper::operator=(Hy3TabGroupWrapper&&) = default;
+Hy3TabGroupWrapper::~Hy3TabGroupWrapper() { release(); }
+
+void Hy3TabGroupWrapper::release() {
+	if (inner.get()) {
+		inner->bar.beginDestroy();
+		g_destroyingTabGroups.push_back(std::move(inner));
+	}
+}
+
+Hy3TabGroupWrapper& Hy3TabGroupWrapper::operator=(UP<Hy3TabGroup> tg) {
+	release();
+	inner = std::move(tg);
+	return *this;
+}
+
 Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	g_pAnimationManager->createAnimation(
 	    Vector2D(0, 0),
@@ -606,16 +622,14 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	this->updateWithGroup(node, true);
 	this->pos->warp();
 	this->size->warp();
-	this->bar.monitor_id = node.workspace->m_monitor->m_id;
+	this->bar.monitor_id = node.layout->workspace()->m_monitor->m_id;
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	static const auto bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 
-	auto windowBox = node.getStandardWindowArea();
-
-	auto tpos = windowBox.pos();
-	auto tsize = Vector2D(windowBox.size().x, *bar_height);
+	auto tpos = node.position;
+	auto tsize = Vector2D(node.size.x, *bar_height);
 
 	this->hidden = node.hidden;
 	if (this->pos->goal() != tpos) {
@@ -628,14 +642,14 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 		if (warp) this->size->warp();
 	}
 
-	this->bar.updateNodeList(node.data.as_group().children);
+	this->bar.updateNodeList(node.as_group().children);
 	this->bar.updateAnimations(warp);
 
-	auto locked = node.data.as_group().locked;
+	auto locked = node.as_group().locked;
 	if (this->bar.locked->goal() != locked) *this->bar.locked = locked;
 
-	if (node.data.as_group().focused_child != nullptr) {
-		this->updateStencilWindows(*node.data.as_group().focused_child);
+	if (node.as_group().focused_child != nullptr) {
+		this->updateStencilWindows(*node.as_group().focused_child);
 	}
 
 	if (this->bar.dirty) this->tick();
@@ -660,9 +674,10 @@ void Hy3TabGroup::tick() {
 		auto has_fullscreen = this->workspace->m_hasFullscreenWindow;
 
 		if (!has_fullscreen && *no_gaps_when_only) {
-			auto root_node = g_Hy3Layout->getWorkspaceRootGroup(this->workspace.get());
-			has_fullscreen = root_node != nullptr && root_node->data.as_group().children.size() == 1
-			              && root_node->data.as_group().children.front()->data.is_window();
+			auto* hy3 = hy3InstanceForWorkspace(this->workspace);
+			auto root_node = hy3 ? hy3->getWorkspaceRootGroup(this->workspace.get()) : nullptr;
+			has_fullscreen = root_node != nullptr && root_node->as_group().children.size() == 1
+			              && root_node->as_group().children.front()->is_target();
 		}
 
 		if (has_fullscreen) {
@@ -895,19 +910,20 @@ bool Hy3TabPassElement::needsPrecomputeBlur() {
 std::optional<CBox> Hy3TabPassElement::boundingBox() { return this->group->getRenderBB().first; }
 
 void findOverlappingWindows(Hy3Node& node, float height, std::vector<PHLWINDOWREF>& windows) {
-	switch (node.data.type()) {
-	case Hy3NodeType::Window: windows.push_back(node.data.as_window()); break;
+	switch (node.type()) {
+	case Hy3NodeType::Target: windows.push_back(node.as_window()); break;
 	case Hy3NodeType::Group:
-		auto& group = node.data.as_group();
+		auto& group = node.as_group();
 
 		switch (group.layout) {
+		case Hy3GroupLayout::Root:
 		case Hy3GroupLayout::SplitH:
-			for (auto* node: group.children) {
+			for (auto& node: group.children) {
 				findOverlappingWindows(*node, height, windows);
 			}
 			break;
 		case Hy3GroupLayout::SplitV:
-			for (auto* node: group.children) {
+			for (auto& node: group.children) {
 				findOverlappingWindows(*node, height, windows);
 				height -= node->size.y;
 				if (height <= 0) break;

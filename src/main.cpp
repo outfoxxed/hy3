@@ -1,11 +1,14 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/ConfigDataValues.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/render/Renderer.hpp>
+#include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/version.h>
 #include <hyprlang.hpp>
 
 #include "dispatchers.hpp"
 #include "globals.hpp"
+#include "TabGroup.hpp"
 
 APICALL EXPORT std::string PLUGIN_API_VERSION() { return HYPRLAND_API_VERSION; }
 
@@ -82,8 +85,66 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 #undef CONF
 
-	g_Hy3Layout = std::make_unique<Hy3Layout>();
-	HyprlandAPI::addLayout(PHANDLE, "hy3", g_Hy3Layout.get());
+	HyprlandAPI::addTiledAlgo(PHANDLE, "hy3", &typeid(Hy3Layout), []() -> UP<Layout::ITiledAlgorithm> {
+		return makeUnique<Hy3Layout>();
+	});
+
+	g_renderListener = Event::bus()->m_events.render.stage.listen([](eRenderStage stage) {
+		static bool rendering_normally = false;
+		static std::vector<Hy3TabGroup*> rendered_groups;
+
+		switch (stage) {
+		case RENDER_PRE_WINDOWS:
+			rendering_normally = true;
+			rendered_groups.clear();
+			break;
+		case RENDER_POST_WINDOW:
+			if (!rendering_normally) break;
+
+			for (auto& wp: g_tabGroups) {
+				auto* entry = wp.get();
+				if (!entry) continue;
+				if (!entry->hidden
+				    && entry->target_window == g_pHyprOpenGL->m_renderData.currentWindow.lock()
+				    && std::find(rendered_groups.begin(), rendered_groups.end(), entry)
+				           == rendered_groups.end())
+				{
+					g_pHyprRenderer->m_renderPass.add(makeUnique<Hy3TabPassElement>(entry));
+					rendered_groups.push_back(entry);
+				}
+			}
+			break;
+		case RENDER_POST_WINDOWS: rendering_normally = false; break;
+		default: break;
+		}
+	});
+
+	g_tickListener = Event::bus()->m_events.tick.listen([]() {
+		for (auto& wp: g_tabGroups) {
+			if (auto* tg = wp.get()) tg->tick();
+		}
+		std::erase_if(g_destroyingTabGroups, [](auto& up) { return up->bar.destroy; });
+		std::erase_if(g_tabGroups, [](auto& wp) { return !wp; });
+	});
+
+	g_windowTitleListener = Event::bus()->m_events.window.title.listen([](PHLWINDOW window) {
+		if (!window) return;
+		auto* hy3 = hy3InstanceForWorkspace(window->m_workspace);
+		if (!hy3) return;
+		auto* node = hy3->getNodeFromWindow(window.get());
+		if (!node) return;
+		node->updateTabBarRecursive();
+	});
+
+	g_urgentListener = Event::bus()->m_events.window.urgent.listen([](PHLWINDOW window) {
+		if (!window) return;
+		window->m_isUrgent = true;
+		auto* hy3 = hy3InstanceForWorkspace(window->m_workspace);
+		if (!hy3) return;
+		auto* node = hy3->getNodeFromWindow(window.get());
+		if (!node) return;
+		node->updateTabBarRecursive();
+	});
 
 	registerDispatchers();
 
@@ -92,4 +153,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	return {"hy3", "i3 like layout for hyprland", "outfoxxed", "0.1"};
 }
 
-APICALL EXPORT void PLUGIN_EXIT() {}
+APICALL EXPORT void PLUGIN_EXIT() {
+	g_renderListener.reset();
+	g_tickListener.reset();
+	g_windowTitleListener.reset();
+	g_urgentListener.reset();
+
+	g_tabGroups.clear();
+	g_destroyingTabGroups.clear();
+}
