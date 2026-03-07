@@ -12,6 +12,23 @@ class Hy3TabBar;
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/render/Texture.hpp>
 
+struct Hy3TabGroupWrapper {
+	UP<Hy3TabGroup> inner;
+
+	Hy3TabGroupWrapper();
+	Hy3TabGroupWrapper(UP<Hy3TabGroup> tg);
+	Hy3TabGroupWrapper(Hy3TabGroupWrapper&&);
+	Hy3TabGroupWrapper& operator=(Hy3TabGroupWrapper&&);
+	~Hy3TabGroupWrapper();
+
+	void release();
+	Hy3TabGroupWrapper& operator=(UP<Hy3TabGroup> tg);
+
+	Hy3TabGroup* operator->() { return inner.get(); }
+	Hy3TabGroup* get() { return inner.get(); }
+	operator bool() const { return inner.get() != nullptr; }
+};
+
 #include "Hy3Node.hpp"
 
 struct Hy3TabBarEntry {
@@ -27,7 +44,8 @@ struct Hy3TabBarEntry {
 	PHLANIMVAR<float> vertical_pos; // 0.0-1.0, user specified direction
 	PHLANIMVAR<float> fade_opacity; // 0.0-1.0
 	Hy3TabBar& tab_bar;
-	Hy3Node& node; // only used for comparison. do not deref.
+	Hy3Node* node; // only used for comparison. do not deref.
+	int lastIndex = -1;
 
 	struct {
 		float scale = 0.0;
@@ -88,14 +106,13 @@ public:
 	void damageBox(const Vector2D* position, const Vector2D* size);
 
 	void tick();
-	void updateNodeList(std::list<Hy3Node*>& nodes);
+	void updateNodeList(std::list<UP<Hy3Node>>& nodes);
 	void updateAnimations(bool warp = false);
 	void setSize(Vector2D);
 
 	std::list<Hy3TabBarEntry> entries;
 
 private:
-	Hy3Node* focused_node = nullptr;
 	Vector2D size;
 
 	// Tab bar entries take a reference to `this`.
@@ -125,6 +142,10 @@ public:
 	Hy3TabBar bar;
 	PHLANIMVAR<Vector2D> pos;
 	PHLANIMVAR<Vector2D> size;
+	WP<Hy3TabGroup> self;
+
+	// Factory: creates a tab group, sets self WP, registers in g_tabGroups.
+	static UP<Hy3TabGroup> create(Hy3Node& node);
 
 	// initialize a group with the given node. UB if node is not a group.
 	Hy3TabGroup(Hy3Node&);

@@ -9,10 +9,15 @@ enum class GroupEphemeralityOption {
 	ForceEphemeral,
 };
 
-#include <list>
 #include <set>
 
-#include <hyprland/src/layout/IHyprLayout.hpp>
+#include <hyprland/src/layout/algorithm/TiledAlgorithm.hpp>
+#include <hyprland/src/layout/algorithm/Algorithm.hpp>
+#include <hyprland/src/layout/space/Space.hpp>
+#include <hyprland/src/layout/target/Target.hpp>
+#include <hyprland/src/layout/LayoutManager.hpp>
+#include <hyprland/src/helpers/signal/Signal.hpp>
+#include <hyprland/src/event/EventBus.hpp>
 
 enum class ShiftDirection {
 	Left,
@@ -25,6 +30,16 @@ inline static constexpr char getShiftDirectionChar(ShiftDirection direction) {
 	     : direction == ShiftDirection::Up   ? 'u'
 	     : direction == ShiftDirection::Down ? 'd'
 	                                         : 'r';
+}
+
+inline static Math::eDirection shiftToMathDirection(ShiftDirection direction) {
+	switch (direction) {
+	case ShiftDirection::Left: return Math::DIRECTION_LEFT;
+	case ShiftDirection::Right: return Math::DIRECTION_RIGHT;
+	case ShiftDirection::Up: return Math::DIRECTION_UP;
+	case ShiftDirection::Down: return Math::DIRECTION_DOWN;
+	}
+	return Math::DIRECTION_DEFAULT;
 }
 
 enum class Axis { None, Horizontal, Vertical };
@@ -82,35 +97,29 @@ enum class ExpandFullscreenOption {
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen = false);
 
-class Hy3Layout: public IHyprLayout {
+class Hy3Layout: public Layout::ITiledAlgorithm {
 public:
-	void onWindowCreatedTiling(PHLWINDOW, eDirection = DIRECTION_DEFAULT) override;
-	void onWindowRemovedTiling(PHLWINDOW) override;
-	void onWindowFocusChange(PHLWINDOW) override;
-	bool isWindowTiled(PHLWINDOW) override;
-	void recalculateMonitor(const MONITORID& monitor_id) override;
-	void recalculateWindow(PHLWINDOW) override;
-	void resizeActiveWindow(const Vector2D& delta, eRectCorner corner, PHLWINDOW pWindow = nullptr)
-	    override;
-	void
-	fullscreenRequestForWindow(PHLWINDOW, eFullscreenMode current_mode, eFullscreenMode target_mode)
-	    override;
-	std::any layoutMessage(SLayoutMessageHeader header, std::string content) override;
-	SWindowRenderLayoutHints requestRenderHints(PHLWINDOW) override;
-	void switchWindows(PHLWINDOW, PHLWINDOW) override;
-	void moveWindowTo(PHLWINDOW, const std::string& direction, bool silent) override;
-	void alterSplitRatio(PHLWINDOW, float, bool) override;
-	std::string getLayoutName() override;
-	PHLWINDOW getNextWindowCandidate(PHLWINDOW) override;
-	void replaceWindowDataWith(PHLWINDOW from, PHLWINDOW to) override;
-	bool isWindowReachable(PHLWINDOW) override;
-	void bringWindowToTop(PHLWINDOW) override;
-	Vector2D predictSizeForNewWindowTiled() override { return Vector2D(); }
+	Hy3Layout();
+	~Hy3Layout() override;
 
-	void onEnable() override;
-	void onDisable() override;
+	// ITiledAlgorithm / IModeAlgorithm overrides
+	void newTarget(SP<Layout::ITarget> target) override;
+	void movedTarget(SP<Layout::ITarget> target, std::optional<Vector2D> focalPoint = std::nullopt) override;
+	void removeTarget(SP<Layout::ITarget> target) override;
+	void resizeTarget(const Vector2D& delta, SP<Layout::ITarget> target, Layout::eRectCorner corner = Layout::CORNER_NONE) override;
+	void recalculate() override;
+	void recalcGeometry(bool no_animation = false);
+	void swapTargets(SP<Layout::ITarget> a, SP<Layout::ITarget> b) override;
+	void moveTargetInDirection(SP<Layout::ITarget> t, Math::eDirection dir, bool silent) override;
+	std::expected<void, std::string> layoutMsg(const std::string_view& sv) override;
+	std::optional<Vector2D> predictSizeForNewTarget() override;
+	SP<Layout::ITarget> getNextCandidate(SP<Layout::ITarget> old) override;
 
-	void insertNode(Hy3Node& node);
+	// Hy3-specific public methods
+	void insertNode(UP<Hy3Node> node, std::optional<Vector2D> focalPoint = std::nullopt);
+	void onWindowFocusChange(PHLWINDOW window);
+	void updateGroupBorderColors();
+
 	void makeGroupOnWorkspace(
 	    const CWorkspace* workspace,
 	    Hy3GroupLayout,
@@ -123,8 +132,8 @@ public:
 	void toggleTabGroupOnWorkspace(const CWorkspace* workspace);
 	void changeGroupToOppositeOnWorkspace(const CWorkspace* workspace);
 	void changeGroupEphemeralityOnWorkspace(const CWorkspace* workspace, bool ephemeral);
-	void makeGroupOn(Hy3Node*, Hy3GroupLayout, GroupEphemeralityOption);
-	void makeOppositeGroupOn(Hy3Node*, GroupEphemeralityOption);
+	void makeGroupOn(Hy3Node&, Hy3GroupLayout, GroupEphemeralityOption);
+	void makeOppositeGroupOn(Hy3Node&, GroupEphemeralityOption);
 	void changeGroupOn(Hy3Node&, Hy3GroupLayout);
 	void untabGroupOn(Hy3Node&);
 	void toggleTabGroupOn(Hy3Node&);
@@ -154,6 +163,7 @@ public:
 	void equalize(const CWorkspace* workspace, bool recursive = false);
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
 	static void warpCursorWithFocus(const Vector2D& pos, bool force = false);
+	static std::string debugNodes();
 
 	bool shouldRenderSelected(const Desktop::View::CWindow*);
 	PHLWINDOW findTiledWindowCandidate(const Desktop::View::CWindow* from);
@@ -166,27 +176,26 @@ public:
 	    bool stop_at_expanded = false
 	);
 
-	static void renderHook(void*, SCallbackInfo&, std::any);
-	static void windowGroupUrgentHook(void*, SCallbackInfo&, std::any);
-	static void windowGroupUpdateRecursiveHook(void*, SCallbackInfo&, std::any);
-	static void tickHook(void*, SCallbackInfo&, std::any);
-	static void mouseButtonHook(void*, SCallbackInfo&, std::any);
+	Hy3Node* getNodeFromWindow(const Desktop::View::CWindow*);
+	Hy3Node* getNodeFromTarget(SP<Layout::ITarget> target);
 
-	std::list<Hy3Node> nodes;
-	std::list<Hy3TabGroup> tab_groups;
+	PHLWORKSPACE workspace();
+	CMonitor* monitor();
+
+	UP<Hy3RootNode> root;
 
 private:
-	Hy3Node* getNodeFromWindow(const Desktop::View::CWindow*);
-	void applyNodeDataToWindow(Hy3Node*, bool no_animation = false);
-
 	// if shift is true, shift the window in the given direction, returning
 	// nullptr, if shift is false, return the window in the given direction or
 	// nullptr. if once is true, only one group will be broken out of / into
-	Hy3Node* shiftOrGetFocus(Hy3Node*, ShiftDirection, bool shift, bool once, bool visible);
+	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool shift, bool once, bool visible);
 
 	void updateAutotileWorkspaces();
 	bool shouldAutotileWorkspace(const CWorkspace* workspace);
-	void resizeNode(Hy3Node*, Vector2D, ShiftDirection resize_edge_x, ShiftDirection resize_edge_y);
+
+	// Per-instance event listeners
+	CHyprSignalListener m_windowActiveListener;
+	CHyprSignalListener m_mouseButtonListener;
 
 	struct {
 		std::string raw_workspaces;

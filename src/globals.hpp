@@ -1,16 +1,37 @@
 #pragma once
 
+#include <set>
 #include <type_traits>
+#include <vector>
 
 #include <hyprland/src/desktop/Workspace.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprlang.hpp>
 
 #include "Hy3Layout.hpp"
+#include "TabGroup.hpp"
 #include "log.hpp"
 
 inline HANDLE PHANDLE = nullptr;
-inline std::unique_ptr<Hy3Layout> g_Hy3Layout;
+
+// Suppress algorithm callbacks (newTarget/movedTarget/removeTarget) during
+// cross-workspace moves where we manually manage the tree.
+inline bool g_suppressInsert = false;
+
+inline std::set<Hy3Layout*> g_hy3Instances;
+
+inline std::vector<WP<Hy3TabGroup>> g_tabGroups;
+inline std::vector<UP<Hy3TabGroup>> g_destroyingTabGroups;
+
+inline CHyprSignalListener g_renderListener;
+inline CHyprSignalListener g_tickListener;
+inline CHyprSignalListener g_windowTitleListener;
+inline CHyprSignalListener g_urgentListener;
+
+inline Hy3Layout* hy3InstanceForWorkspace(PHLWORKSPACE ws) {
+	if (!ws || !ws->m_space || !ws->m_space->algorithm()) return nullptr;
+	return dynamic_cast<Hy3Layout*>(ws->m_space->algorithm()->tiledAlgo().get());
+}
 
 inline void errorNotif() {
 	HyprlandAPI::addNotificationV2(
