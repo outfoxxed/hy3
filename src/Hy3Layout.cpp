@@ -222,39 +222,35 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		if (opening_after == rootNode) {
 			opening_after->wrap(Hy3GroupLayout::SplitH, GroupEphemeralityOption::Standard);
 		}
-	}
 
-	if (opening_after != nullptr) {
 		opening_into = opening_after->parent.get();
 	} else {
-		if ((opening_into = this->getWorkspaceRootGroup(ws.get())) == nullptr) {
-			static const auto tab_first_window =
-			    ConfigValue<Hyprlang::INT>("plugin:hy3:tab_first_window");
+		static const auto tab_first_window =
+		    ConfigValue<Hyprlang::INT>("plugin:hy3:tab_first_window");
 
-			// Use space work area if available, fall back to monitor
-			CBox wa_box(monitor->m_position, monitor->m_size);
-			auto algo = m_parent.lock();
-			if (algo) {
-				auto space = algo->space();
-				if (space) wa_box = space->workArea();
-			}
-
-			auto rootUp = makeUnique<Hy3RootNode>(this);
-			rootUp->self = WP<Hy3Node>(rootUp);
-			this->root = std::move(rootUp);
-
-			UP<Hy3Node> rootGroup;
-			if (*tab_first_window) {
-				rootGroup = Hy3Node::create(Hy3GroupLayout::Tabbed);
-			} else {
-				auto split_layout =
-						wa_box.height > wa_box.width ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
-				rootGroup = Hy3Node::create(split_layout);
-			}
-
-			opening_into = rootGroup.get();
-			this->root->as_group().insertChild(std::move(rootGroup));
+		// Use space work area if available, fall back to monitor
+		CBox wa_box(monitor->m_position, monitor->m_size);
+		auto algo = m_parent.lock();
+		if (algo) {
+			auto space = algo->space();
+			if (space) wa_box = space->workArea();
 		}
+
+		auto rootUp = makeUnique<Hy3RootNode>(this);
+		rootUp->self = WP<Hy3Node>(rootUp);
+		this->root = std::move(rootUp);
+
+		UP<Hy3Node> rootGroup;
+		if (*tab_first_window) {
+			rootGroup = Hy3Node::create(Hy3GroupLayout::Tabbed);
+		} else {
+			auto split_layout =
+					wa_box.height > wa_box.width ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
+			rootGroup = Hy3Node::create(split_layout);
+		}
+
+		opening_into = rootGroup.get();
+		this->root->as_group().insertChild(std::move(rootGroup));
 	}
 
 	if (opening_into->is_target()) {
@@ -293,21 +289,44 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		}
 	}
 
+	// For mouse drops, determine if we should insert before or after the target node
+	if (focalPoint && opening_after) {
+		auto& parentGroup = opening_into->as_group();
+		bool insert_before = false;
+
+		if (parentGroup.layout == Hy3GroupLayout::SplitH) {
+			insert_before = focalPoint->x < opening_after->position.x + opening_after->size.x * 0.5;
+		} else if (parentGroup.layout == Hy3GroupLayout::SplitV) {
+			insert_before = focalPoint->y < opening_after->position.y + opening_after->size.y * 0.5;
+		}
+
+		if (insert_before) {
+			auto iter = parentGroup.findChild(*opening_after);
+			if (iter != parentGroup.children.begin()) {
+				opening_after = std::prev(iter)->get();
+			} else {
+				opening_after = nullptr;
+			}
+		}
+	}
+
 	auto* node = node_up.get();
 
-	if (opening_after == nullptr) {
-		opening_into->as_group().insertChild(std::move(node_up));
-	} else {
+	{
 		auto& group = opening_into->as_group();
-		auto iter = group.findChild(*opening_after);
-		auto iter2 = std::next(iter);
-		group.insertChild(iter2, std::move(node_up));
+		if (opening_after == nullptr) {
+			group.insertChild(group.children.begin(), std::move(node_up));
+		} else {
+			auto iter = group.findChild(*opening_after);
+			group.insertChild(std::next(iter), std::move(node_up));
+		}
 	}
 
 	hy3_log(
 	    LOG,
-	    "tiled node {:x} inserted after node {:x} in node {:x}",
+	    "tiled node {:x} inserted {} node {:x} in node {:x}",
 	    (uintptr_t) node,
+	    opening_after ? "after" : "at beginning of",
 	    (uintptr_t) opening_after,
 	    (uintptr_t) opening_into
 	);
@@ -1388,22 +1407,12 @@ Hy3Node* Hy3Layout::getWorkspaceFocusedNode(
 	return &rootNode->getFocusedNode(ignore_group_focus, stop_at_expanded);
 }
 
-static Hy3Node* findNodeFromWindowRecursive(Hy3Node* node, const CWindow* window) {
-	if (!node) return nullptr;
-	if (node->is_target() && node->as_window().get() == window) {
-		return node;
-	}
-	if (node->is_group()) {
-		for (auto& child: node->as_group().children) {
-			auto* result = findNodeFromWindowRecursive(child.get(), window);
-			if (result) return result;
-		}
+Hy3Node* Hy3Layout::getNodeFromWindow(const CWindow* window) {
+	if (!this->root || !window) return nullptr;
+	for (auto& w: this->root->windows()) {
+		if (&w == window) return getNodeFromTarget(w.layoutTarget());
 	}
 	return nullptr;
-}
-
-Hy3Node* Hy3Layout::getNodeFromWindow(const CWindow* window) {
-	return findNodeFromWindowRecursive(this->root.get(), window);
 }
 
 static Hy3Node* findNodeFromTargetRecursive(Hy3Node* node, SP<Layout::ITarget> target) {
