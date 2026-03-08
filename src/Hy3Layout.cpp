@@ -1592,6 +1592,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		auto shift_it = group_data.findChild(*shift_actor);
 		group_data.children.splice(insert, group_data.children, shift_it);
 		shift_actor->parent->collapseParents(nodeCollapsePolicy());
+		shift_actor->focus(false, Desktop::FOCUS_REASON_KEYBIND);
 		this->recalcGeometry();
 	} else {
 		auto target_group_p = target_group->self;
@@ -1612,9 +1613,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			target_group_p->collapseParents(nodeCollapsePolicy());
 		}
 
-		this->recalcGeometry();
 		node.updateTabBarRecursive();
 		node.focus(false, Desktop::FOCUS_REASON_KEYBIND);
+		this->recalcGeometry();
 	}
 
 	return nullptr;
