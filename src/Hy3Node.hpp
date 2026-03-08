@@ -48,8 +48,8 @@ enum class CollapsePolicy {
 struct Hy3Node {
 	WP<Hy3Node> parent;
 	WP<Hy3Node> self; // set from owning UP at creation time
-	Vector2D position;
-	Vector2D size;
+	CBox logicalBox;
+	CBox visualBox;
 	float size_ratio = 1.0;
 	bool hidden = false;
 

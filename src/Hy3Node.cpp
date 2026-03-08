@@ -245,7 +245,7 @@ void Hy3Node::focus(bool warp, Desktop::eFocusReason reason) {
 			g_pCompositor->changeWindowZOrder(window.m_self.lock(), true);
 		}
 
-		if (warp) Hy3Layout::warpCursorToBox(this->position, this->size);
+		if (warp) Hy3Layout::warpCursorToBox(this->visualBox.pos(), this->visualBox.size());
 		break;
 	}
 	}
@@ -328,25 +328,21 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 	static const auto group_inset = ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset");
 	// clang-format on
 
-	auto tpos = this->position;
-	auto tsize = this->size;
+	this->logicalBox = CBox(
+	    this->visualBox.x - offsets.x, this->visualBox.y - offsets.y,
+	    this->visualBox.w + offsets.x + offsets.w, this->visualBox.h + offsets.y + offsets.h
+	);
 
 	// Keep in sync with WindowTarget::updatePos
 	if (this->is_target()) {
 		this->as_window()->setHidden(this->hidden);
-
-		// Tile slot = visible area expanded by offsets
-		auto logicalBox = CBox(
-		    tpos.x - offsets.x, tpos.y - offsets.y,
-		    tsize.x + offsets.x + offsets.w, tsize.y + offsets.y + offsets.h
-		);
-
-		auto visualBox = CBox(tpos, tsize);
-
-		this->as_target()->setPositionGlobal({.logicalBox = logicalBox, .visualBox = visualBox});
+		this->as_target()->setPositionGlobal({.logicalBox = this->logicalBox, .visualBox = this->visualBox});
 		if (no_animation) this->as_target()->warpPositionSize();
 		return;
 	}
+
+	auto tpos = this->visualBox.pos();
+	auto tsize = this->visualBox.size();
 
 	auto& group = this->as_group();
 	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(this->layout()->workspace());
@@ -380,8 +376,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 			return;
 		}
 
-		expanded_node->position = tpos;
-		expanded_node->size = tsize;
+		expanded_node->visualBox = CBox(tpos, tsize);
 		expanded_node->setHidden(this->hidden);
 
 		expanded_node->recalcSizePosRecursive(offsets, no_animation);
@@ -429,10 +424,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 		case Hy3GroupLayout::SplitH: {
 			double child_w = child->size_ratio * ratio_mul;
 
-			child->position.x = tpos.x + offset;
-			child->size.x = child_w - inset;
-			child->position.y = tpos.y;
-			child->size.y = tsize.y;
+			child->visualBox = CBox(tpos.x + offset, tpos.y, child_w - inset, tsize.y);
 			child->hidden = this->hidden || expand_focused;
 
 			child_offsets.x = is_first ? offsets.x : gaps_in.m_left;
@@ -449,10 +441,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 		case Hy3GroupLayout::SplitV: {
 			double child_h = child->size_ratio * ratio_mul;
 
-			child->position.y = tpos.y + offset;
-			child->size.y = child_h - inset;
-			child->position.x = tpos.x;
-			child->size.x = tsize.x;
+			child->visualBox = CBox(tpos.x, tpos.y + offset, tsize.x, child_h - inset);
 			child->hidden = this->hidden || expand_focused;
 
 			child_offsets.y = (is_first ? offsets.y : gaps_in.m_top) + inset;
@@ -469,10 +458,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 		case Hy3GroupLayout::Tabbed: {
 			double tab_offset = (double)*tab_bar_height + (double)*tab_bar_padding;
 
-			child->position.x = tpos.x;
-			child->position.y = tpos.y + tab_offset;
-			child->size.x = tsize.x;
-			child->size.y = tsize.y - tab_offset;
+			child->visualBox = CBox(tpos.x, tpos.y + tab_offset, tsize.x, tsize.y - tab_offset);
 			child->hidden = this->hidden || expand_focused || group.focused_child != child.get();
 
 			// Tab bar makes child non-edge on top
@@ -485,8 +471,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 			break;
 		}
 		case Hy3GroupLayout::Root: {
-			child->position = tpos;
-			child->size = tsize;
+			child->visualBox = CBox(tpos, tsize);
 			child->hidden = this->hidden;
 			child->recalcSizePosRecursive(offsets, no_animation);
 			break;
@@ -931,7 +916,7 @@ void Hy3Node::resize(ShiftDirection direction, double delta, bool no_animation) 
 	    && getAxis(direction) == getAxis(containing_group.layout))
 	{
 		double parent_size =
-		    getAxis(direction) == Axis::Horizontal ? parent_node->size.x : parent_node->size.y;
+		    getAxis(direction) == Axis::Horizontal ? parent_node->visualBox.w : parent_node->visualBox.h;
 		auto ratio_mod = delta * (float) containing_group.children.size() / parent_size;
 
 		const auto end_of_children = containing_group.children.end();

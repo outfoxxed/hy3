@@ -276,7 +276,7 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		{
 			auto is_horizontal = target_group.layout == Hy3GroupLayout::SplitH;
 			auto trigger = is_horizontal ? *at_trigger_width : *at_trigger_height;
-			auto target_size = is_horizontal ? opening_into->size.x : opening_into->size.y;
+			auto target_size = is_horizontal ? opening_into->visualBox.w : opening_into->visualBox.h;
 			auto size_after_addition = target_size / (target_group.children.size() + 1);
 
 			if (trigger >= 0 && (trigger == 0 || size_after_addition < trigger)) {
@@ -295,9 +295,9 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		bool insert_before = false;
 
 		if (parentGroup.layout == Hy3GroupLayout::SplitH) {
-			insert_before = focalPoint->x < opening_after->position.x + opening_after->size.x * 0.5;
+			insert_before = focalPoint->x < opening_after->visualBox.x + opening_after->visualBox.w * 0.5;
 		} else if (parentGroup.layout == Hy3GroupLayout::SplitV) {
-			insert_before = focalPoint->y < opening_after->position.y + opening_after->size.y * 0.5;
+			insert_before = focalPoint->y < opening_after->visualBox.y + opening_after->visualBox.h * 0.5;
 		}
 
 		if (insert_before) {
@@ -420,8 +420,7 @@ void Hy3Layout::recalcGeometry(bool no_animation) {
 	auto wa = space->workArea();
 
 	if (this->root) {
-	this->root->position = wa.pos();
-	this->root->size = wa.size();
+	this->root->visualBox = wa;
 	this->root->recalcSizePosRecursive(CBox{
 	    wa.x - ma.x,
 	    wa.y - ma.y,
@@ -458,10 +457,10 @@ void Hy3Layout::resizeTarget(const Vector2D& delta, SP<Layout::ITarget> target, 
 		if (space) workArea = space->workArea();
 	}
 
-	const bool display_left = STICKS(node->position.x, workArea.x);
-	const bool display_right = STICKS(node->position.x + node->size.x, workArea.x + workArea.w);
-	const bool display_top = STICKS(node->position.y, workArea.y);
-	const bool display_bottom = STICKS(node->position.y + node->size.y, workArea.y + workArea.h);
+	const bool display_left = STICKS(node->visualBox.x, workArea.x);
+	const bool display_right = STICKS(node->visualBox.x + node->visualBox.w, workArea.x + workArea.w);
+	const bool display_top = STICKS(node->visualBox.y, workArea.y);
+	const bool display_bottom = STICKS(node->visualBox.y + node->visualBox.h, workArea.y + workArea.h);
 
 	Vector2D resize_delta = delta;
 	bool node_is_root =
@@ -888,7 +887,7 @@ void Hy3Layout::warpCursor() {
 		    this->getWorkspaceFocusedNode(Desktop::focusState()->monitor()->m_activeWorkspace.get());
 
 		if (node != nullptr) {
-			Hy3Layout::warpCursorWithFocus(node->position + node->size / 2);
+			Hy3Layout::warpCursorWithFocus(node->visualBox.pos() + node->visualBox.size() / 2);
 		}
 	}
 }
@@ -1056,14 +1055,14 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	if (node.is_group()) {
 		if (node.hidden) return nullptr;
 		// note: tab bar clicks ignore animations
-		if (node.position.x > pos.x || node.position.y > pos.y || node.position.x + node.size.x < pos.x
-		    || node.position.y + node.size.y < pos.y)
+		if (node.visualBox.x > pos.x || node.logicalBox.y > pos.y || node.visualBox.x + node.visualBox.w < pos.x
+		    || node.visualBox.y + node.visualBox.h < pos.y)
 			return nullptr;
 
 		auto& group = node.as_group();
 
 		if (group.isTab() && group.tab_bar) {
-			if (pos.y < node.position.y + inset) {
+			if (pos.y < node.visualBox.y + inset) {
 				auto& children = group.children;
 				auto& tab_bar = *group.tab_bar.get();
 

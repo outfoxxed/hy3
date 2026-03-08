@@ -628,8 +628,8 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	static const auto bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 
-	auto tpos = node.position;
-	auto tsize = Vector2D(node.size.x, *bar_height);
+	auto tpos = node.visualBox.pos();
+	auto tsize = Vector2D(node.visualBox.w, *bar_height);
 
 	this->hidden = node.hidden;
 	if (this->pos->goal() != tpos) {
@@ -925,7 +925,7 @@ void findOverlappingWindows(Hy3Node& node, float height, std::vector<PHLWINDOWRE
 		case Hy3GroupLayout::SplitV:
 			for (auto& node: group.children) {
 				findOverlappingWindows(*node, height, windows);
-				height -= node->size.y;
+				height -= node->visualBox.h;
 				if (height <= 0) break;
 			}
 			break;
