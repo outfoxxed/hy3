@@ -412,7 +412,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 	for (auto& child: group.children) {
 		bool is_first = (child.get() == group.children.front().get());
 		bool is_last = (child.get() == group.children.back().get());
-		int inset = is_first && is_last ? *group_inset : 0;
+		int inset = is_first && is_last && !this->is_root_group() ? *group_inset : 0;
 
 		if (directly_contains_expanded && child.get() == group.focused_child) {
 			// Advance offset past this child's visible share
