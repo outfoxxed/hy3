@@ -74,6 +74,8 @@ void Hy3GroupNode::insertChild(std::list<UP<Hy3Node>>::iterator pos, UP<Hy3Node>
 	child->parent = this->self;
 	if (focused_child == nullptr) focused_child = child.get();
 	children.insert(pos, std::move(child));
+	if (ephemeral == Ephemeral::Staged && children.size() >= 2)
+		ephemeral = Ephemeral::Active;
 }
 
 void Hy3GroupNode::insertChild(UP<Hy3Node> child) {
@@ -164,8 +166,8 @@ void Hy3GroupNode::setLayout(Hy3GroupLayout layout) {
 
 void Hy3GroupNode::setEphemeral(GroupEphemeralityOption ephemeral) {
 	switch (ephemeral) {
-	case GroupEphemeralityOption::Standard: this->ephemeral = false; break;
-	case GroupEphemeralityOption::ForceEphemeral: this->ephemeral = true; break;
+	case GroupEphemeralityOption::Standard: this->ephemeral = Ephemeral::Off; break;
+	case GroupEphemeralityOption::ForceEphemeral: this->ephemeral = Ephemeral::Active; break;
 	case GroupEphemeralityOption::Ephemeral:
 		// no change
 		break;
@@ -671,8 +673,8 @@ std::string Hy3Node::debugNode() {
 			buf << ", has-expanded";
 		}
 
-		if (group.ephemeral) {
-			buf << ", ephemeral";
+		if (group.ephemeral != Ephemeral::Off) {
+			buf << ", ephemeral" << (group.ephemeral == Ephemeral::Staged ? "(staged)" : "");
 		}
 
 		if (group.containment) {
@@ -704,7 +706,7 @@ static bool shouldCollapseNode(Hy3Node* node, CollapsePolicy policy) {
 	if (group.children.size() != 1) return false;
 	auto* child = group.children.front().get();
 	if (node->is_root_group() && !child->is_group()) return false;
-	if (policy == CollapsePolicy::SingleNodeGroups || group.ephemeral) return true;
+	if (policy == CollapsePolicy::SingleNodeGroups || group.ephemeral == Ephemeral::Active) return true;
 
 	if (policy == CollapsePolicy::EmptySplits && group.isSplit()) return true;
 
@@ -815,9 +817,6 @@ void Hy3Node::insertAndMerge(UP<Hy3Node> child, CollapsePolicy policy) {
 }
 
 void Hy3Node::wrap(Hy3GroupLayout layout, GroupEphemeralityOption ephemeral) {
-	bool is_ephemeral = ephemeral == GroupEphemeralityOption::Ephemeral
-	                 || ephemeral == GroupEphemeralityOption::ForceEphemeral;
-
 	auto* parent_node = this->parent.get();
 	auto& parentGroup = parent_node->as_group();
 	auto it = parentGroup.findChild(*this);
@@ -831,7 +830,9 @@ void Hy3Node::wrap(Hy3GroupLayout layout, GroupEphemeralityOption ephemeral) {
 	group.insertChild(std::move(this_up));
 	group.group_focused = false;
 	group.focused_child = this;
-	group.ephemeral = is_ephemeral;
+	if (ephemeral == GroupEphemeralityOption::Ephemeral
+	    || ephemeral == GroupEphemeralityOption::ForceEphemeral)
+		group.ephemeral = group.children.size() == 1 ? Ephemeral::Staged : Ephemeral::Active;
 
 	this->layout()->recalcGeometry();
 	group_node.updateTabBarRecursive();

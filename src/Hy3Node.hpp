@@ -33,6 +33,12 @@ enum class ExpandFocusType {
 	Stack,
 };
 
+enum class Ephemeral {
+	Off,
+	Staged,
+	Active,
+};
+
 enum class CollapsePolicy {
 	InvalidOnly,
 	EmptySplits,
@@ -128,7 +134,7 @@ struct Hy3GroupNode : Hy3Node {
 	bool group_focused = true;
 	Hy3Node* focused_child = nullptr; // non-owning observer, always valid while parent group lives
 	ExpandFocusType expand_focused = ExpandFocusType::NotExpanded;
-	bool ephemeral = false;
+	Ephemeral ephemeral = Ephemeral::Off;
 	bool locked = false;
 	bool containment = false;
 	Hy3TabGroupWrapper tab_bar;
