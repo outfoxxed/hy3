@@ -182,7 +182,7 @@ public:
 	PHLWORKSPACE workspace();
 	CMonitor* monitor();
 
-	UP<Hy3Node> root;
+	UP<Hy3RootNode> root;
 
 private:
 	// if shift is true, shift the window in the given direction, returning

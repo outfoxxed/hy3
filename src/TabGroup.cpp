@@ -514,7 +514,7 @@ void Hy3TabBar::updateNodeList(std::list<UP<Hy3Node>>& nodes) {
 		entry->setActive(active);
 
 		auto last_monitor = Desktop::focusState()->monitor();
-		entry->setMonitorActive(active && (!last_monitor || (*node)->layout->monitor() == last_monitor.get()));
+		entry->setMonitorActive(active && (!last_monitor || (*node)->layout()->monitor() == last_monitor.get()));
 
 		entry->setUrgent((*node)->isUrgent());
 		entry->setWindowTitle((*node)->getTitle());
@@ -622,7 +622,7 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	this->updateWithGroup(node, true);
 	this->pos->warp();
 	this->size->warp();
-	this->bar.monitor_id = node.layout->workspace()->m_monitor->m_id;
+	this->bar.monitor_id = node.layout()->workspace()->m_monitor->m_id;
 }
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {

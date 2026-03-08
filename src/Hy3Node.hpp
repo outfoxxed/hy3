@@ -1,11 +1,12 @@
 #pragma once
 
 struct Hy3Node;
-struct Hy3GroupData;
+struct Hy3TargetNode;
+struct Hy3GroupNode;
+struct Hy3RootNode;
 enum class Hy3GroupLayout;
 
 #include <generator>
-#include <variant>
 
 #include <hyprland/src/defines.hpp>
 #include <hyprland/src/desktop/view/Window.hpp>
@@ -38,59 +39,27 @@ enum class CollapsePolicy {
 	SingleNodeGroups,
 };
 
-struct Hy3GroupData {
-	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
-	Hy3GroupLayout previous_nontab_layout = Hy3GroupLayout::SplitH;
-	std::list<UP<Hy3Node>> children;
-	bool group_focused = true;
-	Hy3Node* focused_child = nullptr; // non-owning observer, always valid while parent group lives
-	ExpandFocusType expand_focused = ExpandFocusType::NotExpanded;
-	bool ephemeral = false;
-	bool locked = false;
-	bool containment = false;
-	Hy3TabGroupWrapper tab_bar;
-	Hy3Node* node = nullptr; // backref to owning node (for parent assignment in insert/extract)
-
-	Hy3GroupData(Hy3GroupLayout layout);
-	~Hy3GroupData();
-
-	bool isSplit() const { return layout == Hy3GroupLayout::SplitH || layout == Hy3GroupLayout::SplitV; }
-	bool isTab() const { return layout == Hy3GroupLayout::Tabbed; }
-
-	bool hasChild(Hy3Node& child);
-	void collapseExpansions();
-	void setLayout(Hy3GroupLayout layout);
-	void setEphemeral(GroupEphemeralityOption ephemeral);
-
-	auto findChild(Hy3Node& child) -> std::list<UP<Hy3Node>>::iterator;
-	void insertChild(std::list<UP<Hy3Node>>::iterator pos, UP<Hy3Node> child);
-	void insertChild(UP<Hy3Node> child);
-	UP<Hy3Node> extractChildRaw(std::list<UP<Hy3Node>>::iterator it);
-	UP<Hy3Node> extractChildRaw(Hy3Node& child);
-	UP<Hy3Node> replaceChild(std::list<UP<Hy3Node>>::iterator it, UP<Hy3Node> replacement);
-	UP<Hy3Node> extractChild(Hy3Node& child);
-
-	Hy3GroupData(Hy3GroupData&&);
-	Hy3GroupData(const Hy3GroupData&) = delete;
-
-	friend struct Hy3Node;
-};
-
 struct Hy3Node {
 	WP<Hy3Node> parent;
 	WP<Hy3Node> self; // set from owning UP at creation time
-	std::variant<WP<Layout::ITarget>, Hy3GroupData> data;
 	Vector2D position;
 	Vector2D size;
 	float size_ratio = 1.0;
 	bool hidden = false;
-	Hy3Layout* layout = nullptr;
+
+	virtual ~Hy3Node() = default;
+	Hy3Node(const Hy3Node&) = delete;
+	Hy3Node& operator=(const Hy3Node&) = delete;
+
+	template<typename T> bool is() const { return dynamic_cast<const T*>(this) != nullptr; }
+	template<typename T> T& as() { return dynamic_cast<T&>(*this); }
+	template<typename T> const T& as() const { return dynamic_cast<const T&>(*this); }
 
 	bool valid() const;
 	Hy3NodeType type() const;
 	bool is_target() const;
 	bool is_group() const;
-	Hy3GroupData& as_group();
+	Hy3GroupNode& as_group();
 	SP<Layout::ITarget> as_target();
 	PHLWINDOW as_window();
 
@@ -98,6 +67,8 @@ struct Hy3Node {
 	bool is_root();
 	bool is_root_group();
 	void assertNotRoot();
+	Hy3RootNode* root();
+	Hy3Layout* layout();
 
 	static UP<Hy3Node> create(SP<Layout::ITarget> target);
 	static UP<Hy3Node> create(Hy3GroupLayout group_layout);
@@ -141,4 +112,50 @@ struct Hy3Node {
 	void insertAndMerge(UP<Hy3Node> child, CollapsePolicy policy = CollapsePolicy::EmptySplits);
 
 	void wrap(Hy3GroupLayout, GroupEphemeralityOption);
+
+protected:
+	Hy3Node() = default;
+};
+
+struct Hy3TargetNode : Hy3Node {
+	WP<Layout::ITarget> target;
+};
+
+struct Hy3GroupNode : Hy3Node {
+	Hy3GroupLayout layout = Hy3GroupLayout::SplitH;
+	Hy3GroupLayout previous_nontab_layout = Hy3GroupLayout::SplitH;
+	std::list<UP<Hy3Node>> children;
+	bool group_focused = true;
+	Hy3Node* focused_child = nullptr; // non-owning observer, always valid while parent group lives
+	ExpandFocusType expand_focused = ExpandFocusType::NotExpanded;
+	bool ephemeral = false;
+	bool locked = false;
+	bool containment = false;
+	Hy3TabGroupWrapper tab_bar;
+
+	Hy3GroupNode(Hy3GroupLayout layout);
+	~Hy3GroupNode() override = default;
+
+	bool isSplit() const { return layout == Hy3GroupLayout::SplitH || layout == Hy3GroupLayout::SplitV; }
+	bool isTab() const { return layout == Hy3GroupLayout::Tabbed; }
+
+	bool hasChild(Hy3Node& child);
+	void collapseExpansions();
+	void setLayout(Hy3GroupLayout layout);
+	void setEphemeral(GroupEphemeralityOption ephemeral);
+
+	auto findChild(Hy3Node& child) -> std::list<UP<Hy3Node>>::iterator;
+	void insertChild(std::list<UP<Hy3Node>>::iterator pos, UP<Hy3Node> child);
+	void insertChild(UP<Hy3Node> child);
+	UP<Hy3Node> extractChildRaw(std::list<UP<Hy3Node>>::iterator it);
+	UP<Hy3Node> extractChildRaw(Hy3Node& child);
+	UP<Hy3Node> replaceChild(std::list<UP<Hy3Node>>::iterator it, UP<Hy3Node> replacement);
+	UP<Hy3Node> extractChild(Hy3Node& child);
+
+	friend struct Hy3Node;
+};
+
+struct Hy3RootNode : Hy3GroupNode {
+	Hy3Layout* algo = nullptr;
+	Hy3RootNode(Hy3Layout* layout);
 };

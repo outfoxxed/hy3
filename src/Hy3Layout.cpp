@@ -239,8 +239,9 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 				if (space) wa_box = space->workArea();
 			}
 
-			this->root = Hy3Node::create(Hy3GroupLayout::Root);
-			this->root->layout = this;
+			auto rootUp = makeUnique<Hy3RootNode>(this);
+			rootUp->self = WP<Hy3Node>(rootUp);
+			this->root = std::move(rootUp);
 
 			UP<Hy3Node> rootGroup;
 			if (*tab_first_window) {
@@ -829,7 +830,7 @@ bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follo
 		Desktop::focusState()->rawMonitorFocus(next_monitor);
 		auto next_workspace = next_monitor->m_activeWorkspace;
 		if (next_workspace) {
-			moveNodeToWorkspace(node.layout->workspace().get(), next_workspace->m_name, follow, false);
+			moveNodeToWorkspace(node.layout()->workspace().get(), next_workspace->m_name, follow, false);
 			return true;
 		}
 	}
@@ -882,16 +883,6 @@ static void updateTreeTabBars(Hy3Node& node) {
 	}
 }
 
-static void setNodeLayoutRecursive(Hy3Node& node, Hy3Layout* layout) {
-	node.layout = layout;
-
-	if (node.is_group()) {
-		for (auto& child: node.as_group().children) {
-			setNodeLayoutRecursive(*child, layout);
-		}
-	}
-}
-
 
 void Hy3Layout::moveNodeToWorkspace(
     CWorkspace* origin,
@@ -914,7 +905,7 @@ void Hy3Layout::moveNodeToWorkspace(
 	auto focused_window = Desktop::focusState()->window();
 	auto* focused_window_node = this->getNodeFromWindow(focused_window.get());
 
-	auto origin_ws = node != nullptr           ? node->layout->workspace()
+	auto origin_ws = node != nullptr           ? node->layout()->workspace()
 	               : focused_window != nullptr ? focused_window->m_workspace
 	                                           : nullptr;
 
@@ -953,7 +944,6 @@ void Hy3Layout::moveNodeToWorkspace(
 		for (auto& window: node->windows()) {
 			window.layoutTarget()->assignToSpace(workspace->m_space);
 		}
-		setNodeLayoutRecursive(*node, destLayout);
 
 		g_suppressInsert = false;
 
@@ -977,7 +967,7 @@ void Hy3Layout::moveNodeToWorkspace(
 
 		monitor->changeWorkspace(workspace);
 
-		node->layout->recalcGeometry();
+		node->layout()->recalcGeometry();
 		node->focus(warp, Desktop::FOCUS_REASON_KEYBIND);
 	}
 }
@@ -1039,7 +1029,7 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 	// clang-format on
 
-	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(node.layout->workspace());
+	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(node.layout()->workspace());
 	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
 
 	auto inset = *tab_bar_height + *tab_bar_padding + gaps_in.m_top;
