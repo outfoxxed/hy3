@@ -117,7 +117,7 @@ struct Hy3Node {
 	);
 	void insertAndMerge(UP<Hy3Node> child, CollapsePolicy policy = CollapsePolicy::EmptySplits);
 
-	void wrap(Hy3GroupLayout, GroupEphemeralityOption);
+	void wrap(Hy3GroupLayout, GroupEphemeralityOption, bool change = true);
 
 protected:
 	Hy3Node() = default;
