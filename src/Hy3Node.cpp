@@ -130,6 +130,7 @@ UP<Hy3Node> Hy3GroupNode::extractChild(Hy3Node& child) {
 		}
 	}
 
+	extracted->size_ratio = 1.0;
 	return extracted;
 }
 
@@ -138,6 +139,7 @@ UP<Hy3Node> Hy3GroupNode::replaceChild(std::list<UP<Hy3Node>>::iterator it, UP<H
 	replacement->size_ratio = (*it)->size_ratio;
 	if (focused_child == it->get()) focused_child = replacement.get();
 	auto old = std::exchange(*it, std::move(replacement));
+	old->size_ratio = 1.0;
 	old->parent.reset();
 	return old;
 }
