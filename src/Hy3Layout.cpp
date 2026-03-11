@@ -1493,10 +1493,15 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 			break_origin->wrap(new_layout, GroupEphemeralityOption::Standard);
 			break_parent = break_origin->parent.get();
 			break;
-		} else {
-			break_origin = break_parent;
-			break_parent = break_origin->parent.get();
 		}
+
+		// special case 1-child nodes so once will only break the group
+		if (once && shift && break_origin->is_group() && break_origin->as_group().children.size() == 1) {
+			break;
+		}
+
+		break_origin = break_parent;
+		break_parent = break_origin->parent.get();
 	}
 
 	auto& parent_group = break_parent->as_group();
