@@ -713,12 +713,14 @@ static void collapseSingleParentInternal(Hy3Node* into) {
 	auto& parentGroup = parent->as_group();
 	auto it = parentGroup.findChild(*into);
 	auto& intoGroup = into->as_group();
+
 	hy3_log(
 	    TRACE,
-	    "swallowing node {:x} into node {:x}",
-	    (uintptr_t) intoGroup.children.front().get(),
-	    (uintptr_t) into
+			"collapsing {:x} in favor of {:x}",
+			(uintptr_t) into,
+	    (uintptr_t) intoGroup.children.front().get()
 	);
+
 	auto childUp = intoGroup.extractChildRaw(intoGroup.children.begin());
 	auto* child = childUp.get();
 	auto old = parentGroup.replaceChild(it, std::move(childUp));

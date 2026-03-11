@@ -225,12 +225,6 @@ configuration options, and some explanation as to what they do.
 ```conf
 plugin {
   hy3 {
-    # disable gaps when only one window is onscreen
-    # 0 - always show gaps
-    # 1 - hide gaps with a single window onscreen
-    # 2 - 1 but also show the window border
-    no_gaps_when_only = <int> # default: 0
-
     # policy controlling what happens when a node is removed from a group,
     # leaving only a group
     # 0 = remove the nested group

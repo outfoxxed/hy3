@@ -1,5 +1,10 @@
 # Changelog
 
+# Upcoming
+
+- Removed no_gaps_when_only in favor of workspace rules.
+- Massive internal refactors, unknown bugs have been added and removed.
+
 # hl0.53.0.1 and before
 
 - Fixed tab bar stencil and damage rendering
