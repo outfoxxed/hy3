@@ -1,5 +1,9 @@
 # Changelog
 
+# Upcoming
+
+- Fixed a crash when using locked opaque tabs.
+
 # hl0.54.2.1 and before
 
 - Fixed focus across monitors not working.
