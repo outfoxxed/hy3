@@ -1600,13 +1600,16 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		auto shift_it = group_data.findChild(*shift_actor);
 		group_data.children.splice(insert, group_data.children, shift_it);
 		shift_actor->parent->collapseParents(nodeCollapsePolicy());
-		shift_actor->focus(false, Desktop::FOCUS_REASON_KEYBIND);
-		this->recalcGeometry();
+	} else if (!shift_actor->parent->is_root() && shift_actor->parent->as_group().children.size() == 1 && target_group == shift_actor->parent->parent.get()) {
+		// special cased to prevent size being reset to 1 on group break
+		auto shift_parent = shift_actor->parent;
+		auto shift_actor_u = shift_parent->as_group().extractChildRaw(*shift_actor);
+		auto iter = std::ranges::find(group_data.children, shift_parent);
+		group_data.replaceChild(iter, std::move(shift_actor_u));
 	} else {
 		auto target_group_p = target_group->self;
 		auto* shift_parent = shift_actor->parent.get();
 		auto shift_actor_u = shift_parent->as_group().extractChild(*shift_actor);
-		shift_actor_u->size_ratio = 1.0;
 
 		group_data.insertChild(insert, std::move(shift_actor_u));
 
@@ -1620,11 +1623,11 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 		if (target_group_p) {
 			target_group_p->collapseParents(nodeCollapsePolicy());
 		}
-
-		node.updateTabBarRecursive();
-		node.focus(false, Desktop::FOCUS_REASON_KEYBIND);
-		this->recalcGeometry();
 	}
+
+	node.updateTabBarRecursive();
+	node.focus(false, Desktop::FOCUS_REASON_KEYBIND);
+	this->recalcGeometry();
 
 	return nullptr;
 }
