@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# hl0.54.2 and before
 
 - Removed no_gaps_when_only in favor of workspace rules.
 - Massive internal refactors, unknown bugs have been added and removed.
