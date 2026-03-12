@@ -103,7 +103,7 @@ struct Hy3Node {
 	std::generator<Desktop::View::CWindow&> windows(bool visibleOnly = false);
 	std::string debugNode();
 
-	[[nodiscard]] Hy3Node* collapseParents(CollapsePolicy policy);
+	Hy3Node* collapseParents(CollapsePolicy policy);
 	UP<Hy3Node> extractAndMerge(
 	    Hy3Node& child,
 	    Hy3Node** out_parent = nullptr,
