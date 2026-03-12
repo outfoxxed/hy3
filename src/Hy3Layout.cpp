@@ -75,9 +75,18 @@ Hy3Layout::Hy3Layout() {
 
 	m_windowActiveListener = Event::bus()->m_events.window.active.listen(
 	    [this](PHLWINDOW window, Desktop::eFocusReason) {
-		    if (!window) return;
+		    if (!window) {
+					this->updateGroupBorderColors();
+			    return;
+				}
+
 		    auto* node = this->getNodeFromWindow(window.get());
-		    if (!node) return;
+
+		    if (!node) {
+					this->updateGroupBorderColors();
+					return;
+				}
+
 		    this->onWindowFocusChange(window);
 	    }
 	);
@@ -1371,12 +1380,11 @@ std::string Hy3Layout::debugNodes() {
 
 bool Hy3Layout::shouldRenderSelected(const CWindow* window) {
 	if (window == nullptr) return false;
+	if (Desktop::focusState()->window()) return false;
+
 	auto* root = this->getWorkspaceRootGroup(window->m_workspace.get());
 	if (root == nullptr || root->as_group().focused_child == nullptr) return false;
 	auto* focused = &root->getFocusedNode();
-	if (focused->is_target()
-	    && focused->as_window() != Desktop::focusState()->window())
-		return false;
 
 	switch (focused->type()) {
 	case Hy3NodeType::Target: return focused->as_window().get() == window;
