@@ -835,9 +835,11 @@ Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
 				found = true;
 
 				// Move the cursor to the window we selected
-				auto found_node = getNodeFromWindow(target_window.get());
+				auto* target_layout = hy3InstanceForWorkspace(next_workspace);
+				auto found_node = target_layout ? target_layout->getNodeFromWindow(target_window.get()) : nullptr;
 				if (found_node) {
 					found_node->focus(true, Desktop::FOCUS_REASON_KEYBIND);
+					this->updateGroupBorderColors();
 					return found_node;
 				}
 			}
