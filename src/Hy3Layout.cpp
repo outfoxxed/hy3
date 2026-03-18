@@ -425,17 +425,11 @@ void Hy3Layout::recalcGeometry(bool no_animation) {
 
 	hy3_log(LOG, "recalculating workspace {}", workspace->m_id);
 
-	auto ma = workspace->m_monitor->logicalBox();
 	auto wa = space->workArea();
 
 	if (this->root) {
 	this->root->visualBox = wa;
-	this->root->recalcSizePosRecursive(CBox{
-	    wa.x - ma.x,
-	    wa.y - ma.y,
-	    (ma.x + ma.w) - (wa.x + wa.w),
-	    (ma.y + ma.h) - (wa.y + wa.h),
-	}, no_animation);
+	this->root->recalcSizePosRecursive(CBox{0, 0, 0, 0}, no_animation);
 	}
 }
 
