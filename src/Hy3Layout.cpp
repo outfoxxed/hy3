@@ -425,7 +425,7 @@ void Hy3Layout::recalcGeometry(bool no_animation) {
 
 	hy3_log(LOG, "recalculating workspace {}", workspace->m_id);
 
-	auto ma = workspace->m_monitor->logicalBox();
+	auto ma = workspace->m_monitor->logicalBoxMinusReserved();
 	auto wa = space->workArea();
 
 	if (this->root) {
