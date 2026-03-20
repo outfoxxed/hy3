@@ -2,6 +2,7 @@
 
 # Upcoming
 
+- Fixed focus across monitors not working.
 - Fixed makegroup toggle not working.
 - Fixed window input area covering reserved area.
 

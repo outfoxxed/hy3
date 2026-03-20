@@ -834,11 +834,15 @@ Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
 			if (target_window) {
 				found = true;
 
-				// Move the cursor to the window we selected
-				auto found_node = getNodeFromWindow(target_window.get());
-				if (found_node) {
-					found_node->focus(true, Desktop::FOCUS_REASON_KEYBIND);
-					return found_node;
+				if (auto* hy3 = hy3InstanceForWorkspace(next_workspace)) {
+					auto found_node = hy3->getNodeFromWindow(target_window.get());
+					if (found_node) {
+						found_node->focus(true, Desktop::FOCUS_REASON_KEYBIND);
+						return found_node;
+					}
+				} else {
+					Desktop::focusState()->fullWindowFocus(target_window, Desktop::FOCUS_REASON_KEYBIND);
+					return nullptr;
 				}
 			}
 		}
