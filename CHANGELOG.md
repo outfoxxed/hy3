@@ -1,5 +1,10 @@
 # Changelog
 
+# Upcoming
+
+- Fixed makegroup toggle not working.
+- Fixed window input area covering reserved area.
+
 # hl0.54.2 and before
 
 - Removed no_gaps_when_only in favor of workspace rules.

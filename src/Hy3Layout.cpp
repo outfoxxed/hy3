@@ -618,7 +618,7 @@ void Hy3Layout::makeGroupOnWorkspace(
 		auto& group = parent->as_group();
 
 		if (group.children.size() == 1 && group.layout == layout) {
-			auto* collapsed = parent->collapseParents(CollapsePolicy::InvalidOnly);
+			auto* collapsed = parent->collapseParents(CollapsePolicy::SingleNodeGroups);
 
 			if (collapsed && !collapsed->is_root()) {
 				collapsed->parent->updateTabBarRecursive();
