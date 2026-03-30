@@ -5,6 +5,7 @@
 - Fixed focus across monitors not working.
 - Fixed makegroup toggle not working.
 - Fixed window input area covering reserved area.
+- Fixed tab bars not being clickable after resizing the tabbed node.
 
 # hl0.54.2 and before
 

@@ -339,7 +339,8 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 	if (this->is_target()) {
 		this->as_window()->setHidden(this->hidden);
 		this->as_target()->setPositionGlobal({.logicalBox = this->logicalBox, .visualBox = this->visualBox});
-		if (no_animation) this->as_target()->warpPositionSize();
+		// warp on hidden fixes bounding boxes for the tab click handler
+		if (no_animation || this->hidden) this->as_target()->warpPositionSize();
 		return;
 	}
 
