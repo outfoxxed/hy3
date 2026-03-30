@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# hl0.54.2.1 and before
 
 - Fixed focus across monitors not working.
 - Fixed makegroup toggle not working.
