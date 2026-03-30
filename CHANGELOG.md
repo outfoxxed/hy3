@@ -6,6 +6,7 @@
 - Fixed makegroup toggle not working.
 - Fixed window input area covering reserved area.
 - Fixed tab bars not being clickable after resizing the tabbed node.
+- Fixed nodes collapsing more than intended when removed via mouse.
 
 # hl0.54.2 and before
 

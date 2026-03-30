@@ -374,7 +374,7 @@ void Hy3Layout::removeTarget(SP<Layout::ITarget> target) {
 
 	auto* parent_node = node->parent.get();
 	// Extracted UP drops — node is destroyed.
-	parent_node->extractAndMerge(*node, nullptr, nodeCollapsePolicy());
+	parent_node->extractAndMerge(*node, nullptr, CollapsePolicy::InvalidOnly);
 	this->recalcGeometry();
 
 	this->updateGroupBorderColors();
