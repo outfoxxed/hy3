@@ -1,7 +1,6 @@
 #pragma once
 
 #include <set>
-#include <type_traits>
 #include <vector>
 
 #include <hyprland/src/desktop/Workspace.hpp>
@@ -10,7 +9,6 @@
 
 #include "Hy3Layout.hpp"
 #include "TabGroup.hpp"
-#include "log.hpp"
 
 inline HANDLE PHANDLE = nullptr;
 

@@ -1,5 +1,4 @@
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/config/ConfigDataValues.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
@@ -105,7 +104,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 				auto* entry = wp.get();
 				if (!entry) continue;
 				if (!entry->hidden
-				    && entry->target_window == g_pHyprOpenGL->m_renderData.currentWindow.lock()
+				    && entry->target_window == g_pHyprRenderer->m_renderData.currentWindow.lock()
 				    && std::find(rendered_groups.begin(), rendered_groups.end(), entry)
 				           == rendered_groups.end())
 				{

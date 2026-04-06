@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <utility>
+#include "render/pass/PassElement.hpp"
 class Hy3TabGroup;
 class Hy3TabBar;
 
@@ -34,7 +35,7 @@ struct Hy3TabGroupWrapper {
 struct Hy3TabBarEntry {
 	std::string window_title;
 	bool destroying = false;
-	SP<CTexture> texture;
+	SP<Render::ITexture> texture;
 	PHLANIMVAR<float> active;
 	PHLANIMVAR<float> focused;
 	PHLANIMVAR<float> urgent;
@@ -125,8 +126,9 @@ public:
 	Hy3TabPassElement(Hy3TabGroup* group): group(group) {}
 
 	const char* passName() override { return "Hy3TabPassElement"; }
-	void draw(const CRegion& damage) override;
+	std::vector<UP<IPassElement>> draw() override;
 	bool needsLiveBlur() override { return false; }
+	ePassElementType type() override { return EK_CUSTOM; }
 	bool needsPrecomputeBlur() override;
 	std::optional<CBox> boundingBox() override;
 

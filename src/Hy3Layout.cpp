@@ -1,5 +1,6 @@
 #include <cstdint>
 #include <regex>
+#include <optional>
 #include <set>
 
 #include <dlfcn.h>
@@ -15,9 +16,11 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/xwayland/XWayland.hpp>
+#include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <ranges>
 
+#include "config/shared/complex/ComplexDataTypes.hpp"
 #include "log.hpp"
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
@@ -399,12 +402,11 @@ void Hy3Layout::onWindowFocusChange(PHLWINDOW window) {
 
 void Hy3Layout::updateGroupBorderColors() {
 	if (!this->root) return;
-	static auto active_color = CConfigValue<Hyprlang::CUSTOMTYPE>("general:col.active_border");
+	static auto active_color = ConfigValue<Hyprlang::CUSTOMTYPE, Config::CGradientValueData>("general:col.active_border");
 
 	for (auto& w: this->root->windows()) {
 		if (this->shouldRenderSelected(&w)) {
-			auto* gradient = static_cast<CGradientValueData*>((active_color.ptr())->getData());
-			w.m_ruleApplicator->inactiveBorderColor().set(*gradient, Desktop::Types::PRIORITY_LAYOUT);
+			w.m_ruleApplicator->inactiveBorderColor().set(*active_color, Desktop::Types::PRIORITY_LAYOUT);
 		} else {
 			w.m_ruleApplicator->inactiveBorderColor().unset(Desktop::Types::PRIORITY_LAYOUT);
 		}
@@ -1055,13 +1057,13 @@ bottom:
 
 Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	// clang-format off
-	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, Config::CCssGapData>("general:gaps_in");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 	// clang-format on
 
-	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(node.layout()->workspace());
-	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
+	auto workspace_rule = Config::workspaceRuleMgr()->getWorkspaceRuleFor(node.layout()->workspace());
+	auto gaps_in = workspace_rule.and_then([](auto r) { return r.m_gapsIn; }).value_or(*p_gaps_in);
 
 	auto inset = *tab_bar_height + *tab_bar_padding + gaps_in.m_top;
 

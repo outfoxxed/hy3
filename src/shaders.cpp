@@ -1,6 +1,4 @@
 #include "shaders.hpp"
-#include <csignal>
-#include <exception>
 #include <string>
 #include <stdexcept>
 

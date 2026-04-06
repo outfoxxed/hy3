@@ -4,10 +4,14 @@
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprutils/string/String.hpp>
+#include <hyprutils/string/VarList.hpp>
 
 #include "dispatchers.hpp"
+#include "log.hpp"
 #include "globals.hpp"
 #include "src/SharedDefs.hpp"
+
+using Hyprutils::String::CVarList;
 
 static Hy3Layout* hy3InstanceForAction(bool allow_fullscreen = false) {
 	auto workspace = workspace_for_action(allow_fullscreen);
@@ -210,7 +214,7 @@ static SDispatchResult dispatch_focustab(std::string value) {
 	else if (args[i] == "index") {
 		i++;
 		focus = TabFocus::Index;
-		if (!isNumber(args[i])) return SDispatchResult {};
+		if (!Hyprutils::String::isNumber(args[i])) return SDispatchResult {};
 		index = std::stoi(args[i]);
 		hy3_log(LOG, "Focus index '%s' -> %d, errno: %d", args[i].c_str(), index, errno);
 	} else return SDispatchResult {};

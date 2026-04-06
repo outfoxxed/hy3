@@ -1,6 +1,7 @@
 #include "TabGroup.hpp"
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include <GLES2/gl2.h>
 #include <cairo/cairo.h>
@@ -15,6 +16,7 @@
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Texture.hpp>
+#include <hyprland/src/config/shared/animation/AnimationTree.hpp>
 #include <hyprutils/math/Box.hpp>
 #include <hyprutils/math/Region.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
@@ -24,6 +26,8 @@
 #include "log.hpp"
 #include "globals.hpp"
 #include "render.hpp"
+#include "render/Renderer.hpp"
+#include "render/pass/PassElement.hpp"
 
 using Hyprgraphics::CColor;
 
@@ -50,56 +54,56 @@ Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_b
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->active,
-	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    Config::animationTree()->getAnimationPropertyConfig("fadeSwitch"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->focused,
-	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    Config::animationTree()->getAnimationPropertyConfig("fadeSwitch"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->urgent,
-	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    Config::animationTree()->getAnimationPropertyConfig("fadeSwitch"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->active_monitor,
-	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    Config::animationTree()->getAnimationPropertyConfig("fadeSwitch"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    -1.0F,
 	    this->offset,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
+	    Config::animationTree()->getAnimationPropertyConfig("windowsMove"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    -1.0F,
 	    this->width,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
+	    Config::animationTree()->getAnimationPropertyConfig("windowsMove"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    1.0F,
 	    this->vertical_pos,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
+	    Config::animationTree()->getAnimationPropertyConfig("windowsMove"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->fade_opacity,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
+	    Config::animationTree()->getAnimationPropertyConfig("windowsMove"),
 	    AVARDAMAGE_NONE
 	);
 
@@ -215,7 +219,7 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	box.round();
 
 	// sometimes enabled before our renderer is called
-	g_pHyprOpenGL->scissor(nullptr);
+	Render::GL::g_pHyprOpenGL->scissor(nullptr);
 
 	Hy3Render::renderTab(
 	    box,
@@ -325,31 +329,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 		g_object_unref(layout);
 		g_object_unref(context);
 
-		auto data = cairo_image_surface_get_data(cairo_surface);
-
-		if (!this->texture) this->texture = makeShared<CTexture>();
-		this->texture->allocate();
-
-		glBindTexture(GL_TEXTURE_2D, this->texture->m_texID);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-#ifdef GLES32
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-#endif
-
-		glTexImage2D(
-		    GL_TEXTURE_2D,
-		    0,
-		    GL_RGBA,
-		    ink_width,
-		    ink_height,
-		    0,
-		    GL_RGBA,
-		    GL_UNSIGNED_BYTE,
-		    data
-		);
+		this->texture = g_pHyprRenderer->createTexture(cairo_surface);
 
 		cairo_destroy(cairo);
 		cairo_surface_destroy(cairo_surface);
@@ -381,7 +361,7 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	glBlendFunc(GL_CONSTANT_COLOR, GL_ONE_MINUS_SRC_ALPHA);
 	glBlendColor(c.r, c.g, c.b, c.a);
 
-	g_pHyprOpenGL->renderTexture(this->texture, texture_box, { .a = opacity });
+	Render::GL::g_pHyprOpenGL->renderTexture(this->texture, texture_box, { .a = opacity });
 
 	glBlendColor(1, 1, 1, 1);
 	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -419,14 +399,14 @@ Hy3TabBar::Hy3TabBar() {
 	g_pAnimationManager->createAnimation(
 	    1.0f,
 	    this->fade_opacity,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
+	    Config::animationTree()->getAnimationPropertyConfig("windowsMove"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    0.0F,
 	    this->locked,
-	    g_pConfigManager->getAnimationPropertyConfig("fadeSwitch"),
+	    Config::animationTree()->getAnimationPropertyConfig("fadeSwitch"),
 	    AVARDAMAGE_NONE
 	);
 
@@ -608,14 +588,14 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 	g_pAnimationManager->createAnimation(
 	    Vector2D(0, 0),
 	    this->pos,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
+	    Config::animationTree()->getAnimationPropertyConfig("windowsMove"),
 	    AVARDAMAGE_NONE
 	);
 
 	g_pAnimationManager->createAnimation(
 	    Vector2D(0, 0),
 	    this->size,
-	    g_pConfigManager->getAnimationPropertyConfig("windowsMove"),
+	    Config::animationTree()->getAnimationPropertyConfig("windowsMove"),
 	    AVARDAMAGE_NONE
 	);
 
@@ -737,10 +717,9 @@ void Hy3TabGroup::tick() {
 }
 
 std::pair<CBox, CBox> Hy3TabGroup::getRenderBB() const {
-	auto* monitor = g_pHyprOpenGL->m_renderData.pMonitor.get();
+	auto* monitor = g_pHyprRenderer->m_renderData.pMonitor.get();
 	auto scale = monitor->m_scale;
 
-	auto monitor_size = monitor->m_size;
 	auto pos = this->pos->value() - monitor->m_position;
 	auto size = this->size->value();
 
@@ -761,7 +740,7 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto [box, scaledBox] = this->getRenderBB();
 
-	auto* monitor = g_pHyprOpenGL->m_renderData.pMonitor.get();
+	auto* monitor = g_pHyprRenderer->m_renderData.pMonitor.get();
 	auto scale = monitor->m_scale;
 
 	if (!this->bar.damaged) {
@@ -770,7 +749,7 @@ void Hy3TabGroup::renderTabBar() {
 
 		pixman_region32_intersect_rect(
 		    &damage,
-		    g_pHyprOpenGL->m_renderData.damage.pixman(),
+		    g_pHyprRenderer->m_renderData.damage.pixman(),
 		    scaledBox.x,
 		    scaledBox.y,
 		    scaledBox.width,
@@ -798,7 +777,7 @@ void Hy3TabGroup::renderTabBar() {
 	}
 
 	if (render_stencil) {
-		g_pHyprOpenGL->m_renderData.currentFB->bind();
+		g_pHyprRenderer->m_renderData.currentFB->bind();
 		glEnable(GL_STENCIL_TEST);
 		glStencilMask(0xff);
 		glClearStencil(0);
@@ -826,7 +805,7 @@ void Hy3TabGroup::renderTabBar() {
 			window_box.scale(scale);
 
 			if (window_box.width > 0 && window_box.height > 0)
-				g_pHyprOpenGL->renderRect(window_box, CHyprColor(0, 0, 0, 0), { .round = radius });
+				Render::GL::g_pHyprOpenGL->renderRect(window_box, CHyprColor(0, 0, 0, 0), { .round = radius });
 		}
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
@@ -879,7 +858,10 @@ void Hy3TabGroup::renderTabBar() {
 	}
 }
 
-void Hy3TabPassElement::draw(const CRegion& damage) { this->group->renderTabBar(); }
+std::vector<UP<IPassElement>> Hy3TabPassElement::draw() {
+	this->group->renderTabBar();
+	return {};
+}
 
 bool Hy3TabPassElement::needsPrecomputeBlur() {
 	// clang-format off

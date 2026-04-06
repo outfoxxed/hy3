@@ -8,8 +8,10 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/defines.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
+#include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
 #include <hyprutils/math/Box.hpp>
 
+#include "config/shared/complex/ComplexDataTypes.hpp"
 #include "log.hpp"
 #include "Hy3Layout.hpp"
 #include "Hy3Node.hpp"
@@ -324,7 +326,7 @@ Hy3Node& Hy3Node::getPlacementActor() {
 
 void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 	// clang-format off
-	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, CCssGapData>("general:gaps_in");
+	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, Config::CCssGapData>("general:gaps_in");
 	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
 	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
 	static const auto group_inset = ConfigValue<Hyprlang::INT>("plugin:hy3:group_inset");
@@ -348,8 +350,8 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 	auto tsize = this->visualBox.size();
 
 	auto& group = this->as_group();
-	auto workspace_rule = g_pConfigManager->getWorkspaceRuleFor(this->layout()->workspace());
-	auto gaps_in = workspace_rule.gapsIn.value_or(*p_gaps_in);
+	auto workspace_rule = Config::workspaceRuleMgr()->getWorkspaceRuleFor(this->layout()->workspace());
+	auto gaps_in = workspace_rule.and_then([](auto r) { return r.m_gapsIn; }).value_or(*p_gaps_in);
 
 	auto expand_focused = group.expand_focused != ExpandFocusType::NotExpanded;
 	bool directly_contains_expanded =
