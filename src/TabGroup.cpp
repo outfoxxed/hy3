@@ -874,7 +874,7 @@ bool Hy3TabPassElement::needsPrecomputeBlur() {
 	static const auto col_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent");
 	static const auto col_border_urgent = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.border");
 	static const auto col_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked");
-	static const auto col_border_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.urgent.locked");
+	static const auto col_border_locked = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.locked.border");
 	static const auto col_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive");
 	static const auto col_border_inactive = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:col.inactive.border");
 	// clang-format on
