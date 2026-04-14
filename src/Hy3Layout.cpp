@@ -41,6 +41,10 @@ static CollapsePolicy nodeCollapsePolicy() {
 	}
 }
 
+static Vector2D mouseCoordsForTabHitTest() {
+	return g_pInputManager->getMouseCoordsInternal();
+}
+
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
 	auto workspace = Desktop::focusState()->monitor()->m_activeSpecialWorkspace;
 	if (!valid(workspace)) workspace = Desktop::focusState()->monitor()->m_activeWorkspace;
@@ -98,21 +102,10 @@ Hy3Layout::Hy3Layout() {
 	    [this](IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
 		    if (event.state != 1 || event.button != 272) return;
 
-		    auto ptr_surface_resource = g_pSeatManager->m_state.pointerFocus.lock();
-		    if (!ptr_surface_resource) return;
-
-		    auto ptr_surface = CWLSurface::fromResource(ptr_surface_resource);
-		    if (!ptr_surface) return;
-
-		    auto view = ptr_surface->view();
-		    auto* window = dynamic_cast<Desktop::View::CWindow*>(view.get());
-		    if (!window || window->m_isFloating || window->isFullscreen()) return;
-
-		    auto* node = this->getNodeFromWindow(window);
-		    if (!node) return;
+		    if (!this->root) return;
 
 		    Hy3Node* focus = nullptr;
-		    auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
+		    auto mouse_pos = mouseCoordsForTabHitTest();
 		    auto* tab_node = findTabBarAt(*this->root, mouse_pos, &focus);
 		    if (!tab_node) return;
 
@@ -1126,19 +1119,7 @@ void Hy3Layout::focusTab(
 	Hy3Node* tab_focused_node;
 
 	if (target == TabFocus::MouseLocation || mouse != TabFocusMousePriority::Ignore) {
-		// no surf focused at all
-		auto ptrSurfaceResource = g_pSeatManager->m_state.pointerFocus.lock();
-		if (!ptrSurfaceResource) return;
-
-		auto ptrSurface = CWLSurface::fromResource(ptrSurfaceResource);
-		if (!ptrSurface) return;
-
-		// non window-parented surface focused, cant have a tab
-		auto view = ptrSurface->view();
-		auto* window = dynamic_cast<CWindow*>(view.get());
-		if (!window || window->m_isFloating) return;
-
-		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
+		auto mouse_pos = mouseCoordsForTabHitTest();
 		tab_node = findTabBarAt(*node, mouse_pos, &tab_focused_node);
 		if (tab_node != nullptr) goto hastab;
 
