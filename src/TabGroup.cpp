@@ -650,7 +650,7 @@ void Hy3TabGroup::tick() {
 
 	this->bar.tick();
 
-	if (valid(this->workspace)) {
+	if (valid(this->workspace) && this->workspace->m_monitor) {
 		auto has_fullscreen = this->workspace->m_hasFullscreenWindow;
 
 		if (!has_fullscreen && *no_gaps_when_only) {

@@ -3,6 +3,7 @@
 # Upcoming
 
 - Fixed a crash when using locked opaque tabs.
+- Fixed a crash when removing a monitor.
 
 # hl0.54.2.1 and before
 
