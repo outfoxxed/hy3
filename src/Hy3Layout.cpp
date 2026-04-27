@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cmath>
 #include <regex>
 #include <optional>
 #include <set>
@@ -72,6 +73,25 @@ std::string operationWorkspaceForName(const std::string& workspace) {
 }
 
 Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node);
+
+struct SmartSplitPlacement {
+	Hy3GroupLayout layout;
+	bool insert_before;
+};
+
+static std::optional<SmartSplitPlacement> smartSplitPlacementFor(const Hy3Node& node, const Vector2D& focalPoint) {
+	const auto& box = node.visualBox;
+	if (box.w <= 0 || box.h <= 0) return std::nullopt;
+
+	const auto center = box.pos() + box.size() / 2;
+	const auto delta = focalPoint - center;
+
+	if (std::abs(delta.y) * box.w < std::abs(delta.x) * box.h) {
+		return SmartSplitPlacement{Hy3GroupLayout::SplitH, delta.x < 0};
+	}
+
+	return SmartSplitPlacement{Hy3GroupLayout::SplitV, delta.y < 0};
+}
 
 Hy3Layout::Hy3Layout() {
 	g_hy3Instances.insert(this);
@@ -271,6 +291,56 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		return;
 	}
 
+	static const auto smart_split = ConfigValue<Hyprlang::INT>("plugin:hy3:smart_split");
+	const auto smart_split_placement =
+	    (*smart_split && focalPoint && opening_after) ? smartSplitPlacementFor(*opening_after, *focalPoint) : std::nullopt;
+
+	if (smart_split_placement) {
+		auto& parent_group = opening_into->as_group();
+		if (parent_group.layout != smart_split_placement->layout) {
+			auto iter = parent_group.findChild(*opening_after);
+			if (iter == parent_group.children.end()) {
+				hy3_log(
+				    ERR,
+				    "smart_split target node ({:x}) was not a child of node {:x}",
+				    (uintptr_t) opening_after,
+				    (uintptr_t) opening_into
+				);
+				errorNotif();
+				return;
+			}
+
+			auto* node = node_up.get();
+			auto group_up = Hy3Node::create(smart_split_placement->layout);
+			auto* group_node = group_up.get();
+			auto target_up = parent_group.replaceChild(iter, std::move(group_up));
+			auto& group = group_node->as_group();
+			group.setEphemeral(GroupEphemeralityOption::ForceEphemeral);
+
+			if (smart_split_placement->insert_before) {
+				group.insertChild(std::move(node_up));
+				group.insertChild(std::move(target_up));
+			} else {
+				group.insertChild(std::move(target_up));
+				group.insertChild(std::move(node_up));
+			}
+
+			hy3_log(
+			    LOG,
+			    "smart_split tiled node {:x} inserted {} node {:x} in node {:x}",
+			    (uintptr_t) node,
+			    smart_split_placement->insert_before ? "before" : "after",
+			    (uintptr_t) opening_after,
+			    (uintptr_t) group_node
+			);
+
+			node->markFocused();
+			this->recalcGeometry();
+			this->updateGroupBorderColors();
+			return;
+		}
+	}
+
 	{
 		// clang-format off
 		static const auto at_enable = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:enable");
@@ -282,7 +352,7 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		this->updateAutotileWorkspaces();
 
 		auto& target_group = opening_into->as_group();
-		if (*at_enable && opening_after != nullptr && target_group.children.size() > 1
+		if (!smart_split_placement && *at_enable && opening_after != nullptr && target_group.children.size() > 1
 		    && target_group.isSplit()
 		    && this->shouldAutotileWorkspace(ws.get()))
 		{
@@ -304,11 +374,11 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 	// For mouse drops, determine if we should insert before or after the target node
 	if (focalPoint && opening_after) {
 		auto& parentGroup = opening_into->as_group();
-		bool insert_before = false;
+		bool insert_before = smart_split_placement ? smart_split_placement->insert_before : false;
 
-		if (parentGroup.layout == Hy3GroupLayout::SplitH) {
+		if (!smart_split_placement && parentGroup.layout == Hy3GroupLayout::SplitH) {
 			insert_before = focalPoint->x < opening_after->visualBox.x + opening_after->visualBox.w * 0.5;
-		} else if (parentGroup.layout == Hy3GroupLayout::SplitV) {
+		} else if (!smart_split_placement && parentGroup.layout == Hy3GroupLayout::SplitV) {
 			insert_before = focalPoint->y < opening_after->visualBox.y + opening_after->visualBox.h * 0.5;
 		}
 
