@@ -701,7 +701,9 @@ static bool shouldCollapseNode(Hy3Node* node, CollapsePolicy policy) {
 
 	if (child->is_group()) {
 		auto& cgroup = child->as_group();
-		if (group.isSplit() && cgroup.isSplit()) return true;
+		if (group.isSplit() && cgroup.isSplit()
+		    && (node->is_root() || node->parent->as_group().isSplit()))
+			return true;
 		if (cgroup.children.size() == 1 && group.isTab() && cgroup.isTab()) return true;
 	}
 
@@ -809,7 +811,9 @@ void Hy3Node::insertAndMerge(UP<Hy3Node> child, CollapsePolicy policy) {
 
 void Hy3Node::wrap(Hy3GroupLayout layout, GroupEphemeralityOption ephemeral, bool change) {
 	auto& parentGroup = this->parent->as_group();
-	if (change && !this->parent->is_root() && parentGroup.children.size() == 1) {
+	if (change && !this->parent->is_root() && parentGroup.children.size() == 1
+	    && parentGroup.isSplit())
+	{
 		parentGroup.setLayout(layout);
 		parentGroup.setEphemeral(ephemeral);
 		this->layout()->recalcGeometry();
