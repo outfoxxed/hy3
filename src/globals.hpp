@@ -20,6 +20,11 @@ inline bool g_suppressInsert = false;
 
 inline std::set<Hy3Layout*> g_hy3Instances;
 
+// Tracks the last focused monitor as reported by monitor.focused events.
+// Desktop::focusState()->monitor() is unreliable during event callbacks
+// because it may not yet reflect the new state.
+inline PHLMONITORREF g_focusedMonitor;
+
 inline std::vector<WP<Hy3TabGroup>> g_tabGroups;
 inline std::vector<UP<Hy3TabGroup>> g_destroyingTabGroups;
 
@@ -27,6 +32,7 @@ inline CHyprSignalListener g_renderListener;
 inline CHyprSignalListener g_tickListener;
 inline CHyprSignalListener g_windowTitleListener;
 inline CHyprSignalListener g_urgentListener;
+inline CHyprSignalListener g_monitorFocusListener;
 
 inline Hy3Layout* hy3InstanceForWorkspace(PHLWORKSPACE ws) {
 	if (!ws || !ws->m_space || !ws->m_space->algorithm()) return nullptr;

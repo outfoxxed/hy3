@@ -146,6 +146,22 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 		node->updateTabBarRecursive();
 	});
 
+	g_monitorFocusListener = Event::bus()->m_events.monitor.focused.listen([](PHLMONITOR monitor) {
+		// Store the focused monitor ourselves since
+		// Desktop::focusState()->monitor() is not yet updated when this fires.
+		g_focusedMonitor = monitor;
+
+		for (auto& mon: g_pCompositor->m_monitors) {
+			for (auto& ws: {mon->m_activeWorkspace, mon->m_activeSpecialWorkspace}) {
+				if (!ws) continue;
+				auto* hy3 = hy3InstanceForWorkspace(ws);
+				if (!hy3) continue;
+				auto* root = hy3->getWorkspaceRootGroup(ws.get());
+				if (root) root->updateDecos();
+			}
+		}
+	});
+
 	registerDispatchers();
 
 	HyprlandAPI::reloadConfig();
@@ -158,6 +174,7 @@ APICALL EXPORT void PLUGIN_EXIT() {
 	g_tickListener.reset();
 	g_windowTitleListener.reset();
 	g_urgentListener.reset();
+	g_monitorFocusListener.reset();
 
 	g_tabGroups.clear();
 	g_destroyingTabGroups.clear();

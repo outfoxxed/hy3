@@ -513,8 +513,10 @@ void Hy3TabBar::updateNodeList(std::list<UP<Hy3Node>>& nodes) {
 		auto active = parent_focused && (parent_group.focused_child == node->get() || parent_group.group_focused);
 		entry->setActive(active);
 
-		auto last_monitor = Desktop::focusState()->monitor();
-		entry->setMonitorActive(active && (!last_monitor || (*node)->layout()->monitor() == last_monitor.get()));
+		auto focused_monitor = g_focusedMonitor.lock();
+		auto node_monitor = (*node)->layout()->monitor();
+		auto monitor_active = active && (!focused_monitor || node_monitor == focused_monitor.get());
+		entry->setMonitorActive(monitor_active);
 
 		entry->setUrgent((*node)->isUrgent());
 		entry->setWindowTitle((*node)->getTitle());
