@@ -1008,6 +1008,7 @@ void Hy3Layout::moveNodeToWorkspace(
 		} else if (focused_window != nullptr) {
 			Desktop::focusState()->fullWindowFocus(focused_window, Desktop::FOCUS_REASON_KEYBIND);
 			if (warp) Hy3Layout::warpCursorToBox(focused_window->m_position, focused_window->m_size);
+			Desktop::focusState()->rawMonitorFocus(monitor.lock());
 		}
 	}
 }
