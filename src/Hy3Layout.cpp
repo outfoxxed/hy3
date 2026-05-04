@@ -935,9 +935,10 @@ void Hy3Layout::moveNodeToWorkspace(
 		workspace = g_pCompositor->createNewWorkspace(target.id, origin_ws->monitorID(), target.name);
 	}
 
-	if (focused_window != nullptr
-	    && (focused_window_node == nullptr || focused_window->isFullscreen()))
-	{
+	const bool moved_floating =
+	    focused_window != nullptr && (focused_window_node == nullptr || focused_window->isFullscreen());
+
+	if (moved_floating) {
 		g_pHyprRenderer->damageWindow(focused_window);
 		g_pCompositor->moveWindowToWorkspaceSafe(focused_window, workspace);
 	} else {
@@ -985,7 +986,7 @@ void Hy3Layout::moveNodeToWorkspace(
 
 		monitor->changeWorkspace(workspace);
 
-		if (node != nullptr) {
+		if (node != nullptr && !moved_floating) {
 			node->layout()->recalcGeometry();
 			node->focus(warp, Desktop::FOCUS_REASON_KEYBIND);
 		} else if (focused_window != nullptr) {
