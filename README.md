@@ -238,6 +238,9 @@ plugin {
     # if a tab group will automatically be created for the first window spawned in a workspace
     tab_first_window = <bool>
 
+    # if mouse drops should choose left/right/top/bottom insertion from the cursor's triangle over the target
+    smart_split = <bool> # default: false
+
     # tab group settings
     tabs {
       # height of the tab bar
