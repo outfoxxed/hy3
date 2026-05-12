@@ -17,6 +17,7 @@
 #include <hyprland/src/plugins/PluginSystem.hpp>
 #include <hyprland/src/xwayland/XWayland.hpp>
 #include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
+#include <hyprland/src/config/shared/actions/ConfigActions.hpp>
 #include <hyprutils/math/Vector2D.hpp>
 #include <ranges>
 
@@ -415,7 +416,7 @@ void Hy3Layout::updateGroupBorderColors() {
 	}
 }
 
-void Hy3Layout::recalculate() { this->recalcGeometry(); }
+void Hy3Layout::recalculate(Layout::eRecalculateReason) { this->recalcGeometry(); }
 
 void Hy3Layout::recalcGeometry(bool no_animation) {
 	auto algo = m_parent.lock();
@@ -537,7 +538,7 @@ void Hy3Layout::moveTargetInDirection(SP<Layout::ITarget> t, Math::eDirection di
 	this->shiftNode(*node, shift, false, false);
 }
 
-std::expected<void, std::string> Hy3Layout::layoutMsg(const std::string_view& sv) {
+Config::ErrorResult Hy3Layout::layoutMsg(const std::string_view& sv) {
 	std::string content(sv);
 
 	if (content == "togglesplit") {
@@ -1226,7 +1227,7 @@ void Hy3Layout::setNodeSwallow(const CWorkspace* workspace, SetSwallowOption opt
 void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
 	auto last_window = Desktop::focusState()->window();
 	if (last_window != nullptr && last_window->m_isFloating) {
-		g_pCompositor->closeWindow(last_window);
+		Config::Actions::closeWindow(last_window);
 	} else {
 		auto* node = this->getWorkspaceFocusedNode(workspace);
 		if (node == nullptr) return;
@@ -1236,7 +1237,7 @@ void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
 
 		for (auto& window: windows) {
 			window->setHidden(false);
-			g_pCompositor->closeWindow(window);
+			Config::Actions::closeWindow(window);
 		}
 	}
 }
