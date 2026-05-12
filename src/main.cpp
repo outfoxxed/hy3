@@ -1,9 +1,9 @@
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/config/values/ConfigValues.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/version.h>
-#include <hyprlang.hpp>
 
 #include "dispatchers.hpp"
 #include "globals.hpp"
@@ -31,56 +31,52 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 #endif
 
 #define CONF(NAME, TYPE, VALUE)                                                                    \
-	HyprlandAPI::addConfigValue(PHANDLE, "plugin:hy3:" NAME, Hyprlang::CConfigValue((TYPE) VALUE))
-
-	using Hyprlang::FLOAT;
-	using Hyprlang::INT;
-	using Hyprlang::STRING;
+	HyprlandAPI::addConfigValueV2(PHANDLE, makeShared<Config::Values::TYPE>("plugin:hy3:" NAME, "", VALUE))
 
 	// general
-	CONF("no_gaps_when_only", INT, 0);
-	CONF("node_collapse_policy", INT, 2);
-	CONF("group_inset", INT, 10);
-	CONF("tab_first_window", INT, 0);
+	CONF("no_gaps_when_only", Int, 0);
+	CONF("node_collapse_policy", Int, 2);
+	CONF("group_inset", Int, 10);
+	CONF("tab_first_window", Int, 0);
 
 	// tabs
-	CONF("tabs:height", INT, 22);
-	CONF("tabs:padding", INT, 5);
-	CONF("tabs:from_top", INT, 0);
-	CONF("tabs:radius", INT, 6);
-	CONF("tabs:border_width", INT, 2);
-	CONF("tabs:render_text", INT, 1);
-	CONF("tabs:text_center", INT, 1);
-	CONF("tabs:text_font", STRING, "Sans");
-	CONF("tabs:text_height", INT, 8);
-	CONF("tabs:text_padding", INT, 3);
-	CONF("tabs:opacity", FLOAT, 1.0);
-	CONF("tabs:blur", INT, 1);
-	CONF("tabs:col.active", INT, 0x4033ccff);
-	CONF("tabs:col.active.border", INT, 0xee33ccff);
-	CONF("tabs:col.active.text", INT, 0xffffffff);
-	CONF("tabs:col.active_alt_monitor", INT, 0x40606060);
-	CONF("tabs:col.active_alt_monitor.border", INT, 0xee808080);
-	CONF("tabs:col.active_alt_monitor.text", INT, 0xffffffff);
-	CONF("tabs:col.focused", INT, 0x40606060);
-	CONF("tabs:col.focused.border", INT, 0xee808080);
-	CONF("tabs:col.focused.text", INT, 0xffffffff);
-	CONF("tabs:col.inactive", INT, 0x20303030);
-	CONF("tabs:col.inactive.border", INT, 0xaa606060);
-	CONF("tabs:col.inactive.text", INT, 0xffffffff);
-	CONF("tabs:col.urgent", INT, 0x40ff2233);
-	CONF("tabs:col.urgent.border", INT, 0xeeff2233);
-	CONF("tabs:col.urgent.text", INT, 0xffffffff);
-	CONF("tabs:col.locked", INT, 0x40909033);
-	CONF("tabs:col.locked.border", INT, 0xee909033);
-	CONF("tabs:col.locked.text", INT, 0xffffffff);
+	CONF("tabs:height", Int, 22);
+	CONF("tabs:padding", Int, 5);
+	CONF("tabs:from_top", Int, 0);
+	CONF("tabs:radius", Int, 6);
+	CONF("tabs:border_width", Int, 2);
+	CONF("tabs:render_text", Int, 1);
+	CONF("tabs:text_center", Int, 1);
+	CONF("tabs:text_font", String, "Sans");
+	CONF("tabs:text_height", Int, 8);
+	CONF("tabs:text_padding", Int, 3);
+	CONF("tabs:opacity", Float, 1.0);
+	CONF("tabs:blur", Int, 1);
+	CONF("tabs:col.active", Int, 0x4033ccff);
+	CONF("tabs:col.active.border", Int, 0xee33ccff);
+	CONF("tabs:col.active.text", Int, 0xffffffff);
+	CONF("tabs:col.active_alt_monitor", Int, 0x40606060);
+	CONF("tabs:col.active_alt_monitor.border", Int, 0xee808080);
+	CONF("tabs:col.active_alt_monitor.text", Int, 0xffffffff);
+	CONF("tabs:col.focused", Int, 0x40606060);
+	CONF("tabs:col.focused.border", Int, 0xee808080);
+	CONF("tabs:col.focused.text", Int, 0xffffffff);
+	CONF("tabs:col.inactive", Int, 0x20303030);
+	CONF("tabs:col.inactive.border", Int, 0xaa606060);
+	CONF("tabs:col.inactive.text", Int, 0xffffffff);
+	CONF("tabs:col.urgent", Int, 0x40ff2233);
+	CONF("tabs:col.urgent.border", Int, 0xeeff2233);
+	CONF("tabs:col.urgent.text", Int, 0xffffffff);
+	CONF("tabs:col.locked", Int, 0x40909033);
+	CONF("tabs:col.locked.border", Int, 0xee909033);
+	CONF("tabs:col.locked.text", Int, 0xffffffff);
 
 	// autotiling
-	CONF("autotile:enable", INT, 0);
-	CONF("autotile:ephemeral_groups", INT, 1);
-	CONF("autotile:trigger_height", INT, 0);
-	CONF("autotile:trigger_width", INT, 0);
-	CONF("autotile:workspaces", STRING, "all");
+	CONF("autotile:enable", Int, 0);
+	CONF("autotile:ephemeral_groups", Int, 1);
+	CONF("autotile:trigger_height", Int, 0);
+	CONF("autotile:trigger_width", Int, 0);
+	CONF("autotile:workspaces", String, "all");
 
 #undef CONF
 

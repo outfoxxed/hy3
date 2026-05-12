@@ -20,6 +20,7 @@
 #include <hyprutils/math/Vector2D.hpp>
 #include <ranges>
 
+#include "config/shared/ConfigErrors.hpp"
 #include "config/shared/complex/ComplexDataTypes.hpp"
 #include "log.hpp"
 #include "Hy3Layout.hpp"
@@ -32,7 +33,7 @@ using namespace Desktop::View;
 
 static CollapsePolicy nodeCollapsePolicy() {
 	static const auto node_collapse_policy =
-	    ConfigValue<Hyprlang::INT>("plugin:hy3:node_collapse_policy");
+	    CConfigValue<Config::INTEGER>("plugin:hy3:node_collapse_policy");
 
 	switch (*node_collapse_policy) {
 	case 0: return CollapsePolicy::SingleNodeGroups;
@@ -238,7 +239,7 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		opening_into = opening_after->parent.get();
 	} else {
 		static const auto tab_first_window =
-		    ConfigValue<Hyprlang::INT>("plugin:hy3:tab_first_window");
+		    CConfigValue<Config::INTEGER>("plugin:hy3:tab_first_window");
 
 		// Use space work area if available, fall back to monitor
 		CBox wa_box(monitor->m_position, monitor->m_size);
@@ -273,10 +274,10 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 
 	{
 		// clang-format off
-		static const auto at_enable = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:enable");
-		static const auto at_ephemeral = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:ephemeral_groups");
-		static const auto at_trigger_width = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:trigger_width");
-		static const auto at_trigger_height = ConfigValue<Hyprlang::INT>("plugin:hy3:autotile:trigger_height");
+		static const auto at_enable = CConfigValue<Config::INTEGER>("plugin:hy3:autotile:enable");
+		static const auto at_ephemeral = CConfigValue<Config::INTEGER>("plugin:hy3:autotile:ephemeral_groups");
+		static const auto at_trigger_width = CConfigValue<Config::INTEGER>("plugin:hy3:autotile:trigger_width");
+		static const auto at_trigger_height = CConfigValue<Config::INTEGER>("plugin:hy3:autotile:trigger_height");
 		// clang-format on
 
 		this->updateAutotileWorkspaces();
@@ -402,11 +403,12 @@ void Hy3Layout::onWindowFocusChange(PHLWINDOW window) {
 
 void Hy3Layout::updateGroupBorderColors() {
 	if (!this->root) return;
-	static auto active_color = ConfigValue<Hyprlang::CUSTOMTYPE, Config::CGradientValueData>("general:col.active_border");
+	static auto active_color = CConfigValue<Config::IComplexConfigValue>("general:col.active_border");
+	auto* const active_color_data = sc<Config::CGradientValueData*>(active_color.ptr());
 
 	for (auto& w: this->root->windows()) {
 		if (this->shouldRenderSelected(&w)) {
-			w.m_ruleApplicator->inactiveBorderColor().set(*active_color, Desktop::Types::PRIORITY_LAYOUT);
+			w.m_ruleApplicator->inactiveBorderColor().set(*active_color_data, Desktop::Types::PRIORITY_LAYOUT);
 		} else {
 			w.m_ruleApplicator->inactiveBorderColor().unset(Desktop::Types::PRIORITY_LAYOUT);
 		}
@@ -415,7 +417,7 @@ void Hy3Layout::updateGroupBorderColors() {
 	}
 }
 
-void Hy3Layout::recalculate() { this->recalcGeometry(); }
+void Hy3Layout::recalculate(Layout::eRecalculateReason) { this->recalcGeometry(); }
 
 void Hy3Layout::recalcGeometry(bool no_animation) {
 	auto algo = m_parent.lock();
@@ -506,7 +508,7 @@ void Hy3Layout::resizeTarget(const Vector2D& delta, SP<Layout::ITarget> target, 
 	auto horizontal_neighbor = node->findNeighbor(target_edge_x);
 	auto vertical_neighbor = node->findNeighbor(target_edge_y);
 
-	static const auto animate = ConfigValue<Hyprlang::INT>("misc:animate_manual_resizes");
+	static const auto animate = CConfigValue<Config::INTEGER>("misc:animate_manual_resizes");
 
 	if (horizontal_neighbor) {
 		horizontal_neighbor->resize(reverse(target_edge_x), resize_delta.x, *animate == 0);
@@ -537,7 +539,7 @@ void Hy3Layout::moveTargetInDirection(SP<Layout::ITarget> t, Math::eDirection di
 	this->shiftNode(*node, shift, false, false);
 }
 
-std::expected<void, std::string> Hy3Layout::layoutMsg(const std::string_view& sv) {
+Config::ErrorResult Hy3Layout::layoutMsg(const std::string_view& sv) {
 	std::string content(sv);
 
 	if (content == "togglesplit") {
@@ -1057,13 +1059,13 @@ bottom:
 
 Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	// clang-format off
-	static const auto p_gaps_in = ConfigValue<Hyprlang::CUSTOMTYPE, Config::CCssGapData>("general:gaps_in");
-	static const auto tab_bar_height = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:height");
-	static const auto tab_bar_padding = ConfigValue<Hyprlang::INT>("plugin:hy3:tabs:padding");
+	static const auto p_gaps_in = CConfigValue<Config::IComplexConfigValue>("general:gaps_in");
+	static const auto tab_bar_height = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:height");
+	static const auto tab_bar_padding = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding");
 	// clang-format on
 
 	auto workspace_rule = Config::workspaceRuleMgr()->getWorkspaceRuleFor(node.layout()->workspace());
-	auto gaps_in = workspace_rule.and_then([](auto r) { return r.m_gapsIn; }).value_or(*p_gaps_in);
+	auto gaps_in = workspace_rule.and_then([](auto r) { return r.m_gapsIn; }).value_or(*sc<Config::CCssGapData*>(p_gaps_in.ptr()));
 
 	auto inset = *tab_bar_height + *tab_bar_padding + gaps_in.m_top;
 
@@ -1226,7 +1228,7 @@ void Hy3Layout::setNodeSwallow(const CWorkspace* workspace, SetSwallowOption opt
 void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
 	auto last_window = Desktop::focusState()->window();
 	if (last_window != nullptr && last_window->m_isFloating) {
-		g_pCompositor->closeWindow(last_window);
+		last_window->sendClose();
 	} else {
 		auto* node = this->getWorkspaceFocusedNode(workspace);
 		if (node == nullptr) return;
@@ -1236,7 +1238,7 @@ void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
 
 		for (auto& window: windows) {
 			window->setHidden(false);
-			g_pCompositor->closeWindow(window);
+			window->sendClose();
 		}
 	}
 }
@@ -1360,8 +1362,8 @@ void Hy3Layout::warpCursorToBox(const Vector2D& pos, const Vector2D& size) {
 }
 
 void Hy3Layout::warpCursorWithFocus(const Vector2D& target, bool force) {
-	static const auto input_follows_mouse = ConfigValue<Hyprlang::INT>("input:follow_mouse");
-	static const auto no_warps = ConfigValue<Hyprlang::INT>("cursor:no_warps");
+	static const auto input_follows_mouse = CConfigValue<Config::INTEGER>("input:follow_mouse");
+	static const auto no_warps = CConfigValue<Config::INTEGER>("cursor:no_warps");
 
 	g_pCompositor->warpCursorTo(target, force);
 
@@ -1653,7 +1655,7 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 
 void Hy3Layout::updateAutotileWorkspaces() {
 	static const auto autotile_raw_workspaces =
-	    ConfigValue<Hyprlang::STRING>("plugin:hy3:autotile:workspaces");
+	    CConfigValue<Config::STRING>("plugin:hy3:autotile:workspaces");
 
 	if (*autotile_raw_workspaces == this->autotile.raw_workspaces) {
 		return;
