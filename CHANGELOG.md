@@ -1,6 +1,6 @@
 # Changelog
 
-# Upcoming
+# hl0.55.0 and before
 
 - Fixed a crash when using locked opaque tabs.
 - Fixed a crash when removing a monitor.
