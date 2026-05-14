@@ -4,6 +4,7 @@
 
 - Fixed a crash when using locked opaque tabs.
 - Fixed a crash when removing a monitor.
+- `tabs.col` options have been renamed to support lua. See readme for details.
 
 # hl0.54.2.1 and before
 

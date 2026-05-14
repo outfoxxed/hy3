@@ -188,18 +188,18 @@ void Hy3TabBarEntry::render(float scale, CBox& box, float opacity_mul) {
 	static const auto border_width = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:border_width");
 	static const auto s_opacity = CConfigValue<Config::FLOAT>("plugin:hy3:tabs:opacity");
 	static const auto blur = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:blur");
-	static const auto col_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active");
-	static const auto col_border_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active.border");
-	static const auto col_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.focused");
-	static const auto col_border_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.focused.border");
-	static const auto col_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.urgent");
-	static const auto col_border_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.urgent.border");
-	static const auto col_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.locked");
-	static const auto col_border_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.locked.border");
-	static const auto col_active_alt_monitor = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active_alt_monitor");
-	static const auto col_border_active_alt_monitor = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active_alt_monitor.border");
-	static const auto col_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.inactive");
-	static const auto col_border_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.inactive.border");
+	static const auto col_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active");
+	static const auto col_border_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active_border");
+	static const auto col_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:focused");
+	static const auto col_border_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:focused_border");
+	static const auto col_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:urgent");
+	static const auto col_border_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:urgent_border");
+	static const auto col_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:locked");
+	static const auto col_border_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:locked_border");
+	static const auto col_active_alt_monitor = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active_alt_monitor");
+	static const auto col_border_active_alt_monitor = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active_alt_monitor_border");
+	static const auto col_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:inactive");
+	static const auto col_border_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:inactive_border");
 	// clang-format on
 
 	auto radius = std::min((double) *s_radius * scale, std::min(box.width * 0.5, box.height * 0.5));
@@ -241,12 +241,12 @@ void Hy3TabBarEntry::renderText(float scale, CBox& box, float opacity) {
 	static const auto text_font = CConfigValue<Config::STRING>("plugin:hy3:tabs:text_font");
 	static const auto text_height = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:text_height");
 	static const auto text_padding = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:text_padding");
-	static const auto col_text_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active.text");
-	static const auto col_text_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.focused.text");
-	static const auto col_text_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.urgent.text");
-	static const auto col_text_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.locked.text");
-	static const auto col_text_active_alt_monitor = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active_alt_monitor.text");
-	static const auto col_text_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.inactive.text");
+	static const auto col_text_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active_text");
+	static const auto col_text_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:focused_text");
+	static const auto col_text_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:urgent_text");
+	static const auto col_text_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:locked_text");
+	static const auto col_text_active_alt_monitor = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active_alt_monitor_text");
+	static const auto col_text_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:inactive_text");
 	// clang-format on
 
 	if (!*render_text) {
@@ -867,16 +867,16 @@ bool Hy3TabPassElement::needsPrecomputeBlur() {
 	// clang-format off
 	static const auto s_opacity = CConfigValue<Config::FLOAT>("plugin:hy3:tabs:opacity");
 	static const auto blur = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:blur");
-	static const auto col_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active");
-	static const auto col_border_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.active.border");
-	static const auto col_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.focused");
-	static const auto col_border_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.focused.border");
-	static const auto col_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.urgent");
-	static const auto col_border_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.urgent.border");
-	static const auto col_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.locked");
-	static const auto col_border_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.locked.border");
-	static const auto col_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.inactive");
-	static const auto col_border_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:col.inactive.border");
+	static const auto col_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active");
+	static const auto col_border_active = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:active_border");
+	static const auto col_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:focused");
+	static const auto col_border_focused = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:focused_border");
+	static const auto col_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:urgent");
+	static const auto col_border_urgent = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:urgent_border");
+	static const auto col_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:locked");
+	static const auto col_border_locked = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:locked_border");
+	static const auto col_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:inactive");
+	static const auto col_border_inactive = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:colors:inactive_border");
 	// clang-format on
 
 	if (!*blur) return false;

@@ -270,35 +270,37 @@ plugin {
       # left padding of the window title
       text_padding = <int> # default: 3
 
-      # active tab bar segment colors
-      col.active = <color> # default: rgba(33ccff40)
-      col.active.border = <color> # default: rgba(33ccffee)
-      col.active.text = <color> # default: rgba(ffffffff)
+      colors {
+        # active tab bar segment colors
+        active = <color> # default: rgba(33ccff40)
+        active_border = <color> # default: rgba(33ccffee)
+        active_text = <color> # default: rgba(ffffffff)
 
-      # active tab bar segment colors for bars on an unfocused monitor
-      col.active_alt_monitor = <color> # default: rgba(60606040)
-      col.active_alt_monitor.border = <color> # default: rgba(808080ee)
-      col.active_alt_monitor.text = <color> # default: rgba(ffffffff)
+        # active tab bar segment colors for bars on an unfocused monitor
+        active_alt_monitor = <color> # default: rgba(60606040)
+        active_alt_monitor_border = <color> # default: rgba(808080ee)
+        active_alt_monitor_text = <color> # default: rgba(ffffffff)
 
-      # focused tab bar segment colors (focused node in unfocused container)
-      col.focused = <color> # default: rgba(60606040)
-      col.focused.border = <color> # default: rgba(808080ee)
-      col.focused.text = <color> # default: rgba(ffffffff)
+        # focused tab bar segment colors (focused node in unfocused container)
+        focused = <color> # default: rgba(60606040)
+        focused_border = <color> # default: rgba(808080ee)
+        focused_text = <color> # default: rgba(ffffffff)
 
-      # inactive tab bar segment colors
-      col.inactive = <color> # default: rgba(30303020)
-      col.inactive.border = <color> # default: rgba(606060aa)
-      col.inactive.text = <color> # default: rgba(ffffffff)
+        # inactive tab bar segment colors
+        inactive = <color> # default: rgba(30303020)
+        inactive_border = <color> # default: rgba(606060aa)
+        inactive_text = <color> # default: rgba(ffffffff)
 
-      # urgent tab bar segment colors
-      col.urgent = <color> # default: rgba(ff223340)
-      col.urgent.border = <color> # default: rgba(ff2233ee)
-      col.urgent.text = <color> # default: rgba(ffffffff)
+        # urgent tab bar segment colors
+        urgent = <color> # default: rgba(ff223340)
+        urgent_border = <color> # default: rgba(ff2233ee)
+        urgent_text = <color> # default: rgba(ffffffff)
 
-      # urgent tab bar segment colors
-      col.locked = <color> # default: rgba(90903340)
-      col.locked.border = <color> # default: rgba(909033ee)
-      col.locked.text = <color> # default: rgba(ffffffff)
+        # locked tab bar segment colors
+        locked = <color> # default: rgba(90903340)
+        locked_border = <color> # default: rgba(909033ee)
+        locked_text = <color> # default: rgba(ffffffff)
+      }
 
       # if tab backgrounds should be blurred
       # Blur is only visible when the above colors are not opaque.
