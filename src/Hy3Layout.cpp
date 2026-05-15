@@ -858,14 +858,14 @@ Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
 	return nullptr;
 }
 
-bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follow) {
+bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follow, bool warp) {
 	auto next_monitor = g_pCompositor->getMonitorInDirection(shiftToMathDirection(direction));
 
 	if (next_monitor) {
 		Desktop::focusState()->rawMonitorFocus(next_monitor);
 		auto next_workspace = next_monitor->m_activeWorkspace;
 		if (next_workspace) {
-			moveNodeToWorkspace(node.layout()->workspace().get(), next_workspace->m_name, follow, false);
+			moveNodeToWorkspace(node.layout()->workspace().get(), next_workspace->m_name, follow, warp);
 			return true;
 		}
 	}
@@ -1503,6 +1503,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 
 		if (break_parent->is_root()) {
 			if (!shift) return focusMonitor(direction);
+
+			// Moving out of the root group should mirror focus movement and cross monitors.
+			if (shiftMonitor(node, direction, true, true)) return nullptr;
 
 			auto new_layout =
 			    shiftIsVertical(direction) ? Hy3GroupLayout::SplitV : Hy3GroupLayout::SplitH;
