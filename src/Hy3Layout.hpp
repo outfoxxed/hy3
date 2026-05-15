@@ -143,7 +143,7 @@ public:
 	void shiftWindow(const CWorkspace* workspace, ShiftDirection, bool once, bool visible);
 	void shiftFocus(const CWorkspace* workspace, ShiftDirection, bool visible, bool warp);
 	void toggleFocusLayer(const CWorkspace* workspace, bool warp);
-	bool shiftMonitor(Hy3Node&, ShiftDirection, bool follow);
+	bool shiftMonitor(Hy3Node&, ShiftDirection, bool follow, bool warp);
 	Hy3Node* focusMonitor(ShiftDirection);
 
 	void warpCursor();
