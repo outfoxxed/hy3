@@ -160,7 +160,7 @@ void Hy3GroupNode::collapseExpansions() {
 }
 
 void Hy3GroupNode::setLayout(Hy3GroupLayout layout) {
-	if (layout == Hy3GroupLayout::Root) return; // root layout is immutable
+	if (layout == Hy3GroupLayout::Root || this->layout == Hy3GroupLayout::Root) return; // root layout is immutable
 	this->layout = layout;
 
 	if (!isTab()) {
