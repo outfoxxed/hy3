@@ -138,6 +138,12 @@ To install hy3 via hyprpm run
 hyprpm add https://github.com/outfoxxed/hy3
 ```
 
+To enable hy3, run
+
+```sh
+hyprpm enable hy3
+```
+
 To update hy3 (and all other plugins), run
 
 ```sh
