@@ -1493,7 +1493,9 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 
 			// if this movement would break out of the group, continue the break loop
 			// (do not enter this if) otherwise break.
-			if ((has_broken_once && shift && (once || group.isTab()))
+			if ((has_broken_once && shift
+			     && (once || group.isTab()
+			         || (break_parent->parent && break_parent->parent->as_group().isTab())))
 			    || !(
 			        (!shiftIsForward(direction) && group.children.front().get() == break_origin)
 			        || (shiftIsForward(direction) && group.children.back().get() == break_origin)
