@@ -561,6 +561,7 @@ Config::ErrorResult Hy3Layout::layoutMsg(const std::string_view& sv) {
 				break;
 			case Hy3GroupLayout::Root: break;
 			case Hy3GroupLayout::Tabbed: break;
+			case Hy3GroupLayout::Stack: break;
 			}
 		}
 	}
@@ -1067,8 +1068,6 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 	auto workspace_rule = Config::workspaceRuleMgr()->getWorkspaceRuleFor(node.layout()->workspace());
 	auto gaps_in = workspace_rule.and_then([](auto r) { return r.m_gapsIn; }).value_or(*sc<Config::CCssGapData*>(p_gaps_in.ptr()));
 
-	auto inset = *tab_bar_height + *tab_bar_padding + gaps_in.m_top;
-
 	if (node.is_group()) {
 		if (node.hidden) return nullptr;
 		// note: tab bar clicks ignore animations
@@ -1079,19 +1078,49 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 		auto& group = node.as_group();
 
 		if (group.isTab() && group.tab_bar) {
-			if (pos.y < node.visualBox.y + inset) {
-				auto& children = group.children;
-				auto& tab_bar = *group.tab_bar.get();
+			auto& children = group.children;
+			auto& tab_bar = *group.tab_bar.get();
+			auto size = tab_bar.size->value();
+			auto child_iter = children.begin();
 
-				auto size = tab_bar.size->value();
-				auto x = pos.x - tab_bar.pos->value().x;
-				auto child_iter = children.begin();
+			if (group.layout == Hy3GroupLayout::Tabbed) {
+				auto inset = *tab_bar_height + *tab_bar_padding + gaps_in.m_top;
+
+				if (pos.y < node.visualBox.y + inset) {
+					auto x = pos.x - tab_bar.pos->value().x;
+
+					for (auto& tab: tab_bar.bar.entries) {
+						if (child_iter == children.end()) break;
+
+						if (x > tab.offset->value() * size.x
+						    && x < (tab.offset->value() + tab.width->value()) * size.x)
+						{
+							*focused_node = child_iter->get();
+							return &node;
+						}
+
+						child_iter = std::next(child_iter);
+					}
+				}
+			} else if (group.layout == Hy3GroupLayout::Stack) {
+				auto child_count = group.children.size();
+				auto total_bar_height = child_count * *tab_bar_height + (child_count > 1 ? (child_count - 1) * *tab_bar_padding : 0);
+				auto inset = total_bar_height + *tab_bar_padding + gaps_in.m_top;
+
+				if (pos.y >= node.visualBox.y + inset) {
+					if (group.focused_child != nullptr) {
+						return findTabBarAt(*group.focused_child, pos, focused_node);
+					}
+					return nullptr;
+				}
+
+				auto y = pos.y - tab_bar.pos->value().y;
 
 				for (auto& tab: tab_bar.bar.entries) {
 					if (child_iter == children.end()) break;
 
-					if (x > tab.offset->value() * size.x
-					    && x < (tab.offset->value() + tab.width->value()) * size.x)
+					if (y > tab.offset->value() * size.y
+					    && y < (tab.offset->value() + tab.width->value()) * size.y)
 					{
 						*focused_node = child_iter->get();
 						return &node;
@@ -1185,14 +1214,24 @@ hastab:
 		} else {
 			auto node_iter = group.findChild(*group.focused_child);
 			if (node_iter == children.end()) return;
-			if (target == TabFocus::Left) {
+
+			bool go_backward = false;
+			bool go_forward = false;
+
+			if (target == TabFocus::Left || target == TabFocus::Up) {
+				go_backward = true;
+			} else if (target == TabFocus::Right || target == TabFocus::Down) {
+				go_forward = true;
+			}
+
+			if (go_backward) {
 				if (node_iter == children.begin()) {
 					if (wrap_scroll) node_iter = std::prev(children.end());
 					else return;
 				} else node_iter = std::prev(node_iter);
 
 				tab_focused_node = node_iter->get();
-			} else {
+			} else if (go_forward) {
 				if (node_iter == std::prev(children.end())) {
 					if (wrap_scroll) node_iter = children.begin();
 					else return;
@@ -1458,6 +1497,8 @@ bool shiftIsVertical(ShiftDirection direction) {
 
 bool shiftMatchesLayout(Hy3GroupLayout layout, ShiftDirection direction) {
 	if (layout == Hy3GroupLayout::Root) return false;
+	if (layout == Hy3GroupLayout::Tabbed) return !shiftIsVertical(direction);
+	if (layout == Hy3GroupLayout::Stack) return shiftIsVertical(direction);
 	return (layout == Hy3GroupLayout::SplitV && shiftIsVertical(direction))
 	    || (layout != Hy3GroupLayout::SplitV && !shiftIsVertical(direction));
 }

@@ -342,11 +342,11 @@ plugin {
 ```
 
 ### Dispatcher list
- - `hy3:makegroup, <h | v | opposite | tab>, [toggle], [ephemeral | force_ephemeral]` - make a vertical / horizontal split or tab group
+ - `hy3:makegroup, <h | v | opposite | tab | stack>, [toggle], [ephemeral | force_ephemeral]` - make a vertical / horizontal split or tab/stack group
    - `toggle` - if the focused node is the only child of its parent, which is of the type specified, the node's parent will be removed.
    - `ephemeral` - the group will be removed once it contains only one node. does not affect existing groups.
    - `force_ephemeral` - same as ephemeral, but converts existing single windows groups.
- - `hy3:changegroup, <h | v | tab | untab | toggletab | opposite>` - change the group the node belongs to, to a different layout
+ - `hy3:changegroup, <h | v | tab | stack | untab | toggletab | opposite>` - change the group the node belongs to, to a different layout
    - `untab` will untab the group if it was previously tabbed
    - `toggletab` will untab if group is tabbed, and tab if group is untabbed
    - `opposite` will toggle between horizontal and vertical layouts if the group is not tabbed.
@@ -373,8 +373,8 @@ plugin {
    - `tabnode` - raise focus to the nearest node under the tab
  - `hy3:togglefocuslayer, [nowarp]` - toggle focus between tiled and floating layers
    - `nowarp` - do not warp the mouse to the newly focused window
- - `hy3:focustab, [l | r | left | right | index, <index>], [prioritize_hovered | require_hovered], [wrap]`
-   - `l | r | left | right` - direction to change focus towards
+ - `hy3:focustab, [l | r | u | d | left | right | up | down | index, <index>], [prioritize_hovered | require_hovered], [wrap]`
+   - `l | r | u | d | left | right | up | down` - direction to change focus towards
    - `index, <index>` - select the `index`th tab
    - `prioritize_hovered` - prioritize the tab group under the mouse when multiple are stacked. use the lowest group if none is under the mouse.
    - `require_hovered` - affect the tab group under the mouse. do nothing if none are hovered.
@@ -401,12 +401,12 @@ local hy3 = hl.plugin.hy3
 -- all factories return dispatcher functions and dispatchers return no values
 -- option tables are optional except for focus_tab
 
-hy3.make_group("h" | "v" | "tab" | "opposite", {
+hy3.make_group("h" | "v" | "tab" | "stack" | "opposite", {
 	toggle = true | false,              -- default: false
 	ephemeral = true | false | "force", -- default: false
 })
 
-hy3.change_group("h" | "v" | "tab" | "untab" | "toggletab" | "opposite")
+hy3.change_group("h" | "v" | "tab" | "stack" | "untab" | "toggletab" | "opposite")
 
 hy3.set_ephemeral(true | false | "true" | "false")
 
@@ -435,7 +435,7 @@ hy3.change_focus("top" | "bottom" | "raise" | "lower" | "tab" | "tabnode")
 
 -- direction and index are mutually exclusive
 hy3.focus_tab({
-	direction = "l" | "r" | "left" | "right",
+	direction = "l" | "r" | "u" | "d" | "left" | "right" | "up" | "down",
 	mouse = "ignore" | "prioritize_hovered" | "require_hovered", -- default: "ignore"
 	wrap = true | false, -- default: false
 })

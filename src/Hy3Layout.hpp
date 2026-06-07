@@ -60,6 +60,8 @@ enum class TabFocus {
 	MouseLocation,
 	Left,
 	Right,
+	Up,
+	Down,
 	Index,
 };
 
