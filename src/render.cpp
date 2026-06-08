@@ -1,7 +1,6 @@
 #include "render.hpp"
 
 #include <GLES2/gl2.h>
-#include <hyprland/src/helpers/math/Math.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/gl/GLTexture.hpp>
 #include <hyprland/src/render/Shader.hpp>
@@ -34,13 +33,7 @@ void Hy3Render::renderTab(
 	const auto& monitorSize = rdata.pMonitor->m_transformedSize;
 	auto monitorBox = CBox {Vector2D(), monitorSize};
 
-	const auto monitor_inverted = Math::wlTransformToHyprutils(
-			Math::invertTransform(g_pHyprRenderer->m_renderData.pMonitor->m_transform)
-	);
-
-	Hyprutils::Math::eTransform transform = monitor_inverted;
-
-	auto glMatrix = g_pHyprRenderer->projectBoxToTarget(monitorBox, transform);
+	auto glMatrix = g_pHyprRenderer->projectBoxToTarget(monitorBox, Hyprutils::Math::HYPRUTILS_TRANSFORM_NORMAL);
 
 	g_pHyprOpenGL->useShader(shader.program);
 
