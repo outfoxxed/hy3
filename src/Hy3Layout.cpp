@@ -5,6 +5,9 @@
 
 #include <dlfcn.h>
 #include <hyprland/src/Compositor.hpp>
+#include <hyprland/src/output/Monitor.hpp>
+#include <hyprland/src/state/WorkspaceState.hpp>
+#include <hyprland/src/state/MonitorState.hpp>
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
@@ -149,10 +152,10 @@ PHLWORKSPACE Hy3Layout::workspace() {
 	return space->workspace();
 }
 
-CMonitor* Hy3Layout::monitor() {
+PHLMONITORREF Hy3Layout::monitor() {
 	auto ws = workspace();
 	if (!ws) return nullptr;
-	return ws->m_monitor.get();
+	return ws->m_monitor;
 }
 
 // ITiledAlgorithm overrides
@@ -826,7 +829,11 @@ void Hy3Layout::shiftFocus(
 }
 
 Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
-	auto next_monitor = g_pCompositor->getMonitorInDirection(shiftToMathDirection(direction));
+	auto next_monitor = State::monitorState()
+													->query()
+													.relativeTo(this->monitor().lock())
+													.inDirection(shiftToMathDirection(direction))
+													.run();
 
 	if (next_monitor) {
 		bool found = false;
@@ -859,7 +866,12 @@ Hy3Node* Hy3Layout::focusMonitor(ShiftDirection direction) {
 }
 
 bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follow) {
-	auto next_monitor = g_pCompositor->getMonitorInDirection(shiftToMathDirection(direction));
+	auto next_monitor = State::monitorState()
+													->query()
+													.relativeTo(this->monitor().lock())
+													.inDirection(shiftToMathDirection(direction))
+													.run();
+
 
 	if (next_monitor) {
 		Desktop::focusState()->rawMonitorFocus(next_monitor);
@@ -932,7 +944,7 @@ void Hy3Layout::moveNodeToWorkspace(
 		return;
 	}
 
-	auto workspace = g_pCompositor->getWorkspaceByID(target.id);
+	auto workspace = State::workspaceState()->query().id(target.id).run();
 
 	if (origin == workspace.get()) return;
 
@@ -949,7 +961,7 @@ void Hy3Layout::moveNodeToWorkspace(
 	if (workspace == nullptr) {
 		hy3_log(LOG, "creating target workspace {} for node move", target.id);
 
-		workspace = g_pCompositor->createNewWorkspace(target.id, origin_ws->monitorID(), target.name);
+		workspace = State::workspaceState()->create(target.id, origin_ws->monitorID(), target.name);
 	}
 
 	if (focused_window != nullptr

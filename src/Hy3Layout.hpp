@@ -14,6 +14,7 @@ enum class GroupEphemeralityOption {
 #include <hyprland/src/layout/algorithm/TiledAlgorithm.hpp>
 #include <hyprland/src/layout/algorithm/Algorithm.hpp>
 #include <hyprland/src/layout/space/Space.hpp>
+#include <hyprland/src/output/Monitor.hpp>
 #include <hyprland/src/layout/target/Target.hpp>
 #include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/helpers/signal/Signal.hpp>
@@ -180,7 +181,7 @@ public:
 	Hy3Node* getNodeFromTarget(SP<Layout::ITarget> target);
 
 	PHLWORKSPACE workspace();
-	CMonitor* monitor();
+	PHLMONITORREF monitor();
 
 	UP<Hy3RootNode> root;
 
