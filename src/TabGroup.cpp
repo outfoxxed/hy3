@@ -607,9 +607,21 @@ Hy3TabGroup::Hy3TabGroup(Hy3Node& node) {
 
 void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	static const auto bar_height = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:height");
+	static const auto bar_padding = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding");
 
 	auto tpos = node.visualBox.pos();
-	auto tsize = Vector2D(node.visualBox.w, *bar_height);
+	auto& group = node.as_group();
+	this->layout = group.layout;
+	Vector2D tsize;
+
+	if (group.layout == Hy3GroupLayout::Tabbed) {
+		tsize = Vector2D(node.visualBox.w, *bar_height);
+	} else if (group.layout == Hy3GroupLayout::Stack) {
+		auto child_count = group.children.size();
+		double entry_h = (double)*bar_height;
+		double total_h = child_count * entry_h + (child_count > 1 ? (child_count - 1) * *bar_padding : 0);
+		tsize = Vector2D(node.visualBox.w, total_h);
+	}
 
 	this->hidden = node.hidden;
 	if (this->pos->goal() != tpos) {
@@ -819,13 +831,27 @@ void Hy3TabGroup::renderTabBar() {
 	                  * (valid(this->workspace) ? this->workspace->m_alpha->value() : 1.0);
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
-		Vector2D entry_pos = {
-		    (box.x + (entry.offset->value() * box.w) + (*padding * 0.5)) * scale,
-		    scaledBox.y
-		        + ((entry.vertical_pos->value() * (box.h + *padding) * scale)
-		           * (*enter_from_top ? -1 : 1)),
-		};
-		Vector2D entry_size = {((entry.width->value() * box.w) - *padding) * scale, scaledBox.h};
+		Vector2D entry_pos;
+		Vector2D entry_size;
+
+		if (this->layout == Hy3GroupLayout::Tabbed) {
+			entry_pos = Vector2D(
+			    (box.x + (entry.offset->value() * box.w) + (*padding * 0.5)) * scale,
+			    scaledBox.y
+			        + ((entry.vertical_pos->value() * (box.h + *padding) * scale)
+			           * (*enter_from_top ? -1 : 1))
+			);
+			entry_size = Vector2D(((entry.width->value() * box.w) - *padding) * scale, scaledBox.h);
+		} else if (this->layout == Hy3GroupLayout::Stack) {
+			entry_pos = Vector2D(
+			    scaledBox.x,
+			    (box.y + (entry.offset->value() * box.h) + (*padding * 0.5)) * scale
+			        + ((entry.vertical_pos->value() * (box.h + *padding) * scale)
+			           * (*enter_from_top ? -1 : 1))
+			);
+			entry_size = Vector2D(scaledBox.w, ((entry.width->value() * box.h) - *padding) * scale);
+		}
+
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
 
 		CBox box = {
@@ -912,6 +938,7 @@ void findOverlappingWindows(Hy3Node& node, float height, std::vector<PHLWINDOWRE
 			}
 			break;
 		case Hy3GroupLayout::Tabbed:
+		case Hy3GroupLayout::Stack:
 			// assume the height of that node's tab bar already pushes it out of range
 			break;
 		}

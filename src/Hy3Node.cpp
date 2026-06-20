@@ -401,6 +401,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 		constraint = tsize.y - (child_count > 1 ? (child_count - 1) * inter_gap : 0);
 		break;
 	case Hy3GroupLayout::Tabbed:
+	case Hy3GroupLayout::Stack:
 	case Hy3GroupLayout::Root: break;
 	}
 
@@ -469,6 +470,23 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 			// Tab bar makes child non-edge on top
 			child_offsets.x = offsets.x;
 			child_offsets.y = offsets.y + tab_offset;
+			child_offsets.w = offsets.w;
+			child_offsets.h = offsets.h;
+
+			child->recalcSizePosRecursive(child_offsets, no_animation);
+			break;
+		}
+		case Hy3GroupLayout::Stack: {
+			double entry_height = (double)*tab_bar_height;
+			double total_bar_height = child_count * entry_height + (child_count > 1 ? (child_count - 1) * *tab_bar_padding : 0);
+			double stack_offset = total_bar_height + (double)*tab_bar_padding;
+
+			child->visualBox = CBox(tpos.x, tpos.y + stack_offset, tsize.x, tsize.y - stack_offset);
+			child->hidden = this->hidden || expand_focused || group.focused_child != child.get();
+
+			// Stack bar makes child on top non-edge
+			child_offsets.x = offsets.x;
+			child_offsets.y = offsets.y + stack_offset;
 			child_offsets.w = offsets.w;
 			child_offsets.h = offsets.h;
 
@@ -553,6 +571,7 @@ std::string Hy3Node::getTitle() {
 		case Hy3GroupLayout::SplitH: title = "[H] "; break;
 		case Hy3GroupLayout::SplitV: title = "[V] "; break;
 		case Hy3GroupLayout::Tabbed: title = "[T] "; break;
+		case Hy3GroupLayout::Stack: title = "[S] "; break;
 		}
 
 		if (group.focused_child == nullptr) {
@@ -656,6 +675,7 @@ std::string Hy3Node::debugNode() {
 		case Hy3GroupLayout::SplitH: buf << "splith"; break;
 		case Hy3GroupLayout::SplitV: buf << "splitv"; break;
 		case Hy3GroupLayout::Tabbed: buf << "tabs"; break;
+		case Hy3GroupLayout::Stack: buf << "stack"; break;
 		}
 
 		buf << "] size ratio: ";

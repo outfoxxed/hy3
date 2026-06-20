@@ -88,6 +88,7 @@ static std::optional<SMakeGroupAction> parseMakeGroupArg(std::string_view arg) {
 	if (arg == "h") return SMakeGroupAction { .layout = Hy3GroupLayout::SplitH };
 	if (arg == "v") return SMakeGroupAction { .layout = Hy3GroupLayout::SplitV };
 	if (arg == "tab") return SMakeGroupAction { .layout = Hy3GroupLayout::Tabbed };
+	if (arg == "stack") return SMakeGroupAction { .layout = Hy3GroupLayout::Stack };
 	if (arg == "opposite") return SMakeGroupAction { .opposite = true };
 	return {};
 }
@@ -96,7 +97,7 @@ static SMakeGroupAction luaMakeGroupActionArg(lua_State* L, int idx, const char*
 	auto value = luaStringArg(L, idx, fn, "layout");
 	auto action = parseMakeGroupArg(value);
 	if (!action)
-		luaL_error(L, "%s: invalid layout '%s' (expected h/v/tab/opposite)", fn, value.c_str());
+		luaL_error(L, "%s: invalid layout '%s' (expected h/v/tab/stack/opposite)", fn, value.c_str());
 	return *action;
 }
 
@@ -197,6 +198,7 @@ enum class ChangeGroupAction {
 	SplitH,
 	SplitV,
 	Tabbed,
+	Stack,
 	Untab,
 	ToggleTab,
 	Opposite,
@@ -206,6 +208,7 @@ static std::optional<ChangeGroupAction> parseChangeGroupArg(std::string_view arg
 	if (arg == "h") return ChangeGroupAction::SplitH;
 	if (arg == "v") return ChangeGroupAction::SplitV;
 	if (arg == "tab") return ChangeGroupAction::Tabbed;
+	if (arg == "stack") return ChangeGroupAction::Stack;
 	if (arg == "untab") return ChangeGroupAction::Untab;
 	if (arg == "toggletab") return ChangeGroupAction::ToggleTab;
 	if (arg == "opposite") return ChangeGroupAction::Opposite;
@@ -216,7 +219,7 @@ static ChangeGroupAction luaChangeGroupActionArg(lua_State* L, int idx, const ch
 	auto value = luaStringArg(L, idx, fn, "layout");
 	auto action = parseChangeGroupArg(value);
 	if (!action)
-		luaL_error(L, "%s: invalid layout '%s' (expected h/v/tab/untab/toggletab/opposite)", fn, value.c_str());
+		luaL_error(L, "%s: invalid layout '%s' (expected h/v/tab/stack/untab/toggletab/opposite)", fn, value.c_str());
 	return *action;
 }
 
@@ -234,6 +237,9 @@ static SDispatchResult changeGroup(ChangeGroupAction action) {
 		break;
 	case ChangeGroupAction::Tabbed:
 		hy3->changeGroupOnWorkspace(ws.get(), Hy3GroupLayout::Tabbed);
+		break;
+	case ChangeGroupAction::Stack:
+		hy3->changeGroupOnWorkspace(ws.get(), Hy3GroupLayout::Stack);
 		break;
 	case ChangeGroupAction::Untab:
 		hy3->untabGroupOnWorkspace(ws.get());
@@ -632,8 +638,10 @@ static int luaFocusTab(lua_State* L) {
 			return luaL_error(L, "%s: expected either 'direction' or 'index'", FN);
 		if (*direction == "l" || *direction == "left") focus = TabFocus::Left;
 		else if (*direction == "r" || *direction == "right") focus = TabFocus::Right;
+		else if (*direction == "u" || *direction == "up") focus = TabFocus::Up;
+		else if (*direction == "d" || *direction == "down") focus = TabFocus::Down;
 		else
-			return luaL_error(L, "%s: invalid direction '%s' (expected left/right)", FN, direction->c_str());
+			return luaL_error(L, "%s: invalid direction '%s' (expected left/right/up/down)", FN, direction->c_str());
 	}
 
 	auto mouse = TabFocusMousePriority::Ignore;
@@ -674,6 +682,8 @@ static SDispatchResult dispatch_focustab(std::string value) {
 
 	if (args[i] == "l" || args[i] == "left") focus = TabFocus::Left;
 	else if (args[i] == "r" || args[i] == "right") focus = TabFocus::Right;
+	else if (args[i] == "u" || args[i] == "up") focus = TabFocus::Up;
+	else if (args[i] == "d" || args[i] == "down") focus = TabFocus::Down;
 	else if (args[i] == "index") {
 		i++;
 		focus = TabFocus::Index;
