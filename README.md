@@ -214,6 +214,8 @@ hy3 requires using a few custom dispatchers for normal operation.
 In your hyprland config replace the following dispatchers:
  - `movefocus` -> `hy3:movefocus`
  - `movewindow` -> `hy3:movewindow`
+ - `movetoworkspace` -> `hy3:movetoworkspace`
+ - `killactive` -> `hy3:killactive`
 
 You can use `hy3:makegroup` to create a new split.
 
@@ -463,4 +465,18 @@ hy3.equalize({
 })
 
 hy3.debug_nodes()
+```
+
+### Minimal as-in-i3 example
+
+Theese binds will provide same effect with the same keys as in the default i3/sway config.
+```conf
+# toggle container layout tabbed/default
+bind = $mainMod, w, hy3:changegroup, toggletab
+# toggle split v/h
+bind = $mainMod, e, hy3:changegroup, opposite
+# split in vertical orientation
+bind = $mainMod, v, hy3:makegroup, v
+# split in horizontal orientation
+bind = $mainMod, h, hy3:makegroup, h
 ```
