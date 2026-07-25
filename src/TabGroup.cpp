@@ -492,10 +492,10 @@ void Hy3TabBar::updateNodeList(std::list<UP<Hy3Node>>& nodes) {
 		auto parent_focused = parent->isIndirectlyFocused();
 
 		entry->setFocused(
-		    parent_group.focused_child == node->get() || (parent_group.group_focused && parent_focused)
+		    parent_group.focused_child.get() == node->get() || (parent_group.group_focused && parent_focused)
 		);
 
-		auto active = parent_focused && (parent_group.focused_child == node->get() || parent_group.group_focused);
+		auto active = parent_focused && (parent_group.focused_child.get() == node->get() || parent_group.group_focused);
 		entry->setActive(active);
 
 		auto last_monitor = Desktop::focusState()->monitor();
@@ -635,8 +635,8 @@ void Hy3TabGroup::updateWithGroup(Hy3Node& node, bool warp) {
 	auto locked = node.as_group().locked;
 	if (this->bar.locked->goal() != locked) *this->bar.locked = locked;
 
-	if (node.as_group().focused_child != nullptr) {
-		this->updateStencilWindows(*node.as_group().focused_child);
+	if (node.as_group().focused_child.get() != nullptr) {
+		this->updateStencilWindows(*node.as_group().focused_child.get());
 	}
 
 	if (this->bar.dirty) this->tick();

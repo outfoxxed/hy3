@@ -75,7 +75,7 @@ auto Hy3GroupNode::findChild(Hy3Node& child) -> std::list<UP<Hy3Node>>::iterator
 
 void Hy3GroupNode::insertChild(std::list<UP<Hy3Node>>::iterator pos, UP<Hy3Node> child) {
 	child->parent = this->self;
-	if (focused_child == nullptr) focused_child = child.get();
+	if (focused_child.get() == nullptr) focused_child = child->self;
 	children.insert(pos, std::move(child));
 	if (ephemeral == Ephemeral::Staged && children.size() >= 2)
 		ephemeral = Ephemeral::Active;
@@ -89,13 +89,13 @@ UP<Hy3Node> Hy3GroupNode::extractChildRaw(std::list<UP<Hy3Node>>::iterator it) {
 	auto* child_ptr = it->get();
 
 	// Fix focused_child if we're extracting it
-	if (focused_child == child_ptr) {
+	if (focused_child.get() == child_ptr) {
 		if (children.size() <= 1) {
-			focused_child = nullptr;
+			focused_child.reset();
 		} else if (it == children.begin()) {
-			focused_child = std::next(it)->get();
+			focused_child = (*std::next(it))->self;
 		} else {
-			focused_child = std::prev(it)->get();
+			focused_child = (*std::prev(it))->self;
 		}
 	}
 
@@ -140,7 +140,7 @@ UP<Hy3Node> Hy3GroupNode::extractChild(Hy3Node& child) {
 UP<Hy3Node> Hy3GroupNode::replaceChild(std::list<UP<Hy3Node>>::iterator it, UP<Hy3Node> replacement) {
 	replacement->parent = this->self;
 	replacement->size_ratio = (*it)->size_ratio;
-	if (focused_child == it->get()) focused_child = replacement.get();
+	if (focused_child.get() == it->get()) focused_child = replacement->self;
 	auto old = std::exchange(*it, std::move(replacement));
 	old->size_ratio = 1.0;
 	old->parent.reset();
@@ -151,12 +151,12 @@ void Hy3GroupNode::collapseExpansions() {
 	if (this->expand_focused == ExpandFocusType::NotExpanded) return;
 	this->expand_focused = ExpandFocusType::NotExpanded;
 
-	Hy3Node* node = this->focused_child;
+	Hy3Node* node = this->focused_child.get();
 
-	while (node->is_group() && node->as_group().expand_focused == ExpandFocusType::Stack) {
+	while (node != nullptr && node->is_group() && node->as_group().expand_focused == ExpandFocusType::Stack) {
 		auto& group = node->as_group();
 		group.expand_focused = ExpandFocusType::NotExpanded;
-		node = group.focused_child;
+		node = group.focused_child.get();
 	}
 }
 
@@ -273,7 +273,7 @@ void Hy3Node::markFocused() {
 
 	for (auto& ancestor: this->ancestors()) {
 		auto& group = ancestor.parent->as_group();
-		group.focused_child = &ancestor;
+		group.focused_child = ancestor.self;
 		group.group_focused = false;
 	}
 
@@ -286,12 +286,12 @@ Hy3Node& Hy3Node::getFocusedNode(bool ignore_group_focus, bool stop_at_expanded)
 	case Hy3NodeType::Group: {
 		auto& group = this->as_group();
 
-		if (group.focused_child == nullptr || (!ignore_group_focus && group.group_focused)
+		if (group.focused_child.get() == nullptr || (!ignore_group_focus && group.group_focused)
 		    || (stop_at_expanded && group.expand_focused != ExpandFocusType::NotExpanded))
 		{
 			return *this;
 		} else {
-			return group.focused_child->getFocusedNode(ignore_group_focus, stop_at_expanded);
+			return group.focused_child.get()->getFocusedNode(ignore_group_focus, stop_at_expanded);
 		}
 	}
 	}
@@ -301,7 +301,7 @@ Hy3Node& Hy3Node::getFocusedNode(bool ignore_group_focus, bool stop_at_expanded)
 bool Hy3Node::isIndirectlyFocused() {
 	for (auto& node: this->ancestors()) {
 		auto& group = node.parent->as_group();
-		if (!group.group_focused && group.focused_child != &node) return false;
+		if (!group.group_focused && group.focused_child.get() != &node) return false;
 	}
 
 	return true;
@@ -357,19 +357,20 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 	auto expand_focused = group.expand_focused != ExpandFocusType::NotExpanded;
 	bool directly_contains_expanded =
 	    expand_focused
-	    && (group.focused_child->is_target()
-	        || group.focused_child->as_group().expand_focused == ExpandFocusType::NotExpanded);
+	    && (group.focused_child.get() != nullptr)
+	    && (group.focused_child.get()->is_target()
+	        || group.focused_child.get()->as_group().expand_focused == ExpandFocusType::NotExpanded);
 
 	auto child_count = group.children.size();
 
 	// Latch/expanded: expanded node covers full parent area with parent offsets
 	if (group.expand_focused == ExpandFocusType::Latch) {
-		auto* expanded_node = group.focused_child;
+		auto* expanded_node = group.focused_child.get();
 
 		while (expanded_node != nullptr && expanded_node->is_group()
 		       && expanded_node->as_group().expand_focused != ExpandFocusType::NotExpanded)
 		{
-			expanded_node = expanded_node->as_group().focused_child;
+			expanded_node = expanded_node->as_group().focused_child.get();
 		}
 
 		if (expanded_node == nullptr) {
@@ -415,7 +416,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 		bool is_last = (child.get() == group.children.back().get());
 		int inset = is_first && is_last && !this->is_root_group() ? *group_inset : 0;
 
-		if (directly_contains_expanded && child.get() == group.focused_child) {
+		if (directly_contains_expanded && child.get() == group.focused_child.get()) {
 			// Advance offset past this child's visible share
 			if (group.isSplit()) {
 				offset += child->size_ratio * ratio_mul - inset;
@@ -465,7 +466,7 @@ void Hy3Node::recalcSizePosRecursive(CBox offsets, bool no_animation) {
 			double tab_offset = (double)*tab_bar_height + (double)*tab_bar_padding;
 
 			child->visualBox = CBox(tpos.x, tpos.y + tab_offset, tsize.x, tsize.y - tab_offset);
-			child->hidden = this->hidden || expand_focused || group.focused_child != child.get();
+			child->hidden = this->hidden || expand_focused || group.focused_child.get() != child.get();
 
 			// Tab bar makes child non-edge on top
 			child_offsets.x = offsets.x;
@@ -556,10 +557,10 @@ std::string Hy3Node::getTitle() {
 		case Hy3GroupLayout::Tabbed: title = "[T] "; break;
 		}
 
-		if (group.focused_child == nullptr) {
+		if (group.focused_child.get() == nullptr) {
 			title += "Group";
 		} else {
-			title += group.focused_child->getTitle();
+			title += group.focused_child.get()->getTitle();
 		}
 
 		return title;
@@ -620,8 +621,8 @@ std::generator<CWindow&> Hy3Node::windows(bool visibleOnly) {
 		    && (group.isTab()
 		        || group.expand_focused != ExpandFocusType::NotExpanded))
 		{
-			if (group.focused_child != nullptr) {
-				for (auto& window: group.focused_child->windows(true)) {
+			if (group.focused_child.get() != nullptr) {
+				for (auto& window: group.focused_child.get()->windows(true)) {
 					co_yield window;
 				}
 			}
@@ -831,7 +832,7 @@ void Hy3Node::wrap(Hy3GroupLayout layout, GroupEphemeralityOption ephemeral, boo
 	auto& group = group_node.as_group();
 	group.insertChild(std::move(this_up));
 	group.group_focused = false;
-	group.focused_child = this;
+	group.focused_child = this->self;
 	if (ephemeral == GroupEphemeralityOption::Ephemeral
 	    || ephemeral == GroupEphemeralityOption::ForceEphemeral)
 		group.setEphemeral(GroupEphemeralityOption::ForceEphemeral);
