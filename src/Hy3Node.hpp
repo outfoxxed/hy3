@@ -20,6 +20,7 @@ enum class Hy3GroupLayout {
 	SplitH,
 	SplitV,
 	Tabbed,
+	Stack,
 };
 
 enum class Hy3NodeType {
@@ -143,7 +144,7 @@ struct Hy3GroupNode : Hy3Node {
 	~Hy3GroupNode() override = default;
 
 	bool isSplit() const { return layout == Hy3GroupLayout::SplitH || layout == Hy3GroupLayout::SplitV; }
-	bool isTab() const { return layout == Hy3GroupLayout::Tabbed; }
+	bool isTab() const { return layout == Hy3GroupLayout::Tabbed || layout == Hy3GroupLayout::Stack; }
 
 	bool hasChild(Hy3Node& child);
 	void collapseExpansions();
