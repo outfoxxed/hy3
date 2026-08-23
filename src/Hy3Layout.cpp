@@ -13,6 +13,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/desktop/rule/Engine.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
@@ -114,7 +115,7 @@ Hy3Layout::Hy3Layout() {
 
 		    auto view = ptr_surface->view();
 		    auto* window = dynamic_cast<Desktop::View::CWindow*>(view.get());
-		    if (!window || window->m_isFloating || Fullscreen::controller()->isFullscreen(window->m_self.lock())) return;
+		    if (!window || window->isFloating() || Fullscreen::controller()->isFullscreen(window->m_self.lock())) return;
 
 		    auto* node = this->getNodeFromWindow(window);
 		    if (!node) return;
@@ -418,7 +419,7 @@ void Hy3Layout::updateGroupBorderColors() {
 			w.m_ruleApplicator->inactiveBorderColor().unset(Desktop::Types::PRIORITY_LAYOUT);
 		}
 
-		w.updateDecorationValues();
+		w.presentation().refreshValues();
 	}
 }
 
@@ -597,8 +598,8 @@ PHLWINDOW Hy3Layout::findTiledWindowCandidate(const CWindow* from) {
 PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const CWindow* from) {
 	// return the first floating window on the same workspace that has not asked not to be focused
 	for (const auto& w: Desktop::windowState()->windows() | std::views::reverse) {
-		if (w->m_isMapped && !w->isHidden() && w->m_isFloating && !w->isX11OverrideRedirect()
-		    && w->m_workspace == from->m_workspace && !w->m_X11ShouldntFocus
+		if (w->mapped() && !w->isHidden() && w->isFloating() && !w->backend().traits().overrideRedirect
+		    && w->m_workspace == from->m_workspace && !w->shouldntFocus()
 		    && !w->m_ruleApplicator->noFocus().valueOrDefault() && w.get() != from)
 		{
 			return w;
@@ -793,7 +794,7 @@ void Hy3Layout::shiftFocus(
 			return;
 		}
 
-		if (current_window->m_isFloating) {
+		if (current_window->isFloating()) {
 			auto next_window = Desktop::windowState()->query().inDirection(
 			    current_window,
 			    shiftToMathDirection(direction)
@@ -802,7 +803,10 @@ void Hy3Layout::shiftFocus(
 			if (next_window != nullptr) {
 				g_pInputManager->unconstrainMouse();
 				Desktop::focusState()->fullWindowFocus(next_window, Desktop::FOCUS_REASON_KEYBIND);
-				if (warp) Hy3Layout::warpCursorToBox(next_window->m_reportedPosition, next_window->m_reportedSize);
+				if (warp) {
+					const auto box = next_window->layoutBox();
+					Hy3Layout::warpCursorToBox(box.pos(), box.size());
+				}
 			}
 			return;
 		}
@@ -889,7 +893,7 @@ void Hy3Layout::toggleFocusLayer(const CWorkspace* workspace, bool warp) {
 	if (!current_window) return;
 
 	PHLWINDOW target;
-	if (current_window->m_isFloating) {
+	if (current_window->isFloating()) {
 		target = this->findTiledWindowCandidate(current_window.get());
 	} else {
 		target = this->findFloatingWindowCandidate(current_window.get());
@@ -1150,7 +1154,7 @@ void Hy3Layout::focusTab(
 		// non window-parented surface focused, cant have a tab
 		auto view = ptrSurface->view();
 		auto* window = dynamic_cast<CWindow*>(view.get());
-		if (!window || window->m_isFloating) return;
+		if (!window || window->isFloating()) return;
 
 		auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
 		tab_node = findTabBarAt(*node, mouse_pos, &tab_focused_node);
@@ -1239,7 +1243,7 @@ void Hy3Layout::setNodeSwallow(const CWorkspace* workspace, SetSwallowOption opt
 
 void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
 	auto last_window = Desktop::focusState()->window();
-	if (last_window != nullptr && last_window->m_isFloating) {
+	if (last_window != nullptr && last_window->isFloating()) {
 		last_window->sendClose();
 	} else {
 		auto* node = this->getWorkspaceFocusedNode(workspace);

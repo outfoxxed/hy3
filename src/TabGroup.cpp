@@ -11,6 +11,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/desktop/view/types/Geometric.hpp>
 #include <hyprland/src/helpers/Color.hpp>
 #include <hyprland/src/animation/AnimationManager.hpp>
@@ -804,8 +805,8 @@ void Hy3TabGroup::renderTabBar() {
 			auto wsize = window->size(IGeometric::GEOMETRIC_CURRENT);
 
 			CBox window_box = {wpos.x, wpos.y, wsize.x, wsize.y};
-			auto border = window->getRealBorderSize();
-			auto radius = *window_rounding + border;
+			auto border = window->presentation().borderSize();
+			auto radius = sc<int>(*window_rounding) + border;
 			window_box.expand(border);
 			// scaleBox(&window_box, scale);
 			window_box.scale(scale);

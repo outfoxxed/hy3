@@ -9,7 +9,7 @@ enum class Hy3GroupLayout;
 #include <generator>
 
 #include <hyprland/src/defines.hpp>
-#include <hyprland/src/desktop/view/Window.hpp>
+#include <hyprland/src/desktop/view/window/Window.hpp>
 #include <hyprland/src/layout/target/Target.hpp>
 
 #include "Hy3Layout.hpp"
