@@ -126,8 +126,8 @@ Hy3Layout::Hy3Layout() {
 		    if (!tab_node) return;
 
 		    while (focus->is_group() && !focus->as_group().group_focused
-		           && focus->as_group().focused_child != nullptr)
-			    focus = focus->as_group().focused_child;
+		           && focus->as_group().focused_child.get() != nullptr)
+			    focus = focus->as_group().focused_child.get();
 
 		    focus->focus(false, Desktop::FOCUS_REASON_CLICK);
 		    g_pInputManager->simulateMouseMovement();
@@ -1039,8 +1039,8 @@ void Hy3Layout::changeFocus(const CWorkspace* workspace, FocusShift shift) {
 		this->updateGroupBorderColors();
 		return;
 	case FocusShift::Lower:
-		if (node->is_group() && node->as_group().focused_child != nullptr)
-			node->as_group().focused_child->focus(false, Desktop::FOCUS_REASON_KEYBIND);
+		if (node->is_group() && node->as_group().focused_child.get() != nullptr)
+			node->as_group().focused_child.get()->focus(false, Desktop::FOCUS_REASON_KEYBIND);
 		this->updateGroupBorderColors();
 		return;
 	case FocusShift::Tab:
@@ -1064,8 +1064,8 @@ void Hy3Layout::changeFocus(const CWorkspace* workspace, FocusShift shift) {
 	}
 
 bottom:
-	while (node->is_group() && node->as_group().focused_child != nullptr) {
-		node = node->as_group().focused_child;
+	while (node->is_group() && node->as_group().focused_child.get() != nullptr) {
+		node = node->as_group().focused_child.get();
 	}
 
 	node->focus(false, Desktop::FOCUS_REASON_KEYBIND);
@@ -1117,8 +1117,8 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 				}
 			}
 
-			if (group.focused_child != nullptr) {
-				return findTabBarAt(*group.focused_child, pos, focused_node);
+			if (group.focused_child.get() != nullptr) {
+				return findTabBarAt(*group.focused_child.get(), pos, focused_node);
 			}
 		} else {
 			for (auto& child: group.children) {
@@ -1181,7 +1181,7 @@ void Hy3Layout::focusTab(
 hastab:
 	if (target != TabFocus::MouseLocation) {
 		auto& group = tab_node->as_group();
-		if (group.focused_child == nullptr || group.children.size() < 2) return;
+		if (group.focused_child.get() == nullptr || group.children.size() < 2) return;
 
 		auto& children = group.children;
 		if (target == TabFocus::Index) {
@@ -1199,7 +1199,7 @@ hastab:
 			return;
 		cont:;
 		} else {
-			auto node_iter = group.findChild(*group.focused_child);
+			auto node_iter = group.findChild(*group.focused_child.get());
 			if (node_iter == children.end()) return;
 			if (target == TabFocus::Left) {
 				if (node_iter == children.begin()) {
@@ -1221,8 +1221,8 @@ hastab:
 
 	auto* focus = tab_focused_node;
 	while (focus->is_group() && !focus->as_group().group_focused
-	       && focus->as_group().focused_child != nullptr)
-		focus = focus->as_group().focused_child;
+	       && focus->as_group().focused_child.get() != nullptr)
+		focus = focus->as_group().focused_child.get();
 
 	focus->focus(false, Desktop::FOCUS_REASON_KEYBIND);
 	this->recalcGeometry();
@@ -1276,7 +1276,7 @@ void Hy3Layout::expand(
 			node->as_group().expand_focused = ExpandFocusType::Stack;
 
 		auto& group = node->parent->as_group();
-		group.focused_child = node;
+		group.focused_child = node->self;
 		group.expand_focused = ExpandFocusType::Latch;
 
 		this->recalcGeometry();
@@ -1294,8 +1294,8 @@ void Hy3Layout::expand(
 			auto& group = node->as_group();
 
 			group.expand_focused = ExpandFocusType::NotExpanded;
-			if (group.focused_child->is_group())
-				group.focused_child->as_group().expand_focused = ExpandFocusType::Latch;
+			if (group.focused_child.get()->is_group())
+				group.focused_child.get()->as_group().expand_focused = ExpandFocusType::Latch;
 
 			this->recalcGeometry();
 		}
@@ -1407,7 +1407,7 @@ bool Hy3Layout::shouldRenderSelected(const CWindow* window) {
 	if (Desktop::focusState()->window()) return false;
 
 	auto* root = this->getWorkspaceRootGroup(window->m_workspace.get());
-	if (root == nullptr || root->as_group().focused_child == nullptr) return false;
+	if (root == nullptr || root->as_group().focused_child.get() == nullptr) return false;
 	auto* focused = &root->getFocusedNode();
 
 	switch (focused->type()) {
@@ -1580,14 +1580,14 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 				bool shift_after = false;
 
 				if (!shift && group_data.isTab()
-				    && group_data.focused_child != nullptr)
+				    && group_data.focused_child.get() != nullptr)
 				{
-					iter = group_data.findChild(*group_data.focused_child);
+					iter = group_data.findChild(*group_data.focused_child.get());
 				} else if (visible && group_data.isTab()
-				           && group_data.focused_child != nullptr)
+				           && group_data.focused_child.get() != nullptr)
 				{
 					// if the group is tabbed and we're going by visible nodes, jump to the current entry
-					iter = group_data.findChild(*group_data.focused_child);
+					iter = group_data.findChild(*group_data.focused_child.get());
 					shift_after = true;
 				} else if (shiftMatchesLayout(group_data.layout, direction)
 				           || (visible && group_data.isTab()))
@@ -1600,8 +1600,8 @@ Hy3Node* Hy3Layout::shiftOrGetFocus(
 						shift_after = true;
 					}
 				} else {
-					if (group_data.focused_child != nullptr) {
-						iter = group_data.findChild(*group_data.focused_child);
+					if (group_data.focused_child.get() != nullptr) {
+						iter = group_data.findChild(*group_data.focused_child.get());
 						shift_after = true;
 					} else {
 						iter = group_data.children.begin();
