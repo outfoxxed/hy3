@@ -94,6 +94,11 @@ struct Hy3Node {
 	void updateTabBarRecursive();
 	void updateDecos();
 
+	// Recomputes and applies the `hy3_grouped` / `hy3_tabbed` window tags for
+	// this node (recursively, if this is a group node) based on its current
+	// position in the tree. See Hy3Node.cpp for the exact semantics.
+	void syncHy3Tags();
+
 	std::string getTitle();
 	bool isUrgent();
 	void setHidden(bool);
