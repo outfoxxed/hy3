@@ -133,7 +133,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
 	g_urgentListener = Event::bus()->m_events.window.urgent.listen([](PHLWINDOW window) {
 		if (!window) return;
-		window->m_hints |= Desktop::View::WINDOW_HINT_URGENT;
+		window->m_isUrgent = true;
 		auto* hy3 = hy3InstanceForWorkspace(window->m_workspace);
 		if (!hy3) return;
 		auto* node = hy3->getNodeFromWindow(window.get());
