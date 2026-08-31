@@ -42,6 +42,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	// tabs
 	CONF("tabs:height", Int, 22);
 	CONF("tabs:padding", Int, 5);
+	CONF("tabs:padding_horizontal", Int, -1);
+	CONF("tabs:padding_outer", Bool, true);
 	CONF("tabs:from_top", Bool, false);
 	CONF("tabs:radius", Int, 6);
 	CONF("tabs:border_width", Int, 2);

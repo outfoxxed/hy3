@@ -1,4 +1,5 @@
 #include "TabGroup.hpp"
+#include <algorithm>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -7,27 +8,27 @@
 #include <cairo/cairo.h>
 #include <hyprgraphics/color/Color.hpp>
 #include <hyprland/src/Compositor.hpp>
-#include <hyprland/src/desktop/state/FocusState.hpp>
+#include <hyprland/src/animation/AnimationManager.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
+#include <hyprland/src/config/shared/animation/AnimationTree.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
 #include <hyprland/src/desktop/Workspace.hpp>
-#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
+#include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/desktop/view/types/Geometric.hpp>
+#include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/helpers/Color.hpp>
-#include <hyprland/src/animation/AnimationManager.hpp>
-#include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
 #include <hyprland/src/render/Texture.hpp>
-#include <hyprland/src/config/shared/animation/AnimationTree.hpp>
 #include <hyprutils/math/Box.hpp>
 #include <hyprutils/math/Region.hpp>
 #include <hyprutils/memory/SharedPtr.hpp>
 #include <pango/pangocairo.h>
 #include <pixman.h>
 
-#include "log.hpp"
 #include "globals.hpp"
+#include "log.hpp"
 #include "render.hpp"
 #include "render/Renderer.hpp"
 #include "render/pass/PassElement.hpp"
@@ -53,6 +54,17 @@ CHyprColor merge_colors(Args... colors) {
 	// conversion to an rgb
 	return CHyprColor(Hyprgraphics::CColor(oklab), alpha);
 }
+
+constexpr std::pair<double, double>
+tab_entry_padding(double padding, bool outer, bool first, bool last) {
+	return {
+	    outer || !first ? padding * 0.5 : 0.0,
+	    outer || !last ? padding * 0.5 : 0.0,
+	};
+}
+
+static_assert(tab_entry_padding(6, false, true, false) == std::pair {0.0, 3.0});
+static_assert(tab_entry_padding(6, false, false, true) == std::pair {3.0, 0.0});
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(&node) {
 	auto& mgr = Animation::mgr();
@@ -745,6 +757,9 @@ void Hy3TabGroup::renderTabBar() {
 	static const auto window_rounding = CConfigValue<Config::INTEGER>("decoration:rounding");
 	static const auto enter_from_top = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:from_top");
 	static const auto padding = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding");
+	static const auto padding_horizontal =
+	    CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding_horizontal");
+	static const auto padding_outer = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding_outer");
 
 	auto [box, scaledBox] = this->getRenderBB();
 
@@ -824,15 +839,33 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto fade_opacity = this->bar.fade_opacity->value()
 	                  * (valid(this->workspace) ? this->workspace->m_alpha->value() : 1.0);
+	auto horizontal_padding = *padding_horizontal < 0 ? *padding : *padding_horizontal;
+	auto first_entry =
+	    std::find_if(this->bar.entries.begin(), this->bar.entries.end(), [](auto& entry) {
+		    return !entry.destroying;
+	    });
+	auto last_entry =
+	    std::find_if(this->bar.entries.rbegin(), this->bar.entries.rend(), [](auto& entry) {
+		    return !entry.destroying;
+	    });
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
+		auto [left_padding, right_padding] = tab_entry_padding(
+		    horizontal_padding,
+		    *padding_outer,
+		    first_entry != this->bar.entries.end() && &entry == &*first_entry,
+		    last_entry != this->bar.entries.rend() && &entry == &*last_entry
+		);
 		Vector2D entry_pos = {
-		    (box.x + (entry.offset->value() * box.w) + (*padding * 0.5)) * scale,
+		    (box.x + (entry.offset->value() * box.w) + left_padding) * scale,
 		    scaledBox.y
 		        + ((entry.vertical_pos->value() * (box.h + *padding) * scale)
 		           * (*enter_from_top ? -1 : 1)),
 		};
-		Vector2D entry_size = {((entry.width->value() * box.w) - *padding) * scale, scaledBox.h};
+		Vector2D entry_size = {
+		    ((entry.width->value() * box.w) - left_padding - right_padding) * scale,
+		    scaledBox.h,
+		};
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
 
 		CBox box = {
