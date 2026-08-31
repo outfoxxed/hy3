@@ -243,8 +243,14 @@ plugin {
       # height of the tab bar
       height = <int> # default: 22
 
-      # padding between the tab bar and its focused node
-      padding = <int> # default: 6
+      # vertical padding between the tab bar and its focused node
+      padding = <int> # default: 5
+
+      # horizontal padding between tabs; -1 uses the value of padding
+      padding_horizontal = <int> # default: -1
+
+      # if horizontal padding should be added at the outer edges of the tab bar
+      padding_outer = <bool> # default: true
 
       # the tab bar should animate in/out from the top instead of below the window
       from_top = <bool> # default: false
