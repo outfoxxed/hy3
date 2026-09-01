@@ -54,6 +54,15 @@ CHyprColor merge_colors(Args... colors) {
 	return CHyprColor(Hyprgraphics::CColor(oklab), alpha);
 }
 
+constexpr std::pair<double, double>
+tab_entry_geometry(double group_width, double padding, bool outer, double offset, double width) {
+	if (outer) return {offset * group_width + padding * 0.5, width * group_width - padding};
+	return {offset * (group_width + padding), width * (group_width + padding) - padding};
+}
+
+static_assert(tab_entry_geometry(100, 20, false, 0.0, 0.25) == std::pair {0.0, 10.0});
+static_assert(tab_entry_geometry(100, 20, false, 0.75, 0.25) == std::pair {90.0, 10.0});
+
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(&node) {
 	auto& mgr = Animation::mgr();
 	mgr->createAnimation(
@@ -745,6 +754,9 @@ void Hy3TabGroup::renderTabBar() {
 	static const auto window_rounding = CConfigValue<Config::INTEGER>("decoration:rounding");
 	static const auto enter_from_top = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:from_top");
 	static const auto padding = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding");
+	static const auto padding_horizontal =
+	    CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding_horizontal");
+	static const auto padding_outer = CConfigValue<Config::INTEGER>("plugin:hy3:tabs:padding_outer");
 
 	auto [box, scaledBox] = this->getRenderBB();
 
@@ -824,15 +836,26 @@ void Hy3TabGroup::renderTabBar() {
 
 	auto fade_opacity = this->bar.fade_opacity->value()
 	                  * (valid(this->workspace) ? this->workspace->m_alpha->value() : 1.0);
+	auto horizontal_padding = *padding_horizontal < 0 ? *padding : *padding_horizontal;
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
+		auto [entry_x, entry_width] = tab_entry_geometry(
+		    box.w,
+		    horizontal_padding,
+		    *padding_outer,
+		    entry.offset->value(),
+		    entry.width->value()
+		);
 		Vector2D entry_pos = {
-		    (box.x + (entry.offset->value() * box.w) + (*padding * 0.5)) * scale,
+		    (box.x + entry_x) * scale,
 		    scaledBox.y
 		        + ((entry.vertical_pos->value() * (box.h + *padding) * scale)
 		           * (*enter_from_top ? -1 : 1)),
 		};
-		Vector2D entry_size = {((entry.width->value() * box.w) - *padding) * scale, scaledBox.h};
+		Vector2D entry_size = {
+		    entry_width * scale,
+		    scaledBox.h,
+		};
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
 
 		CBox box = {
