@@ -1,5 +1,4 @@
 #include "TabGroup.hpp"
-#include <algorithm>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -56,15 +55,13 @@ CHyprColor merge_colors(Args... colors) {
 }
 
 constexpr std::pair<double, double>
-tab_entry_padding(double padding, bool outer, bool first, bool last) {
-	return {
-	    outer || !first ? padding * 0.5 : 0.0,
-	    outer || !last ? padding * 0.5 : 0.0,
-	};
+tab_entry_geometry(double group_width, double padding, bool outer, double offset, double width) {
+	if (outer) return {offset * group_width + padding * 0.5, width * group_width - padding};
+	return {offset * (group_width + padding), width * (group_width + padding) - padding};
 }
 
-static_assert(tab_entry_padding(6, false, true, false) == std::pair {0.0, 3.0});
-static_assert(tab_entry_padding(6, false, false, true) == std::pair {3.0, 0.0});
+static_assert(tab_entry_geometry(100, 20, false, 0.0, 0.25) == std::pair {0.0, 10.0});
+static_assert(tab_entry_geometry(100, 20, false, 0.75, 0.25) == std::pair {90.0, 10.0});
 
 Hy3TabBarEntry::Hy3TabBarEntry(Hy3TabBar& tab_bar, Hy3Node& node): tab_bar(tab_bar), node(&node) {
 	auto& mgr = Animation::mgr();
@@ -840,30 +837,23 @@ void Hy3TabGroup::renderTabBar() {
 	auto fade_opacity = this->bar.fade_opacity->value()
 	                  * (valid(this->workspace) ? this->workspace->m_alpha->value() : 1.0);
 	auto horizontal_padding = *padding_horizontal < 0 ? *padding : *padding_horizontal;
-	auto first_entry =
-	    std::find_if(this->bar.entries.begin(), this->bar.entries.end(), [](auto& entry) {
-		    return !entry.destroying;
-	    });
-	auto last_entry =
-	    std::find_if(this->bar.entries.rbegin(), this->bar.entries.rend(), [](auto& entry) {
-		    return !entry.destroying;
-	    });
 
 	auto render_entry = [&](Hy3TabBarEntry& entry) {
-		auto [left_padding, right_padding] = tab_entry_padding(
+		auto [entry_x, entry_width] = tab_entry_geometry(
+		    box.w,
 		    horizontal_padding,
 		    *padding_outer,
-		    first_entry != this->bar.entries.end() && &entry == &*first_entry,
-		    last_entry != this->bar.entries.rend() && &entry == &*last_entry
+		    entry.offset->value(),
+		    entry.width->value()
 		);
 		Vector2D entry_pos = {
-		    (box.x + (entry.offset->value() * box.w) + left_padding) * scale,
+		    (box.x + entry_x) * scale,
 		    scaledBox.y
 		        + ((entry.vertical_pos->value() * (box.h + *padding) * scale)
 		           * (*enter_from_top ? -1 : 1)),
 		};
 		Vector2D entry_size = {
-		    ((entry.width->value() * box.w) - left_padding - right_padding) * scale,
+		    entry_width * scale,
 		    scaledBox.h,
 		};
 		if (entry_size.x < 0 || entry_size.y < 0 || fade_opacity == 0.0) return;
