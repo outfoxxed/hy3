@@ -12,7 +12,7 @@
 #include <hyprland/src/desktop/state/FocusState.hpp>
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/desktop/DesktopTypes.hpp>
-#include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/workspace/HLWorkspace.hpp>
 #include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/desktop/rule/Engine.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
@@ -174,7 +174,7 @@ void Hy3Layout::newTarget(SP<Layout::ITarget> target) {
 	    "newTarget called with window {:x} (monitor: {}, workspace: {})",
 	    (uintptr_t) window.get(),
 	    window->monitorID(),
-	    target->workspace() ? target->workspace()->m_id : -1
+	    target->workspace() ? target->workspace()->addressableName() : "null"
 	);
 
 	auto* existing = this->getNodeFromTarget(target);
@@ -208,9 +208,9 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 	if (!valid(ws)) {
 		hy3_log(
 		    ERR,
-		    "insertNode called for node {:x} with invalid workspace id {}",
+		    "insertNode called for node {:x} with invalid workspace {}",
 		    (uintptr_t) node_up.get(),
-		    ws ? ws->m_id : -1
+		    ws ? ws->addressableName() : "null"
 		);
 		return;
 	}
@@ -433,7 +433,7 @@ void Hy3Layout::recalcGeometry(bool no_animation) {
 	auto workspace = space->workspace();
 	if (!workspace) return;
 
-	hy3_log(LOG, "recalculating workspace {}", workspace->m_id);
+	hy3_log(LOG, "recalculating workspace {}", workspace->addressableName());
 
 	auto ma = workspace->m_monitor->logicalBoxMinusReserved();
 	auto wa = space->workArea();
@@ -610,7 +610,7 @@ PHLWINDOW Hy3Layout::findFloatingWindowCandidate(const CWindow* from) {
 }
 
 void Hy3Layout::makeGroupOnWorkspace(
-    const CWorkspace* workspace,
+    const Workspace::CHLWorkspace* workspace,
     Hy3GroupLayout layout,
     GroupEphemeralityOption ephemeral,
     bool toggle
@@ -639,7 +639,7 @@ void Hy3Layout::makeGroupOnWorkspace(
 }
 
 void Hy3Layout::makeOppositeGroupOnWorkspace(
-    const CWorkspace* workspace,
+    const Workspace::CHLWorkspace* workspace,
     GroupEphemeralityOption ephemeral
 ) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
@@ -648,7 +648,7 @@ void Hy3Layout::makeOppositeGroupOnWorkspace(
 	this->makeOppositeGroupOn(*node, ephemeral);
 }
 
-void Hy3Layout::changeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout layout) {
+void Hy3Layout::changeGroupOnWorkspace(const Workspace::CHLWorkspace* workspace, Hy3GroupLayout layout) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 	node = &node->getPlacementActor();
@@ -656,7 +656,7 @@ void Hy3Layout::changeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayo
 	this->changeGroupOn(*node, layout);
 }
 
-void Hy3Layout::untabGroupOnWorkspace(const CWorkspace* workspace) {
+void Hy3Layout::untabGroupOnWorkspace(const Workspace::CHLWorkspace* workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 	node = &node->getPlacementActor();
@@ -664,7 +664,7 @@ void Hy3Layout::untabGroupOnWorkspace(const CWorkspace* workspace) {
 	this->untabGroupOn(*node);
 }
 
-void Hy3Layout::toggleTabGroupOnWorkspace(const CWorkspace* workspace) {
+void Hy3Layout::toggleTabGroupOnWorkspace(const Workspace::CHLWorkspace* workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 	node = &node->getPlacementActor();
@@ -672,7 +672,7 @@ void Hy3Layout::toggleTabGroupOnWorkspace(const CWorkspace* workspace) {
 	this->toggleTabGroupOn(*node);
 }
 
-void Hy3Layout::changeGroupToOppositeOnWorkspace(const CWorkspace* workspace) {
+void Hy3Layout::changeGroupToOppositeOnWorkspace(const Workspace::CHLWorkspace* workspace) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 	node = &node->getPlacementActor();
@@ -680,7 +680,7 @@ void Hy3Layout::changeGroupToOppositeOnWorkspace(const CWorkspace* workspace) {
 	this->changeGroupToOppositeOn(*node);
 }
 
-void Hy3Layout::changeGroupEphemeralityOnWorkspace(const CWorkspace* workspace, bool ephemeral) {
+void Hy3Layout::changeGroupEphemeralityOnWorkspace(const Workspace::CHLWorkspace* workspace, bool ephemeral) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 	node = &node->getPlacementActor();
@@ -770,7 +770,7 @@ void Hy3Layout::shiftNode(Hy3Node& node, ShiftDirection direction, bool once, bo
 }
 
 void Hy3Layout::shiftWindow(
-    const CWorkspace* workspace,
+    const Workspace::CHLWorkspace* workspace,
     ShiftDirection direction,
     bool once,
     bool visible
@@ -782,7 +782,7 @@ void Hy3Layout::shiftWindow(
 }
 
 void Hy3Layout::shiftFocus(
-    const CWorkspace* workspace,
+    const Workspace::CHLWorkspace* workspace,
     ShiftDirection direction,
     bool visible,
     bool warp
@@ -881,14 +881,14 @@ bool Hy3Layout::shiftMonitor(Hy3Node& node, ShiftDirection direction, bool follo
 		Desktop::focusState()->rawMonitorFocus(next_monitor);
 		auto next_workspace = next_monitor->m_activeWorkspace;
 		if (next_workspace) {
-			moveNodeToWorkspace(node.layout()->workspace().get(), next_workspace->m_name, follow, false);
+			moveNodeToWorkspace(node.layout()->workspace().get(), next_workspace->addressableName(), follow, false);
 			return true;
 		}
 	}
 	return false;
 }
 
-void Hy3Layout::toggleFocusLayer(const CWorkspace* workspace, bool warp) {
+void Hy3Layout::toggleFocusLayer(const Workspace::CHLWorkspace* workspace, bool warp) {
 	auto current_window = Desktop::focusState()->window();
 	if (!current_window) return;
 
@@ -936,19 +936,20 @@ static void updateTreeTabBars(Hy3Node& node) {
 
 
 void Hy3Layout::moveNodeToWorkspace(
-    CWorkspace* origin,
+    Workspace::CHLWorkspace* origin,
     std::string wsname,
     bool follow,
     bool warp
 ) {
-	auto target = getWorkspaceIDNameFromString(operationWorkspaceForName(wsname));
+	const auto targetName = operationWorkspaceForName(wsname);
+	const bool numbered   = std::regex_match(targetName, std::regex(R"(^\d+$)"));
 
-	if (target.id == WORKSPACE_INVALID) {
+	if (!numbered && !targetName.starts_with("special") && !targetName.starts_with("name:")) {
 		hy3_log(ERR, "moveNodeToWorkspace called with invalid workspace {}", wsname);
 		return;
 	}
 
-	auto workspace = State::workspaceState()->query().id(target.id).run();
+	auto workspace = State::workspaceState()->query().input(targetName).run();
 
 	if (origin == workspace.get()) return;
 
@@ -963,9 +964,24 @@ void Hy3Layout::moveNodeToWorkspace(
 	if (!valid(origin_ws)) return;
 
 	if (workspace == nullptr) {
-		hy3_log(LOG, "creating target workspace {} for node move", target.id);
+		hy3_log(LOG, "creating target workspace {} for node move", targetName);
 
-		workspace = State::workspaceState()->create(target.id, origin_ws->monitorID(), target.name);
+		auto origin_monitor = origin_ws->m_monitor.lock();
+		if (!origin_monitor) return;
+
+		if (numbered) {
+			workspace = State::workspaceState()->createNumbered(
+			    Workspace::SWorkspaceNumberedID{static_cast<Workspace::WorkspaceIDContainer>(std::stol(targetName))},
+			    origin_monitor
+			);
+		} else if (targetName == "special") {
+			workspace = State::workspaceState()->createSpecial("special", origin_monitor);
+		} else if (targetName.starts_with("special:") && targetName.size() > 8) {
+			workspace = State::workspaceState()->createSpecial(targetName.substr(8), origin_monitor);
+		} else {
+			const auto address = targetName.starts_with("name:") ? targetName.substr(5) : targetName;
+			workspace = State::workspaceState()->createNamed(address, origin_monitor, address);
+		}
 	}
 
 	if (focused_window != nullptr
@@ -980,8 +996,8 @@ void Hy3Layout::moveNodeToWorkspace(
 		    LOG,
 		    "moving node {:x} from workspace {} to workspace {} (follow: {})",
 		    (uintptr_t) node,
-		    origin->m_id,
-		    workspace->m_id,
+		    origin->addressableName(),
+		    workspace->addressableName(),
 		    follow
 		);
 
@@ -993,7 +1009,7 @@ void Hy3Layout::moveNodeToWorkspace(
 		g_suppressInsert = true;
 
 		for (auto& window: node->windows()) {
-			window.layoutTarget()->assignToSpace(workspace->m_space);
+			window.layoutTarget()->assignToSpace(workspace->space());
 		}
 
 		g_suppressInsert = false;
@@ -1010,9 +1026,9 @@ void Hy3Layout::moveNodeToWorkspace(
 	if (follow) {
 		auto& monitor = workspace->m_monitor;
 
-		if (workspace->m_isSpecialWorkspace) {
+		if (workspace->type() == Workspace::eWorkspaceType::SPECIAL) {
 			monitor->setSpecialWorkspace(workspace);
-		} else if (origin_ws->m_isSpecialWorkspace) {
+		} else if (origin_ws->type() == Workspace::eWorkspaceType::SPECIAL) {
 			origin_ws->m_monitor->setSpecialWorkspace(nullptr);
 		}
 
@@ -1023,7 +1039,7 @@ void Hy3Layout::moveNodeToWorkspace(
 	}
 }
 
-void Hy3Layout::changeFocus(const CWorkspace* workspace, FocusShift shift) {
+void Hy3Layout::changeFocus(const Workspace::CHLWorkspace* workspace, FocusShift shift) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 
@@ -1131,7 +1147,7 @@ Hy3Node* findTabBarAt(Hy3Node& node, Vector2D pos, Hy3Node** focused_node) {
 }
 
 void Hy3Layout::focusTab(
-    const CWorkspace* workspace,
+    const Workspace::CHLWorkspace* workspace,
     TabFocus target,
     TabFocusMousePriority mouse,
     bool wrap_scroll,
@@ -1228,7 +1244,7 @@ hastab:
 	this->recalcGeometry();
 }
 
-void Hy3Layout::setNodeSwallow(const CWorkspace* workspace, SetSwallowOption option) {
+void Hy3Layout::setNodeSwallow(const Workspace::CHLWorkspace* workspace, SetSwallowOption option) {
 	auto* node = this->getWorkspaceFocusedNode(workspace);
 	if (node == nullptr) return;
 	node->assertNotRoot();
@@ -1241,7 +1257,7 @@ void Hy3Layout::setNodeSwallow(const CWorkspace* workspace, SetSwallowOption opt
 	}
 }
 
-void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
+void Hy3Layout::killFocusedNode(const Workspace::CHLWorkspace* workspace) {
 	auto last_window = Desktop::focusState()->window();
 	if (last_window != nullptr && last_window->isFloating()) {
 		last_window->sendClose();
@@ -1260,7 +1276,7 @@ void Hy3Layout::killFocusedNode(const CWorkspace* workspace) {
 }
 
 void Hy3Layout::expand(
-    const CWorkspace* workspace,
+    const Workspace::CHLWorkspace* workspace,
     ExpandOption option,
     ExpandFullscreenOption fs_option
 ) {
@@ -1314,7 +1330,7 @@ void Hy3Layout::expand(
 	return;
 }
 
-void Hy3Layout::setTabLock(const CWorkspace* workspace, TabLockMode mode) {
+void Hy3Layout::setTabLock(const Workspace::CHLWorkspace* workspace, TabLockMode mode) {
 	auto* focused = this->getWorkspaceFocusedNode(workspace);
 	if (focused == nullptr) return;
 
@@ -1344,7 +1360,7 @@ static void equalizeRecursive(Hy3Node* node, bool recursive) {
 	}
 }
 
-void Hy3Layout::equalize(const CWorkspace* workspace, bool recursive) {
+void Hy3Layout::equalize(const Workspace::CHLWorkspace* workspace, bool recursive) {
 	auto* focused = this->getWorkspaceFocusedNode(workspace);
 	if (focused == nullptr) return;
 
@@ -1421,7 +1437,7 @@ bool Hy3Layout::shouldRenderSelected(const CWindow* window) {
 	return false;
 }
 
-Hy3Node* Hy3Layout::getWorkspaceRootGroup(const CWorkspace* workspace) {
+Hy3Node* Hy3Layout::getWorkspaceRootGroup(const Workspace::CHLWorkspace* workspace) {
 	if (!this->root) return nullptr;
 	auto& group = this->root->as_group();
 	if (group.children.empty()) return nullptr;
@@ -1429,7 +1445,7 @@ Hy3Node* Hy3Layout::getWorkspaceRootGroup(const CWorkspace* workspace) {
 }
 
 Hy3Node* Hy3Layout::getWorkspaceFocusedNode(
-    const CWorkspace* workspace,
+    const Workspace::CHLWorkspace* workspace,
     bool ignore_group_focus,
     bool stop_at_expanded
 ) {
@@ -1711,11 +1727,11 @@ void Hy3Layout::updateAutotileWorkspaces() {
 	}
 }
 
-bool Hy3Layout::shouldAutotileWorkspace(const CWorkspace* workspace) {
+bool Hy3Layout::shouldAutotileWorkspace(const Workspace::CHLWorkspace* workspace) {
 	if (this->autotile.workspace_blacklist) {
-		return !this->autotile.workspaces.contains(workspace->m_id);
+		return !this->autotile.workspaces.contains(static_cast<int>(workspace->numberedID().value_or(0)));
 	} else {
 		return this->autotile.workspaces.empty()
-		    || this->autotile.workspaces.contains(workspace->m_id);
+		    || this->autotile.workspaces.contains(static_cast<int>(workspace->numberedID().value_or(0)));
 	}
 }

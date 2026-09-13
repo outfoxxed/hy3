@@ -3,7 +3,7 @@
 #include <set>
 #include <vector>
 
-#include <hyprland/src/desktop/Workspace.hpp>
+#include <hyprland/src/workspace/HLWorkspace.hpp>
 #include <hyprland/src/config/ConfigValue.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprlang.hpp>
@@ -29,8 +29,8 @@ inline CHyprSignalListener g_windowTitleListener;
 inline CHyprSignalListener g_urgentListener;
 
 inline Hy3Layout* hy3InstanceForWorkspace(PHLWORKSPACE ws) {
-	if (!ws || !ws->m_space || !ws->m_space->algorithm()) return nullptr;
-	return dynamic_cast<Hy3Layout*>(ws->m_space->algorithm()->tiledAlgo().get());
+	if (!ws || !ws->space() || !ws->space()->algorithm()) return nullptr;
+	return dynamic_cast<Hy3Layout*>(ws->space()->algorithm()->tiledAlgo().get());
 }
 
 inline void errorNotif() {

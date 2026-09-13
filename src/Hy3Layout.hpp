@@ -122,17 +122,17 @@ public:
 	void updateGroupBorderColors();
 
 	void makeGroupOnWorkspace(
-	    const CWorkspace* workspace,
+	    const Workspace::CHLWorkspace* workspace,
 	    Hy3GroupLayout,
 	    GroupEphemeralityOption,
 	    bool toggle
 	);
-	void makeOppositeGroupOnWorkspace(const CWorkspace* workspace, GroupEphemeralityOption);
-	void changeGroupOnWorkspace(const CWorkspace* workspace, Hy3GroupLayout);
-	void untabGroupOnWorkspace(const CWorkspace* workspace);
-	void toggleTabGroupOnWorkspace(const CWorkspace* workspace);
-	void changeGroupToOppositeOnWorkspace(const CWorkspace* workspace);
-	void changeGroupEphemeralityOnWorkspace(const CWorkspace* workspace, bool ephemeral);
+	void makeOppositeGroupOnWorkspace(const Workspace::CHLWorkspace* workspace, GroupEphemeralityOption);
+	void changeGroupOnWorkspace(const Workspace::CHLWorkspace* workspace, Hy3GroupLayout);
+	void untabGroupOnWorkspace(const Workspace::CHLWorkspace* workspace);
+	void toggleTabGroupOnWorkspace(const Workspace::CHLWorkspace* workspace);
+	void changeGroupToOppositeOnWorkspace(const Workspace::CHLWorkspace* workspace);
+	void changeGroupEphemeralityOnWorkspace(const Workspace::CHLWorkspace* workspace, bool ephemeral);
 	void makeGroupOn(Hy3Node&, Hy3GroupLayout, GroupEphemeralityOption);
 	void makeOppositeGroupOn(Hy3Node&, GroupEphemeralityOption);
 	void changeGroupOn(Hy3Node&, Hy3GroupLayout);
@@ -141,27 +141,27 @@ public:
 	void changeGroupToOppositeOn(Hy3Node&);
 	void changeGroupEphemeralityOn(Hy3Node&, bool ephemeral);
 	void shiftNode(Hy3Node&, ShiftDirection, bool once, bool visible);
-	void shiftWindow(const CWorkspace* workspace, ShiftDirection, bool once, bool visible);
-	void shiftFocus(const CWorkspace* workspace, ShiftDirection, bool visible, bool warp);
-	void toggleFocusLayer(const CWorkspace* workspace, bool warp);
+	void shiftWindow(const Workspace::CHLWorkspace* workspace, ShiftDirection, bool once, bool visible);
+	void shiftFocus(const Workspace::CHLWorkspace* workspace, ShiftDirection, bool visible, bool warp);
+	void toggleFocusLayer(const Workspace::CHLWorkspace* workspace, bool warp);
 	bool shiftMonitor(Hy3Node&, ShiftDirection, bool follow);
 	Hy3Node* focusMonitor(ShiftDirection);
 
 	void warpCursor();
-	void moveNodeToWorkspace(CWorkspace* origin, std::string wsname, bool follow, bool warp);
-	void changeFocus(const CWorkspace* workspace, FocusShift);
+	void moveNodeToWorkspace(Workspace::CHLWorkspace* origin, std::string wsname, bool follow, bool warp);
+	void changeFocus(const Workspace::CHLWorkspace* workspace, FocusShift);
 	void focusTab(
-	    const CWorkspace* workspace,
+	    const Workspace::CHLWorkspace* workspace,
 	    TabFocus target,
 	    TabFocusMousePriority,
 	    bool wrap_scroll,
 	    int index
 	);
-	void setNodeSwallow(const CWorkspace* workspace, SetSwallowOption);
-	void killFocusedNode(const CWorkspace* workspace);
-	void expand(const CWorkspace* workspace, ExpandOption, ExpandFullscreenOption);
-	void setTabLock(const CWorkspace* workspace, TabLockMode);
-	void equalize(const CWorkspace* workspace, bool recursive = false);
+	void setNodeSwallow(const Workspace::CHLWorkspace* workspace, SetSwallowOption);
+	void killFocusedNode(const Workspace::CHLWorkspace* workspace);
+	void expand(const Workspace::CHLWorkspace* workspace, ExpandOption, ExpandFullscreenOption);
+	void setTabLock(const Workspace::CHLWorkspace* workspace, TabLockMode);
+	void equalize(const Workspace::CHLWorkspace* workspace, bool recursive = false);
 	static void warpCursorToBox(const Vector2D& pos, const Vector2D& size);
 	static void warpCursorWithFocus(const Vector2D& pos, bool force = false);
 	static std::string debugNodes();
@@ -170,9 +170,9 @@ public:
 	PHLWINDOW findTiledWindowCandidate(const Desktop::View::CWindow* from);
 	PHLWINDOW findFloatingWindowCandidate(const Desktop::View::CWindow* from);
 
-	Hy3Node* getWorkspaceRootGroup(const CWorkspace* workspace);
+	Hy3Node* getWorkspaceRootGroup(const Workspace::CHLWorkspace* workspace);
 	Hy3Node* getWorkspaceFocusedNode(
-	    const CWorkspace* workspace,
+	    const Workspace::CHLWorkspace* workspace,
 	    bool ignore_group_focus = false,
 	    bool stop_at_expanded = false
 	);
@@ -192,7 +192,7 @@ private:
 	Hy3Node* shiftOrGetFocus(Hy3Node&, ShiftDirection, bool shift, bool once, bool visible);
 
 	void updateAutotileWorkspaces();
-	bool shouldAutotileWorkspace(const CWorkspace* workspace);
+	bool shouldAutotileWorkspace(const Workspace::CHLWorkspace* workspace);
 
 	// Per-instance event listeners
 	CHyprSignalListener m_windowActiveListener;

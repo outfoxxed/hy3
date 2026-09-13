@@ -655,7 +655,7 @@ std::string Hy3Node::debugNode() {
 		case Hy3GroupLayout::Root: {
 			auto* l = this->layout();
 			auto ws = l ? l->workspace() : nullptr;
-			buf << "root " << (ws ? ws->m_id : -1);
+			buf << "root " << (ws ? ws->addressableName() : "null");
 			break;
 		}
 		case Hy3GroupLayout::SplitH: buf << "splith"; break;
