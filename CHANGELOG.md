@@ -1,5 +1,9 @@
 # Changelog
 
+# Upcoming
+
+- Fixed a crash when moving a fullscreen window to another workspace with follow.
+
 # hl0.56.0.1 and before
 
 - Fix mouse up+left mouse resize
