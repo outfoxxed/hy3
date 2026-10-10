@@ -1,5 +1,9 @@
 # Changelog
 
+# Upcoming
+
+- Fixed a crash when moving a fullscreen window to another workspace with follow.
+
 # hl0.57.0 and before
 
 - Added configurable horizontal tab padding
