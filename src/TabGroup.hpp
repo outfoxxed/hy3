@@ -78,10 +78,10 @@ struct Hy3TabBarEntry {
 	void beginDestroy();
 	void unDestroy();
 	bool shouldRemove();
-	void render(float scale, CBox& box, float opacity_mul);
+	void render(Render::CRenderContext& ctx, float scale, CBox& box, float opacity_mul);
 
 private:
-	void renderText(float scale, CBox& box, float opacity);
+	void renderText(Render::CRenderContext& ctx, float scale, CBox& box, float opacity);
 	CHyprColor mergeColors(
 	    const CHyprColor& active,
 	    const CHyprColor& focused,
@@ -126,11 +126,11 @@ public:
 	Hy3TabPassElement(Hy3TabGroup* group): group(group) {}
 
 	const char* passName() override { return "Hy3TabPassElement"; }
-	std::vector<UP<IPassElement>> draw() override;
-	bool needsLiveBlur() override { return false; }
+	std::vector<UP<IPassElement>> draw(Render::CRenderContext& ctx) override;
+	bool needsLiveBlur(Render::CRenderContext& ctx) override { return false; }
 	ePassElementType type() override { return EK_CUSTOM; }
-	bool needsPrecomputeBlur() override;
-	std::optional<CBox> boundingBox() override;
+	bool needsPrecomputeBlur(Render::CRenderContext& ctx) override;
+	std::optional<CBox> boundingBox(Render::CRenderContext& ctx) override;
 
 private:
 	Hy3TabGroup* group;
@@ -155,9 +155,9 @@ public:
 	// update tab bar with node position and data. UB if node is not a group.
 	void updateWithGroup(Hy3Node&, bool warp);
 	void tick();
-	std::pair<CBox, CBox> getRenderBB() const;
+	std::pair<CBox, CBox> getRenderBB(Render::CRenderContext& ctx) const;
 	// render the scaled tab bar on the current monitor.
-	void renderTabBar();
+	void renderTabBar(Render::CRenderContext& ctx);
 
 private:
 	std::vector<PHLWINDOWREF> stencil_windows;

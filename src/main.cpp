@@ -84,27 +84,27 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 		return makeUnique<Hy3Layout>();
 	});
 
-	g_renderListener = Event::bus()->m_events.render.stage.listen([](eRenderStage stage) {
+	g_renderListener = Event::bus()->m_events.render.stage.listen([](const Event::SRenderStageEvent& event) {
 		static bool rendering_normally = false;
 		static std::vector<Hy3TabGroup*> rendered_groups;
 
-		switch (stage) {
+		switch (event.stage) {
 		case RENDER_PRE_WINDOWS:
 			rendering_normally = true;
 			rendered_groups.clear();
 			break;
 		case RENDER_POST_WINDOW:
-			if (!rendering_normally) break;
+			if (!rendering_normally || !event.context) break;
 
 			for (auto& wp: g_tabGroups) {
 				auto* entry = wp.get();
 				if (!entry) continue;
 				if (!entry->hidden
-				    && entry->target_window == g_pHyprRenderer->m_renderData.currentWindow.lock()
+				    && entry->target_window == event.context->get().m_data.currentWindow.lock()
 				    && std::find(rendered_groups.begin(), rendered_groups.end(), entry)
 				           == rendered_groups.end())
 				{
-					g_pHyprRenderer->m_renderPass.add(makeUnique<Hy3TabPassElement>(entry));
+					g_pHyprRenderer->addPassElement(event.context->get(), makeUnique<Hy3TabPassElement>(entry));
 					rendered_groups.push_back(entry);
 				}
 			}
