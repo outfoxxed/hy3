@@ -17,6 +17,7 @@
 #include <hyprland/src/desktop/rule/Engine.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
+#include <hyprland/src/managers/fullscreen/handler/FullscreenHandler.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/pointer/PointerController.hpp>
 #include <hyprland/src/pointer/PointerManager.hpp>
@@ -423,7 +424,19 @@ void Hy3Layout::updateGroupBorderColors() {
 	}
 }
 
-void Hy3Layout::recalculate(Layout::eRecalculateReason) { this->recalcGeometry(); }
+void Hy3Layout::recalculate(Layout::eRecalculateReason) {
+	auto algo = m_parent.lock();
+	if (!algo || !algo->space()) return;
+
+	// The regular geometry path cannot reposition a covering fullscreen target.
+	// Re-sync it when the monitor changes size or scale.
+	if (Fullscreen::controller()->hasFullscreen(algo->space()->workspace(), true)) {
+		m_defaultFullscreenHandler->syncTargetSizeAndPosition();
+		return;
+	}
+
+	this->recalcGeometry();
+}
 
 void Hy3Layout::recalcGeometry(bool no_animation) {
 	auto algo = m_parent.lock();
