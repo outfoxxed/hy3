@@ -1,0 +1,117 @@
+name: Pin new Hyprland release
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      hyprland_commit: ${{ steps.release.outputs.hyprland_commit }}
+      hy3_commit: ${{ steps.release.outputs.hy3_commit }}
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: hyprpm.toml
+          sparse-checkout-cone-mode: false
+
+      - name: Look for a Hyprland release we have not pinned yet
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # hyprpm builds master when no pin matches the running hyprland,
+          # and master tracks hyprland git rather than any release
+          tag=$(gh api repos/hyprwm/Hyprland/releases/latest --jq .tag_name)
+          commit=$(gh api "repos/hyprwm/Hyprland/commits/$tag" --jq .sha)
+
+          if grep -q "$commit" hyprpm.toml; then
+            echo "Hyprland $tag ($commit) is already pinned."
+            exit 0
+          fi
+
+          echo "Hyprland $tag ($commit) has no pin yet."
+          {
+            echo "tag=$tag"
+            echo "hyprland_commit=$commit"
+            # reuse the hy3 commit the previous release points to
+            echo "hy3_commit=$(sed -n 's/.*", "\([0-9a-f]\{40\}\)"\].*/\1/p' hyprpm.toml | tail -1)"
+          } >> "$GITHUB_OUTPUT"
+
+  pin:
+    needs: check
+    if: needs.check.outputs.tag
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.check.outputs.tag }}
+      HYPRLAND_COMMIT: ${{ needs.check.outputs.hyprland_commit }}
+      HY3_COMMIT: ${{ needs.check.outputs.hy3_commit }}
+
+    steps:
+      - name: Install the libraries Hyprland and hy3 build against
+        # installing hyprland pulls in every library the build needs
+        run: pacman -Syu --noconfirm --needed git cmake ninja pkgconf cpio hyprland pango cairo
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # the build below checks out an older hy3 commit
+
+      - uses: actions/checkout@v5
+        with:
+          repository: hyprwm/Hyprland
+          ref: ${{ needs.check.outputs.tag }}
+          path: hyprland
+          submodules: recursive
+
+      - name: Check that hy3 still builds against it
+        run: |
+          # the container runs as root, the checkouts belong to the runner user
+          git config --global --add safe.directory '*'
+
+          # a pin only holds if that hy3 commit compiles against the release's
+          # own headers, and hyprland generates those rather than shipping them
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/tmp/headers \
+            -S hyprland -B hyprland/build
+          make -C hyprland installheaders PREFIX=/tmp/headers
+
+          git worktree add /tmp/hy3 "$HY3_COMMIT"
+          export PKG_CONFIG_PATH="/tmp/headers/share/pkgconfig:${PKG_CONFIG_PATH:-}"
+
+          # stop unless these headers match the release and pkg-config finds them
+          grep -q "$HYPRLAND_COMMIT" /tmp/headers/include/hyprland/src/version.h
+          pkg-config --cflags hyprland | grep -q /tmp/headers
+
+          # run what hyprpm runs: the build commands in the pinned commit's manifest
+          cd /tmp/hy3
+          mapfile -t commands < <(sed -n '/^build = \[/,/^]/ s/^[[:space:]]*"\(.*\)",\{0,1\}$/\1/p' hyprpm.toml)
+          for command in "${commands[@]}"; do eval "$command"; done
+          test -f "$(sed -n 's/^output = "\(.*\)"$/\1/p' hyprpm.toml)"
+
+      - name: Add the pin and push it
+        run: |
+          # insert before the "]" that closes commit_pins
+          sed -i "0,/^]$/s|^]$|\t[\"$HYPRLAND_COMMIT\", \"$HY3_COMMIT\"], # ${TAG#v}\n]|" hyprpm.toml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "fixup: add ${TAG#v} to hyprpm.toml"
+          git push
