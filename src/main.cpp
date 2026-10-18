@@ -149,6 +149,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
+	// Hyprland only removes the layout after PLUGIN_EXIT returns, and that teardown
+	// queues fading tab groups. Remove it here so the clear() below frees them.
+	// Hyprland skips workspaces without a monitor, so those keep their layout.
+	HyprlandAPI::removeAlgo(PHANDLE, "hy3");
+	g_pHyprRenderer->context().m_pass.removeAllOfType("Hy3TabPassElement");
+
 	g_renderListener.reset();
 	g_tickListener.reset();
 	g_windowTitleListener.reset();
