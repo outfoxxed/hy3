@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <set>
 #include <vector>
 
@@ -27,6 +28,13 @@ inline CHyprSignalListener g_renderListener;
 inline CHyprSignalListener g_tickListener;
 inline CHyprSignalListener g_windowTitleListener;
 inline CHyprSignalListener g_urgentListener;
+inline CHyprSignalListener g_touchDownListener;
+inline CHyprSignalListener g_touchMotionListener;
+inline CHyprSignalListener g_touchUpListener;
+
+// Touches that started on a tab, by ID. Plugin-wide so a layout destroyed
+// mid-touch can't leak the rest of the touch to a client that never saw the down.
+inline std::map<int32_t, WP<ITouch>> g_tabBarTouches;
 
 inline Hy3Layout* hy3InstanceForWorkspace(PHLWORKSPACE ws) {
 	if (!ws || !ws->space() || !ws->space()->algorithm()) return nullptr;

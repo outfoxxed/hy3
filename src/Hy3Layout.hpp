@@ -19,6 +19,7 @@ enum class GroupEphemeralityOption {
 #include <hyprland/src/layout/LayoutManager.hpp>
 #include <hyprland/src/helpers/signal/Signal.hpp>
 #include <hyprland/src/event/EventBus.hpp>
+#include <hyprland/src/devices/ITouch.hpp>
 
 enum class ShiftDirection {
 	Left,
@@ -109,6 +110,8 @@ public:
 	void removeTarget(SP<Layout::ITarget> target) override;
 	void resizeTarget(const Vector2D& delta, SP<Layout::ITarget> target, Layout::eRectCorner corner = Layout::CORNER_NONE) override;
 	void recalculate(Layout::eRecalculateReason reason) override;
+	// Switches to the tab under a touch down, if nothing is drawn above it
+	static bool touchTab(const ITouch::SDownEvent& event);
 	void recalcGeometry(bool no_animation = false);
 	void swapTargets(SP<Layout::ITarget> a, SP<Layout::ITarget> b) override;
 	void moveTargetInDirection(SP<Layout::ITarget> t, Math::eDirection dir, bool silent) override;
@@ -197,6 +200,8 @@ private:
 	// Per-instance event listeners
 	CHyprSignalListener m_windowActiveListener;
 	CHyprSignalListener m_mouseButtonListener;
+
+	Hy3Node* tabAt(Vector2D pos);
 
 	struct {
 		std::string raw_workspaces;

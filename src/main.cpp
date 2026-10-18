@@ -1,5 +1,6 @@
 #include <hyprland/src/Compositor.hpp>
 #include <hyprland/src/config/values/ConfigValues.hpp>
+#include <hyprland/src/managers/input/InputManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/render/Renderer.hpp>
 #include <hyprland/src/render/OpenGL.hpp>
@@ -131,6 +132,31 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 		node->updateTabBarRecursive();
 	});
 
+	// A touch never raises mouse.button. Once a tap lands on a tab, cancel its motion
+	// and up too, since the client underneath never saw the down.
+	g_touchDownListener =
+	    Event::bus()->m_events.input.touch.down.listen([](ITouch::SDownEvent event,
+	                                                      Event::SCallbackInfo& info) {
+		    // Plugins never see a touch cancel, so a new down is the first sign that an
+		    // older touch with this ID is over.
+		    g_tabBarTouches.erase(event.touchID);
+		    if (info.cancelled || !Hy3Layout::touchTab(event)) return;
+
+		    g_tabBarTouches[event.touchID] = event.device;
+		    info.cancelled = true;
+	    });
+
+	g_touchMotionListener =
+	    Event::bus()->m_events.input.touch.motion.listen([](ITouch::SMotionEvent event,
+	                                                        Event::SCallbackInfo& info) {
+		    if (g_tabBarTouches.contains(event.touchID)) info.cancelled = true;
+	    });
+
+	g_touchUpListener = Event::bus()->m_events.input.touch.up.listen([](ITouch::SUpEvent event,
+	                                                                    Event::SCallbackInfo& info) {
+		if (g_tabBarTouches.erase(event.touchID)) info.cancelled = true;
+	});
+
 	g_urgentListener = Event::bus()->m_events.window.urgent.listen([](PHLWINDOW window) {
 		if (!window) return;
 		window->m_hints |= Desktop::View::WINDOW_HINT_URGENT;
@@ -153,6 +179,16 @@ APICALL EXPORT void PLUGIN_EXIT() {
 	g_tickListener.reset();
 	g_windowTitleListener.reset();
 	g_urgentListener.reset();
+	g_touchDownListener.reset();
+	g_touchMotionListener.reset();
+	g_touchUpListener.reset();
+
+	// Hyprland drops the motion and up of a consumed touch, as it does for swipe fingers
+	for (auto& [id, device]: g_tabBarTouches)
+		g_pInputManager->m_touchData.consumedTouches.emplace_back(
+		    STouchData::SConsumedTouch {.device = device, .id = id}
+		);
+	g_tabBarTouches.clear();
 
 	g_tabGroups.clear();
 	g_destroyingTabGroups.clear();
