@@ -51,8 +51,11 @@ static CollapsePolicy nodeCollapsePolicy() {
 }
 
 PHLWORKSPACE workspace_for_action(bool allow_fullscreen) {
-	auto workspace = Desktop::focusState()->monitor()->m_activeSpecialWorkspace;
-	if (!valid(workspace)) workspace = Desktop::focusState()->monitor()->m_activeWorkspace;
+	auto monitor = Desktop::focusState()->monitor();
+	if (!monitor) return nullptr;
+
+	auto workspace = monitor->m_activeSpecialWorkspace;
+	if (!valid(workspace)) workspace = monitor->m_activeWorkspace;
 
 	if (!valid(workspace)) return nullptr;
 	if (!allow_fullscreen && Fullscreen::controller()->hasFullscreen(workspace)) return nullptr;
@@ -248,7 +251,8 @@ void Hy3Layout::insertNode(UP<Hy3Node> node_up, std::optional<Vector2D> focalPoi
 		    CConfigValue<Config::INTEGER>("plugin:hy3:tab_first_window");
 
 		// Use space work area if available, fall back to monitor
-		CBox wa_box(monitor->m_position, monitor->m_size);
+		CBox wa_box;
+		if (monitor) wa_box = CBox(monitor->m_position, monitor->m_size);
 		auto algo = m_parent.lock();
 		if (algo) {
 			auto space = algo->space();
@@ -435,7 +439,10 @@ void Hy3Layout::recalcGeometry(bool no_animation) {
 
 	hy3_log(LOG, "recalculating workspace {}", workspace->addressableName());
 
-	auto ma = workspace->m_monitor->logicalBoxMinusReserved();
+	auto monitor = workspace->m_monitor.lock();
+	if (!monitor) return;
+
+	auto ma = monitor->logicalBoxMinusReserved();
 	auto wa = space->workArea();
 
 	if (this->root) {
@@ -916,8 +923,10 @@ void Hy3Layout::warpCursor() {
 			Hy3Layout::warpCursorWithFocus(current_window->middle(), true);
 		}
 	} else {
-		auto* node =
-		    this->getWorkspaceFocusedNode(Desktop::focusState()->monitor()->m_activeWorkspace.get());
+		auto monitor = Desktop::focusState()->monitor();
+		if (!monitor) return;
+
+		auto* node = this->getWorkspaceFocusedNode(monitor->m_activeWorkspace.get());
 
 		if (node != nullptr) {
 			Hy3Layout::warpCursorWithFocus(node->visualBox.pos() + node->visualBox.size() / 2);
@@ -1024,12 +1033,16 @@ void Hy3Layout::moveNodeToWorkspace(
 	}
 
 	if (follow) {
-		auto& monitor = workspace->m_monitor;
+		// A workspace orphaned by the last monitor disconnect isn't adopted on reconnect
+		auto monitor = workspace->m_monitor.lock();
+		if (!monitor) monitor = Desktop::focusState()->monitor();
+		if (!monitor) return;
 
 		if (workspace->type() == Workspace::eWorkspaceType::SPECIAL) {
 			monitor->setSpecialWorkspace(workspace);
 		} else if (origin_ws->type() == Workspace::eWorkspaceType::SPECIAL) {
-			origin_ws->m_monitor->setSpecialWorkspace(nullptr);
+			if (auto origin_monitor = origin_ws->m_monitor.lock())
+				origin_monitor->setSpecialWorkspace(nullptr);
 		}
 
 		monitor->changeWorkspace(workspace);
