@@ -141,6 +141,7 @@ public:
 	PHLWINDOW target_window = nullptr;
 	PHLWORKSPACE workspace = nullptr;
 	bool hidden = false;
+	Hy3GroupLayout layout;
 	Hy3TabBar bar;
 	PHLANIMVAR<Vector2D> pos;
 	PHLANIMVAR<Vector2D> size;
