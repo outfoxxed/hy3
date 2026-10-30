@@ -69,7 +69,7 @@ jobs:
     steps:
       - name: Install the libraries Hyprland and hy3 build against
         # installing hyprland pulls in every library the build needs
-        run: pacman -Syu --noconfirm --needed git cmake ninja pkgconf cpio hyprland pango cairo
+        run: pacman -Syu --noconfirm --needed git cmake ninja pkgconf cpio hyprland hyprland-protocols hyprwayland-scanner pango cairo
 
       - uses: actions/checkout@v5
         with:
