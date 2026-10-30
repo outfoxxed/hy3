@@ -16,12 +16,15 @@
 #include <hyprland/src/desktop/view/window/WindowPresentation.hpp>
 #include <hyprland/src/desktop/rule/Engine.hpp>
 #include <hyprland/src/managers/SeatManager.hpp>
+#include <hyprland/src/managers/SessionLockManager.hpp>
 #include <hyprland/src/managers/fullscreen/FullscreenController.hpp>
 #include <hyprland/src/managers/input/InputManager.hpp>
+#include <hyprland/src/managers/input/UnifiedWorkspaceSwipeGesture.hpp>
 #include <hyprland/src/pointer/PointerController.hpp>
 #include <hyprland/src/pointer/PointerManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/plugins/PluginSystem.hpp>
+#include <hyprland/src/protocols/LayerShell.hpp>
 #include <hyprland/src/xwayland/XWayland.hpp>
 #include <hyprland/src/config/shared/workspace/WorkspaceRuleManager.hpp>
 #include <hyprutils/math/Vector2D.hpp>
@@ -120,14 +123,8 @@ Hy3Layout::Hy3Layout() {
 		    auto* node = this->getNodeFromWindow(window);
 		    if (!node) return;
 
-		    Hy3Node* focus = nullptr;
-		    auto mouse_pos = g_pInputManager->getMouseCoordsInternal();
-		    auto* tab_node = findTabBarAt(*this->root, mouse_pos, &focus);
-		    if (!tab_node) return;
-
-		    while (focus->is_group() && !focus->as_group().group_focused
-		           && focus->as_group().focused_child != nullptr)
-			    focus = focus->as_group().focused_child;
+		    auto* focus = this->tabAt(g_pInputManager->getMouseCoordsInternal());
+		    if (!focus) return;
 
 		    focus->focus(false, Desktop::FOCUS_REASON_CLICK);
 		    g_pInputManager->simulateMouseMovement();
@@ -136,6 +133,81 @@ Hy3Layout::Hy3Layout() {
 		    info.cancelled = true;
 	    }
 	);
+}
+
+Hy3Node* Hy3Layout::tabAt(Vector2D pos) {
+	Hy3Node* focus = nullptr;
+	if (!this->root || !findTabBarAt(*this->root, pos, &focus)) return nullptr;
+
+	while (focus->is_group() && !focus->as_group().group_focused
+	       && focus->as_group().focused_child != nullptr)
+		focus = focus->as_group().focused_child;
+
+	return focus;
+}
+
+bool Hy3Layout::touchTab(const ITouch::SDownEvent& event) {
+	static const auto swipe_touch = CConfigValue<Config::INTEGER>("gestures:workspace_swipe_touch");
+	static const auto gaps_out = CConfigValue<Config::IComplexConfigValue>("general:gaps_out");
+	static const auto border_size = CConfigValue<Config::INTEGER>("general:border_size");
+
+	// Hyprland only checks these after plugins have seen the down
+	if (!event.device || g_pSessionLockManager->isSessionLocked()) return false;
+	if (g_pInputManager->getClickMode() == CLICKMODE_KILL) return false;
+	if (g_pUnifiedWorkspaceSwipe->isGestureInProgress()) return false;
+	const auto& touch_data = g_pInputManager->m_touchData;
+	if (touch_data.workspaceSwipe || !touch_data.consumedTouches.empty()) return false;
+
+	auto monitor = State::monitorState()
+	                   ->query()
+	                   .name(!event.device->m_boundOutput.empty() ? event.device->m_boundOutput : "")
+	                   .run();
+	if (!monitor) monitor = Desktop::focusState()->monitor();
+	if (!monitor || !monitor->m_activeWorkspace || monitor->m_size.x <= 0 || monitor->m_size.y <= 0)
+		return false;
+
+	if (*swipe_touch) {
+		// The edge band where Hyprland starts a touch workspace swipe
+		const auto* gaps = sc<Config::CCssGapData*>(gaps_out.ptr());
+		const auto style = monitor->m_activeWorkspace->m_renderOffset->getStyle();
+		const bool vertical = style == "slidevert" || style.starts_with("slidefadevert");
+		const double size = vertical ? monitor->m_size.y : monitor->m_size.x;
+		const double start = ((vertical ? gaps->m_top : gaps->m_left) + *border_size) / size;
+		const double end = 1 - ((vertical ? gaps->m_bottom : gaps->m_right) + *border_size) / size;
+		const double position = vertical ? event.pos.y : event.pos.x;
+		if (position < start || position > end) return false;
+	}
+
+	auto workspace = monitor->m_activeSpecialWorkspace ? monitor->m_activeSpecialWorkspace
+	                                                   : monitor->m_activeWorkspace;
+	if (Fullscreen::controller()->hasFullscreen(workspace)) return false;
+
+	auto* layout = hy3InstanceForWorkspace(workspace);
+	if (!layout) return false;
+
+	const auto pos = monitor->m_position + event.pos * monitor->m_size;
+
+	Vector2D surface_pos;
+	PHLLS layer;
+	const auto& hit_test = Desktop::viewState()->hitTest();
+	if (hit_test.layerPopupSurfaceAt(pos, monitor, &surface_pos, &layer)) return false;
+	for (auto level: {ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY, ZWLR_LAYER_SHELL_V1_LAYER_TOP}) {
+		if (hit_test.layerSurfaceAt(pos, &monitor->m_layerSurfaceLayers[level], &surface_pos, &layer))
+			return false;
+	}
+	auto window = hit_test.windowAt(pos, ALLOW_FLOATING | RESERVED_EXTENTS | INPUT_EXTENTS);
+	if (window && (window->isFloating() || (!window->backend().isX11() && window->hasPopupAt(pos))))
+		return false;
+
+	auto* focus = layout->tabAt(pos);
+	if (!focus) return false;
+
+	// Hyprland would have moved monitor focus on the down, and focusing a group does not
+	if (monitor != Desktop::focusState()->monitor()) Desktop::focusState()->rawMonitorFocus(monitor);
+
+	focus->focus(false, Desktop::FOCUS_REASON_CLICK);
+	layout->recalcGeometry();
+	return true;
 }
 
 Hy3Layout::~Hy3Layout() {
