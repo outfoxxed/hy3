@@ -38,6 +38,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 	CONF("node_collapse_policy", Int, 2);
 	CONF("group_inset", Int, 10);
 	CONF("tab_first_window", Bool, false);
+	CONF("tag_windows", Bool, false);
 
 	// tabs
 	CONF("tabs:height", Int, 22);
