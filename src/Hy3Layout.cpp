@@ -989,6 +989,8 @@ void Hy3Layout::moveNodeToWorkspace(
 	{
 		g_pHyprRenderer->damageWindow(focused_window);
 		Desktop::globalWindowController()->moveWindowToWorkspace(focused_window, workspace);
+		// node is freed by removeTarget or is not the moved window
+		node = nullptr;
 	} else {
 		if (node == nullptr) return;
 
@@ -1034,8 +1036,17 @@ void Hy3Layout::moveNodeToWorkspace(
 
 		monitor->changeWorkspace(workspace);
 
-		node->layout()->recalcGeometry();
-		node->focus(warp, Desktop::FOCUS_REASON_KEYBIND);
+		if (node != nullptr) {
+			node->layout()->recalcGeometry();
+			node->focus(warp, Desktop::FOCUS_REASON_KEYBIND);
+		} else {
+			g_pInputManager->unconstrainMouse();
+			Desktop::focusState()->fullWindowFocus(focused_window, Desktop::FOCUS_REASON_KEYBIND);
+			if (warp) {
+				const auto box = focused_window->layoutBox();
+				Hy3Layout::warpCursorToBox(box.pos(), box.size());
+			}
+		}
 	}
 }
 
