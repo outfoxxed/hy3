@@ -132,7 +132,7 @@ struct Hy3GroupNode : Hy3Node {
 	Hy3GroupLayout previous_nontab_layout = Hy3GroupLayout::SplitH;
 	std::list<UP<Hy3Node>> children;
 	bool group_focused = true;
-	Hy3Node* focused_child = nullptr; // non-owning observer, always valid while parent group lives
+	WP<Hy3Node> focused_child; // ponytail: WP prevents use-after-free on extracted/freed nodes
 	ExpandFocusType expand_focused = ExpandFocusType::NotExpanded;
 	Ephemeral ephemeral = Ephemeral::Off;
 	bool locked = false;
